@@ -1,95 +1,120 @@
-import { getProduct } from '../../lib/woocommerce'
-import OrderForm from '../../components/OrderForm'
+import { getProducts, getCategories } from '../lib/woocommerce'
+import ProductCard from '../components/ProductCard'
 
-export default async function ProductPage({ params }) {
-  let product = null
+export default async function ProductsPage({ searchParams }) {
+  const page = parseInt(searchParams?.page || '1')
+  const category = searchParams?.category || ''
+
+  let products = []
+  let categories = []
 
   try {
-    product = await getProduct(params.id)
+    [products, categories] = await Promise.all([
+      getProducts(page, 20, category),
+      getCategories(),
+    ])
   } catch (e) {
-    return (
-      <div className="container" style={{ padding: '80px 24px', textAlign: 'center' }}>
-        <h2>המוצר לא נמצא</h2>
-        <a href="/products" className="btn-primary" style={{ display: 'inline-block', marginTop: '24px', textDecoration: 'none' }}>
-          חזרה לחנות
-        </a>
-      </div>
-    )
+    console.error(e)
   }
 
-  const image = product.images?.[0]?.src || '/placeholder.jpg'
-  const description = product.description?.replace(/<[^>]*>/g, '') || ''
-
   return (
-    <div style={{ padding: '56px 0' }}>
+    <div style={{ padding: '48px 0' }}>
       <div className="container">
-        {/* Breadcrumb */}
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '32px' }}>
-          <a href="/" style={{ color: 'inherit', textDecoration: 'none' }}>בית</a>
-          {' > '}
-          <a href="/products" style={{ color: 'inherit', textDecoration: 'none' }}>ספרים</a>
-          {' > '}
-          {product.name}
+        <h1 style={{
+          fontFamily: 'Frank Ruhl Libre, serif',
+          fontSize: '40px',
+          fontWeight: '900',
+          marginBottom: '8px',
+        }}>
+          כל הספרים
+        </h1>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '40px' }}>
+          מבחר של למעלה מ-5,000 ספרי קודש ויהדות
         </p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '64px' }}>
-          {/* תמונה */}
-          <div>
-            <div style={{
-              background: 'var(--cream-dark)',
-              padding: '32px',
-              marginBottom: '16px',
-            }}>
-              <img
-                src={image}
-                alt={product.name}
-                style={{ width: '100%', height: 'auto', display: 'block' }}
-              />
-            </div>
-          </div>
+        <div style={{ display: 'flex', gap: '40px' }}>
+          {/* סינון קטגוריות */}
+          <aside style={{ width: '220px', flexShrink: 0 }}>
+            <h3 style={{ fontSize: '16px', marginBottom: '16px', color: 'var(--text)' }}>קטגוריות</h3>
+            <ul style={{ listStyle: 'none' }}>
+              <li style={{ marginBottom: '8px' }}>
+                <a
+                  href="/products"
+                  style={{
+                    color: !category ? 'var(--gold-dark)' : 'var(--text-muted)',
+                    textDecoration: 'none',
+                    fontSize: '14px',
+                    fontWeight: !category ? '700' : '400',
+                  }}
+                >
+                  כל הספרים
+                </a>
+              </li>
+              {categories.map((cat) => (
+                <li key={cat.id} style={{ marginBottom: '8px' }}>
+                  <a
+                    href={`/products?category=${cat.id}`}
+                    style={{
+                      color: category === String(cat.id) ? 'var(--gold-dark)' : 'var(--text-muted)',
+                      textDecoration: 'none',
+                      fontSize: '14px',
+                      fontWeight: category === String(cat.id) ? '700' : '400',
+                      transition: 'color 0.2s',
+                    }}
+                  >
+                    {cat.name} ({cat.count})
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </aside>
 
-          {/* פרטים + הזמנה */}
-          <div>
-            <h1 style={{
-              fontFamily: 'Frank Ruhl Libre, serif',
-              fontSize: '34px',
-              fontWeight: '900',
-              marginBottom: '16px',
-              lineHeight: 1.3,
-            }}>
-              {product.name}
-            </h1>
-
-            <div style={{ marginBottom: '24px' }}>
-              <span className="price" style={{ fontSize: '2rem' }}>
-                ₪{parseFloat(product.price).toFixed(0)}
-              </span>
-              {product.sale_price && product.sale_price !== product.regular_price && (
-                <span style={{
-                  fontSize: '16px',
-                  color: 'var(--text-muted)',
-                  textDecoration: 'line-through',
-                  marginRight: '12px',
+          {/* רשת מוצרים */}
+          <div style={{ flex: 1 }}>
+            {products.length > 0 ? (
+              <>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: '20px',
+                  marginBottom: '40px',
                 }}>
-                  ₪{parseFloat(product.regular_price).toFixed(0)}
-                </span>
-              )}
-            </div>
+                  {products.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
 
-            <div style={{
-              borderTop: '1px solid var(--cream-dark)',
-              borderBottom: '1px solid var(--cream-dark)',
-              padding: '20px 0',
-              marginBottom: '32px',
-              fontSize: '15px',
-              lineHeight: 1.8,
-              color: 'var(--text)',
-            }}>
-              {description.slice(0, 400)}{description.length > 400 ? '...' : ''}
-            </div>
-
-            {/* טופס הזמנה */}
-            <OrderForm product={product} />
+                {/* דפדוף */}
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                  {page > 1 && (
+                    <a
+                      href={`/products?page=${page - 1}${category ? `&category=${category}` : ''}`}
+                      className="btn-outline"
+                      style={{ textDecoration: 'none' }}
+                    >
+                      ← הקודם
+                    </a>
+                  )}
+                  <a
+                    href={`/products?page=${page + 1}${category ? `&category=${category}` : ''}`}
+                    className="btn-primary"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    הבא →
+                  </a>
+                </div>
+              </>
+            ) : (
+              <div style={{
+                textAlign: 'center',
+                padding: '80px',
+                background: 'var(--cream-dark)',
+                color: 'var(--text-muted)',
+              }}>
+                <p style={{ fontSize: '18px', marginBottom: '12px' }}>⚠️ לא ניתן לטעון מוצרים</p>
+                <p style={{ fontSize: '14px' }}>יש להגדיר את מפתחות ה-API בקובץ .env.local</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
