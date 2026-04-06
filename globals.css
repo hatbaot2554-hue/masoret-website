@@ -1,0 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500&display=swap');
+
+:root {
+  --gold: #C9A84C;
+  --gold-light: #E8C97A;
+  --gold-dark: #8B6914;
+  --navy: #1A2332;
+  --navy-light: #243040;
+  --cream: #F8F4EE;
+  --cream-dark: #EDE6D9;
+  --text: #2C2416;
+  --text-muted: #6B5C3E;
+  --white: #FFFFFF;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  direction: rtl;
+  font-size: 16px;
+}
+
+body {
+  font-family: 'Heebo', sans-serif;
+  background-color: var(--cream);
+  color: var(--text);
+  line-height: 1.7;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Frank Ruhl Libre', serif;
+  font-weight: 700;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* כפתורים */
+.btn-primary {
+  background: var(--gold);
+  color: var(--navy);
+  border: none;
+  padding: 12px 28px;
+  font-family: 'Heebo', sans-serif;
+  font-weight: 500;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.02em;
+}
+
+.btn-primary:hover {
+  background: var(--gold-light);
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--gold);
+  border: 1.5px solid var(--gold);
+  padding: 10px 24px;
+  font-family: 'Heebo', sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-outline:hover {
+  background: var(--gold);
+  color: var(--navy);
+}
+
+/* כרטיסי מוצר */
+.product-card {
+  background: var(--white);
+  border: 1px solid var(--cream-dark);
+  transition: all 0.25s;
+  overflow: hidden;
+}
+
+.product-card:hover {
+  border-color: var(--gold);
+  box-shadow: 0 8px 32px rgba(201,168,76,0.15);
+  transform: translateY(-2px);
+}
+
+/* מחיר */
+.price {
+  font-family: 'Frank Ruhl Libre', serif;
+  font-size: 1.4rem;
+  color: var(--gold-dark);
+  font-weight: 700;
+}
+
+/* הודעות */
+.alert-success {
+  background: #f0faf0;
+  border: 1px solid #4caf50;
+  color: #2e7d32;
+  padding: 16px 20px;
+  border-radius: 4px;
+}
+
+.alert-error {
+  background: #fff5f5;
+  border: 1px solid #ef5350;
+  color: #b71c1c;
+  padding: 16px 20px;
+  border-radius: 4px;
+}
