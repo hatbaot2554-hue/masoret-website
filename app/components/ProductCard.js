@@ -1,90 +1,31 @@
 'use client'
 
-export default function ProductCard({ product }) {
-  const image = product.images?.[0]?.src || '/placeholder.jpg'
-  const price = product.price
-  const regularPrice = product.regular_price
-  const onSale = product.sale_price && product.sale_price !== product.regular_price
+export default function ProductCard({ product, index }) {
+  const image = product.image || ''
+  const price = parseFloat(product.price || 0).toFixed(0)
 
   return (
-    <a
-      href={`/products/${product.id}`}
-      style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
-    >
-      <div className="product-card">
-        {/* תמונה */}
-        <div style={{
-          aspectRatio: '3/4',
-          overflow: 'hidden',
-          background: 'var(--cream-dark)',
-          position: 'relative',
-        }}>
-          <img
-            src={image}
-            alt={product.name}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              transition: 'transform 0.4s',
-            }}
-            onMouseEnter={e => e.target.style.transform = 'scale(1.04)'}
-            onMouseLeave={e => e.target.style.transform = 'scale(1)'}
-          />
-          {onSale && (
-            <span style={{
-              position: 'absolute',
-              top: '12px',
-              right: '12px',
-              background: 'var(--gold)',
-              color: 'var(--navy)',
-              padding: '4px 10px',
-              fontSize: '12px',
-              fontWeight: '700',
-            }}>
-              מבצע
-            </span>
+    <a href={`/products/${index ?? 0}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+      <div style={{ background: '#fff', border: '1px solid #EDE6D9', transition: 'all 0.25s', overflow: 'hidden' }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = '#C9A84C'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = '#EDE6D9'; e.currentTarget.style.transform = 'translateY(0)' }}>
+        <div style={{ aspectRatio: '3/4', overflow: 'hidden', background: '#EDE6D9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {image ? (
+            <img src={image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <span style={{ fontSize: '48px' }}>📖</span>
           )}
         </div>
-
-        {/* פרטים */}
         <div style={{ padding: '16px' }}>
-          <h3 style={{
-            fontSize: '15px',
-            fontWeight: '700',
-            marginBottom: '8px',
-            lineHeight: 1.4,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}>
+          <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '8px', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
             {product.name}
           </h3>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="price">₪{parseFloat(price).toFixed(0)}</span>
-            {onSale && (
-              <span style={{
-                fontSize: '13px',
-                color: 'var(--text-muted)',
-                textDecoration: 'line-through',
-              }}>
-                ₪{parseFloat(regularPrice).toFixed(0)}
-              </span>
-            )}
+          <div style={{ fontFamily: 'serif', fontSize: '1.4rem', color: '#8B6914', fontWeight: '700', marginBottom: '12px' }}>
+            ₪{price}
           </div>
-
-          <button
-            className="btn-primary"
-            style={{ width: '100%', marginTop: '12px', fontSize: '13px', padding: '10px' }}
-            onClick={(e) => {
-              e.preventDefault()
-              window.location.href = `/products/${product.id}`
-            }}
-          >
+          <div style={{ background: '#C9A84C', color: '#1A2332', padding: '10px', textAlign: 'center', fontSize: '13px', fontWeight: '500' }}>
             לפרטים והזמנה
-          </button>
+          </div>
         </div>
       </div>
     </a>
