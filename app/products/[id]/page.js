@@ -8,12 +8,12 @@ async function getProduct(id) {
     )
     if (!res.ok) return null
     const all = await res.json()
-    return all[parseInt(id)] || null
+    const decoded = decodeURIComponent(id)
+    return all.find(p => p.url.includes(decoded)) || all[parseInt(id)] || null
   } catch {
     return null
   }
 }
-
 export default async function ProductPage({ params }) {
   const product = await getProduct(params.id)
 
