@@ -8,14 +8,17 @@ async function getProduct(id) {
     )
     if (!res.ok) return null
     const all = await res.json()
-    const decoded = decodeURIComponent(id)
-    return all.find(p => p.url.includes(decoded)) || all[parseInt(id)] || null
+    const idx = parseInt(id)
+    if (!isNaN(idx) && idx >= 0 && idx < all.length) return all[idx]
+    return null
   } catch {
     return null
   }
 }
+
 export default async function ProductPage({ params }) {
   const product = await getProduct(params.id)
+  const inStock = product?.in_stock !== false
 
   if (!product) {
     return (
@@ -26,6 +29,10 @@ export default async function ProductPage({ params }) {
     )
   }
 
+  const price = parseFloat(product.price || 0)
+  const originalPrice = parseFloat(product.original_price || 0)
+  const displayPrice = price > 1 ? price.toFixed(0) : (originalPrice * 1.15).toFixed(0)
+
   return (
     <div style={{ padding: '56px 0' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
@@ -35,7 +42,12 @@ export default async function ProductPage({ params }) {
           {product.name}
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '64px' }}>
-          <div style={{ background: '#EDE6D9', padding: '32px' }}>
+          <div style={{ background: '#EDE6D9', padding: '32px', position: 'relative' }}>
+            {!inStock && (
+              <div style={{ position: 'absolute', top: '16px', right: '16px', background: '#c0392b', color: '#fff', padding: '6px 14px', fontSize: '13px', fontWeight: '700' }}>
+                חסר במלאי
+              </div>
+            )}
             {product.image ? (
               <img src={product.image} alt={product.name} style={{ width: '100%', height: 'auto', display: 'block' }} />
             ) : (
@@ -49,17 +61,22 @@ export default async function ProductPage({ params }) {
                 קטגוריה: <a href={`/products?category=${encodeURIComponent(product.category)}`} style={{ color: '#8B6914' }}>{product.category}</a>
               </p>
             )}
-            <div style={{ marginBottom: '24px' }}>
-              <span style={{ fontFamily: 'serif', fontSize: '2rem', color: '#8B6914', fontWeight: '700' }}>
-                ₪{parseFloat(product.price).toFixed(0)}
-              </span>
+            <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontFamily: 'serif', fontSize: '2rem', color: '#8B6914', fontWeight: '700' }}>₪{displayPrice}</span>
+              {!inStock && <span style={{ background: '#fff0f0', color: '#c0392b', padding: '4px 10px', fontSize: '13px', fontWeight: '600', border: '1px solid #fcc' }}>חסר במלאי</span>}
             </div>
             {product.description && (
               <div style={{ borderTop: '1px solid #EDE6D9', borderBottom: '1px solid #EDE6D9', padding: '20px 0', marginBottom: '32px', fontSize: '15px', lineHeight: 1.8, color: '#2C2416' }}>
                 {product.description}
               </div>
             )}
-            <OrderForm product={{ ...product, sourceProductId: product.url }} />
+            {inStock ? (
+              <OrderForm product={{ ...product, price: displayPrice, sourceProductId: product.url }} />
+            ) : (
+              <div style={{ background: '#fff0f0', border: '1px solid #fcc', padding: '20px', textAlign: 'center', color: '#c0392b', fontSize: '16px' }}>
+                המוצר כרגע חסר במלאי — נשמח לעדכן אותך כשיחזור
+              </div>
+            )}
           </div>
         </div>
       </div>
