@@ -24,21 +24,27 @@ export default async function ProductPage({ params }) {
     return (
       <div style={{ textAlign: 'center', padding: '80px 24px' }}>
         <h2>המוצר לא נמצא</h2>
-        <a href="/products" style={{ display: 'inline-block', marginTop: '24px', background: '#C9A84C', color: '#1A2332', padding: '12px 28px', textDecoration: 'none' }}>חזרה לחנות</a>
+        <a href="/products" style={{ display: 'inline-block', marginTop: '24px', background: '#C9A84C', color: '#1A2332', padding: '12px 28px', textDecoration: 'none' }}>
+          חזרה לחנות
+        </a>
       </div>
     )
   }
 
-  const price = parseFloat(product.price || 0)
   const originalPrice = parseFloat(product.original_price || 0)
-  const displayPrice = price > 1 ? price.toFixed(0) : (originalPrice * 1.15).toFixed(0)
+  const markup15 = originalPrice * 0.15
+  const finalPrice = markup15 >= 2
+    ? Math.round(originalPrice * 1.15)
+    : Math.round(originalPrice + 2)
 
   return (
     <div style={{ padding: '56px 0' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
         <p style={{ fontSize: '13px', color: '#6B5C3E', marginBottom: '32px' }}>
-          <a href="/" style={{ color: 'inherit', textDecoration: 'none' }}>בית</a> {' > '}
-          <a href="/products" style={{ color: 'inherit', textDecoration: 'none' }}>ספרים</a> {' > '}
+          <a href="/" style={{ color: 'inherit', textDecoration: 'none' }}>בית</a>
+          {' > '}
+          <a href="/products" style={{ color: 'inherit', textDecoration: 'none' }}>ספרים</a>
+          {' > '}
           {product.name}
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '64px' }}>
@@ -55,15 +61,23 @@ export default async function ProductPage({ params }) {
             )}
           </div>
           <div>
-            <h1 style={{ fontFamily: 'serif', fontSize: '34px', fontWeight: '900', marginBottom: '16px', lineHeight: 1.3 }}>{product.name}</h1>
+            <h1 style={{ fontFamily: 'serif', fontSize: '34px', fontWeight: '900', marginBottom: '16px', lineHeight: 1.3 }}>
+              {product.name}
+            </h1>
             {product.category && (
               <p style={{ fontSize: '13px', color: '#6B5C3E', marginBottom: '16px' }}>
                 קטגוריה: <a href={`/products?category=${encodeURIComponent(product.category)}`} style={{ color: '#8B6914' }}>{product.category}</a>
               </p>
             )}
             <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontFamily: 'serif', fontSize: '2rem', color: '#8B6914', fontWeight: '700' }}>₪{displayPrice}</span>
-              {!inStock && <span style={{ background: '#fff0f0', color: '#c0392b', padding: '4px 10px', fontSize: '13px', fontWeight: '600', border: '1px solid #fcc' }}>חסר במלאי</span>}
+              <span style={{ fontFamily: 'serif', fontSize: '2rem', color: '#8B6914', fontWeight: '700' }}>
+                ₪{finalPrice}
+              </span>
+              {!inStock && (
+                <span style={{ background: '#fff0f0', color: '#c0392b', padding: '4px 10px', fontSize: '13px', fontWeight: '600', border: '1px solid #fcc' }}>
+                  חסר במלאי
+                </span>
+              )}
             </div>
             {product.description && (
               <div style={{ borderTop: '1px solid #EDE6D9', borderBottom: '1px solid #EDE6D9', padding: '20px 0', marginBottom: '32px', fontSize: '15px', lineHeight: 1.8, color: '#2C2416' }}>
@@ -71,7 +85,7 @@ export default async function ProductPage({ params }) {
               </div>
             )}
             {inStock ? (
-              <OrderForm product={{ ...product, price: displayPrice, sourceProductId: product.url }} />
+              <OrderForm product={{ ...product, price: finalPrice, sourceProductId: product.url }} />
             ) : (
               <div style={{ background: '#fff0f0', border: '1px solid #fcc', padding: '20px', textAlign: 'center', color: '#c0392b', fontSize: '16px' }}>
                 המוצר כרגע חסר במלאי — נשמח לעדכן אותך כשיחזור
