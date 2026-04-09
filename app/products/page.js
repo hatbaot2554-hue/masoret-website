@@ -1,18 +1,19 @@
-import fs from 'fs'
-import path from 'path'
 import ProductCard from '../components/ProductCard'
 
-function getProducts(category = '', page = 1) {
+async function getProducts(category = '', page = 1) {
   try {
-    const filePath = path.join(process.cwd(), 'products.json')
-    if (!fs.existsSync(filePath)) return { products: [], categories: [] }
-    const all = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+    const res = await fetch(
+      'https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/products.json',
+      { next: { revalidate: 3600 } }
+    )
+    if (!res.ok) return { products: [], categories: [], total: 0, hasMore: false }
+    const all = await res.json()
     const filtered = category ? all.filter(p => p.category === category) : all
     const perPage = 20
     const start = (page - 1) * perPage
     const categories = [...new Set(all.map(p => p.category).filter(Boolean))]
     return {
-      products: filtered.slice(start, start + perPage),
+      products: filtered.slice(start, start + perPage).map((p, i) => ({ ...p, index: start + i })),
       categories,
       total: filtered.length,
       hasMore: start + perPage < filtered.length,
@@ -22,27 +23,22 @@ function getProducts(category = '', page = 1) {
   }
 }
 
-export default function ProductsPage({ searchParams }) {
+export default async function ProductsPage({ searchParams }) {
   const page = parseInt(searchParams?.page || '1')
   const category = searchParams?.category || ''
-  const { products, categories, hasMore } = getProducts(category, page)
+  const { products, categories, hasMore } = await getProducts(category, page)
 
   return (
     <div style={{ padding: '48px 0' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
-        <h1 style={{ fontFamily: 'serif', fontSize: '40px', fontWeight: '900', marginBottom: '8px' }}>
-          כל הספרים
-        </h1>
+        <h1 style={{ fontFamily: 'serif', fontSize: '40px', fontWeight: '900', marginBottom: '8px' }}>כל הספרים</h1>
         <p style={{ color: '#6B5C3E', marginBottom: '40px' }}>מבחר של למעלה מ-5,000 ספרי קודש ויהדות</p>
-
         <div style={{ display: 'flex', gap: '40px' }}>
           <aside style={{ width: '200px', flexShrink: 0 }}>
             <h3 style={{ fontSize: '16px', marginBottom: '16px' }}>קטגוריות</h3>
             <ul style={{ listStyle: 'none', padding: 0 }}>
               <li style={{ marginBottom: '8px' }}>
-                <a href="/products" style={{ color: !category ? '#8B6914' : '#6B5C3E', textDecoration: 'none', fontSize: '14px', fontWeight: !category ? '700' : '400' }}>
-                  כל הספרים
-                </a>
+                <a href="/products" style={{ color: !category ? '#8B6914' : '#6B5C3E', textDecoration: 'none', fontSize: '14px', fontWeight: !category ? '700' : '400' }}>כל הספרים</a>
               </li>
               {categories.map((cat, i) => (
                 <li key={i} style={{ marginBottom: '8px' }}>
@@ -54,13 +50,12 @@ export default function ProductsPage({ searchParams }) {
               ))}
             </ul>
           </aside>
-
           <div style={{ flex: 1 }}>
             {products.length > 0 ? (
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '40px' }}>
-                  {products.map((product, i) => (
-                    <ProductCard key={i} product={product} />
+                  {products.map((product) => (
+                    <ProductCard key={product.index} product={product} index={product.index} />
                   ))}
                 </div>
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
