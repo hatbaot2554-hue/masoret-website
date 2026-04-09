@@ -5,7 +5,7 @@ export default function ProductCard({ product, index }) {
   const price = parseFloat(product.price || 0).toFixed(0)
 
   return (
-  <a href={`/products/${encodeURIComponent(product.url?.split('/').filter(Boolean).pop() || index)}`}
+    <a href={`/products/${index}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
       <div style={{ background: '#fff', border: '1px solid #EDE6D9', transition: 'all 0.25s', overflow: 'hidden' }}
         onMouseEnter={e => { e.currentTarget.style.borderColor = '#C9A84C'; e.currentTarget.style.transform = 'translateY(-2px)' }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = '#EDE6D9'; e.currentTarget.style.transform = 'translateY(0)' }}>
