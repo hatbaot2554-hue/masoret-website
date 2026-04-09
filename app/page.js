@@ -1,20 +1,21 @@
-import fs from 'fs'
-import path from 'path'
 import ProductCard from './components/ProductCard'
 
-function getProducts() {
+async function getProducts() {
   try {
-    const filePath = path.join(process.cwd(), 'products.json')
-    if (!fs.existsSync(filePath)) return []
-    const all = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+    const res = await fetch(
+      'https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/products.json',
+      { next: { revalidate: 3600 } }
+    )
+    if (!res.ok) return []
+    const all = await res.json()
     return all.slice(0, 8).map((p, i) => ({ ...p, index: i }))
   } catch {
     return []
   }
 }
 
-export default function HomePage() {
-  const products = getProducts()
+export default async function HomePage() {
+  const products = await getProducts()
 
   return (
     <>
@@ -38,7 +39,6 @@ export default function HomePage() {
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
             <h2 style={{ fontSize: '36px', fontWeight: '900', fontFamily: 'serif' }}>ספרים מומלצים</h2>
           </div>
-
           {products.length > 0 ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
               {products.map((product) => (
@@ -51,7 +51,6 @@ export default function HomePage() {
               <p style={{ fontSize: '14px' }}>הסריקה היומית תטען את כל הספרים בקרוב</p>
             </div>
           )}
-
           <div style={{ textAlign: 'center', marginTop: '48px' }}>
             <a href="/products" style={{ background: '#C9A84C', color: '#1A2332', padding: '14px 36px', textDecoration: 'none', fontSize: '16px', fontWeight: '500', display: 'inline-block' }}>
               לכל הספרים ←
