@@ -1,32 +1,31 @@
 import ProductCard from '../components/ProductCard'
 
-async function getProducts(category = '', page = 1) {
+async function getAllProducts() {
   try {
     const res = await fetch(
       'https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/products.json',
       { next: { revalidate: 3600 } }
     )
-    if (!res.ok) return { products: [], categories: [], total: 0, hasMore: false }
-    const all = await res.json()
-    const filtered = category ? all.filter(p => p.category === category) : all
-    const perPage = 20
-    const start = (page - 1) * perPage
-    const categories = [...new Set(all.map(p => p.category).filter(Boolean))]
-    return {
-     products: filtered.slice(start, start + perPage).map((p) => ({ ...p, index: p.url })),
-      categories,
-      total: filtered.length,
-      hasMore: start + perPage < filtered.length,
-    }
+    if (!res.ok) return []
+    return await res.json()
   } catch {
-    return { products: [], categories: [], total: 0, hasMore: false }
+    return []
   }
 }
 
 export default async function ProductsPage({ searchParams }) {
   const page = parseInt(searchParams?.page || '1')
   const category = searchParams?.category || ''
-  const { products, categories, hasMore } = await getProducts(category, page)
+  const all = await getAllProducts()
+
+  // כל מוצר מקבל את האינדקס האמיתי שלו ברשימה הכללית
+  const allWithIndex = all.map((p, i) => ({ ...p, index: i }))
+  const filtered = category ? allWithIndex.filter(p => p.category === category) : allWithIndex
+  const perPage = 20
+  const start = (page - 1) * perPage
+  const products = filtered.slice(start, start + perPage)
+  const categories = [...new Set(all.map(p => p.category).filter(Boolean))]
+  const hasMore = start + perPage < filtered.length
 
   return (
     <div style={{ padding: '48px 0' }}>
@@ -61,15 +60,11 @@ export default async function ProductsPage({ searchParams }) {
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                   {page > 1 && (
                     <a href={`/products?page=${page - 1}${category ? `&category=${encodeURIComponent(category)}` : ''}`}
-                      style={{ background: 'transparent', color: '#C9A84C', border: '1.5px solid #C9A84C', padding: '10px 24px', textDecoration: 'none', fontSize: '14px' }}>
-                      ← הקודם
-                    </a>
+                      style={{ background: 'transparent', color: '#C9A84C', border: '1.5px solid #C9A84C', padding: '10px 24px', textDecoration: 'none', fontSize: '14px' }}>← הקודם</a>
                   )}
                   {hasMore && (
                     <a href={`/products?page=${page + 1}${category ? `&category=${encodeURIComponent(category)}` : ''}`}
-                      style={{ background: '#C9A84C', color: '#1A2332', padding: '10px 24px', textDecoration: 'none', fontSize: '14px' }}>
-                      הבא →
-                    </a>
+                      style={{ background: '#C9A84C', color: '#1A2332', padding: '10px 24px', textDecoration: 'none', fontSize: '14px' }}>הבא →</a>
                   )}
                 </div>
               </>
