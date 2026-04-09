@@ -9,11 +9,19 @@ export async function POST(request) {
       return NextResponse.json({ error: 'יש למלא את כל שדות החובה' }, { status: 400 })
     }
 
-    // מספר הזמנה ייחודי
     const ourOrderId = Date.now().toString().slice(-6)
 
-    // שמירת ההזמנה ב-memory (זמני עד שנגדיר מסד נתונים)
-    console.log('הזמנה חדשה:', { ourOrderId, firstName, lastName, email, phone, address, city, items })
+    console.log('הזמנה חדשה:', {
+      ourOrderId,
+      firstName,
+      lastName,
+      email,
+      phone,
+      address,
+      city,
+      items,
+      note,
+    })
 
     return NextResponse.json({
       success: true,
