@@ -13,7 +13,7 @@ async function getProducts(category = '', page = 1) {
     const start = (page - 1) * perPage
     const categories = [...new Set(all.map(p => p.category).filter(Boolean))]
     return {
-      products: filtered.slice(start, start + perPage).map((p, i) => ({ ...p, index: start + i })),
+     products: filtered.slice(start, start + perPage).map((p) => ({ ...p, index: p.url })),
       categories,
       total: filtered.length,
       hasMore: start + perPage < filtered.length,
