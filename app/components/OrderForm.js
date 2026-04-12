@@ -8,8 +8,10 @@ export default function OrderForm({ product }) {
   const [errorMsg, setErrorMsg] = useState('')
   const [orderIds, setOrderIds] = useState({ ours: null })
 
-  const price = parseFloat(product.price || 0)
-  const totalPrice = (price * quantity).toFixed(0)
+  const sourcePrice = parseFloat(product.sourcePrice || product.price || 0)
+  const markup = Math.max(sourcePrice * 0.15, 2)
+  const ourPrice = parseFloat((sourcePrice + markup).toFixed(0))
+  const totalPrice = (ourPrice * quantity).toFixed(0)
 
   function handleChange(e) { setForm({ ...form, [e.target.name]: e.target.value }) }
 
@@ -21,7 +23,18 @@ export default function OrderForm({ product }) {
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, items: [{ sourceProductId: product.sourceProductId, quantity }] }),
+        body: JSON.stringify({
+          ...form,
+          items: [{
+            sourceProductId: product.sourceProductId,
+            name: product.name || product.title || product.sourceProductId,
+            price: ourPrice,
+            cost: sourcePrice,
+            quantity,
+            options: product.selectedOptions || ''
+          }],
+          utm_source: typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('utm_source') || document.referrer || 'direct') : 'direct'
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'שגיאה')
