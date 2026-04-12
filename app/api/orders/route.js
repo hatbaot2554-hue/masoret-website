@@ -17,7 +17,7 @@ export async function POST(request) {
       customer_email: email.toLowerCase(),
       customer_address: `${address}, ${city}`,
       items: items,
-      total_price: items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0),
+      total_price: items.reduce((sum, item) => sum + (parseFloat(item.price || 0) * (item.quantity || 1)), 0),
       payment_method: 'pending',
       notes: note || ''
     };
@@ -29,10 +29,12 @@ export async function POST(request) {
     });
 
     const saved = await response.json();
+    const shortId = saved.id ? saved.id.toString().slice(-6).toUpperCase() : Date.now().toString().slice(-6);
 
     return NextResponse.json({
       success: true,
-      ourOrderId: saved.id,
+      ourOrderId: shortId,
+      fullId: saved.id,
       message: 'ההזמנה התקבלה בהצלחה!'
     });
   } catch (e) {
@@ -52,7 +54,10 @@ export async function GET(request) {
 
     const response = await fetch(`${DASHBOARD_URL}/api/orders`);
     const orders = await response.json();
-    const order = orders.find(o => o.id === orderNumber && o.customer_email === email);
+    const order = orders.find(o => 
+      o.customer_email === email && 
+      (o.id === orderNumber || o.id?.toString().slice(-6).toUpperCase() === orderNumber)
+    );
 
     if (!order) {
       return NextResponse.json({ error: 'הזמנה לא נמצאה' }, { status: 404 });
