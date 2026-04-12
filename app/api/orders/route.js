@@ -5,11 +5,14 @@ const DASHBOARD_URL = 'https://masoret-dashboard.vercel.app';
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { firstName, lastName, email, phone, address, city, items, note } = body;
+    const { firstName, lastName, email, phone, address, city, items, note, source, utm_source } = body;
 
     if (!firstName || !lastName || !email || !phone || !address || !city || !items?.length) {
       return NextResponse.json({ error: 'יש למלא את כל שדות החובה' }, { status: 400 });
     }
+
+    const customerPrice = items.reduce((sum, item) => sum + (parseFloat(item.price || 0) * (item.quantity || 1)), 0);
+    const costPrice = items.reduce((sum, item) => sum + (parseFloat(item.cost || 0) * (item.quantity || 1)), 0);
 
     const orderData = {
       customer_name: `${firstName} ${lastName}`,
@@ -17,9 +20,13 @@ export async function POST(request) {
       customer_email: email.toLowerCase(),
       customer_address: `${address}, ${city}`,
       items: items,
-      total_price: items.reduce((sum, item) => sum + (parseFloat(item.price || 0) * (item.quantity || 1)), 0),
+      total_price: customerPrice,
+      cost_price: costPrice,
+      profit: customerPrice - costPrice,
       payment_method: 'pending',
-      notes: note || ''
+      notes: note || '',
+      source: source || 'direct',
+      utm_source: utm_source || ''
     };
 
     const response = await fetch(`${DASHBOARD_URL}/api/orders`, {
@@ -54,8 +61,8 @@ export async function GET(request) {
 
     const response = await fetch(`${DASHBOARD_URL}/api/orders`);
     const orders = await response.json();
-    const order = orders.find(o => 
-      o.customer_email === email && 
+    const order = orders.find(o =>
+      o.customer_email === email &&
       (o.id === orderNumber || o.id?.toString().slice(-6).toUpperCase() === orderNumber)
     );
 
