@@ -8,9 +8,8 @@ export default function OrderForm({ product }) {
   const [errorMsg, setErrorMsg] = useState('')
   const [orderIds, setOrderIds] = useState({ ours: null })
 
-  const sourcePrice = parseFloat(product.sourcePrice || product.price || 0)
-  const markup = Math.max(sourcePrice * 0.15, 2)
-  const ourPrice = parseFloat((sourcePrice + markup).toFixed(0))
+  const ourPrice = parseFloat(product.price || 0)
+  const sourcePrice = parseFloat(product.original_price || product.sourcePrice || 0)
   const totalPrice = (ourPrice * quantity).toFixed(0)
 
   function handleChange(e) { setForm({ ...form, [e.target.name]: e.target.value }) }
@@ -20,20 +19,23 @@ export default function OrderForm({ product }) {
     setStatus('loading')
     setErrorMsg('')
     try {
+      const utmSource = typeof window !== 'undefined'
+        ? (new URLSearchParams(window.location.search).get('utm_source') || document.referrer || 'direct')
+        : 'direct'
+
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
           items: [{
-            sourceProductId: product.sourceProductId,
-            name: product.name || product.title || product.sourceProductId,
+            sourceProductId: product.sourceProductId || product.url,
+            name: product.name || product.title || '',
             price: ourPrice,
             cost: sourcePrice,
             quantity,
-            options: product.selectedOptions || ''
           }],
-          utm_source: typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('utm_source') || document.referrer || 'direct') : 'direct'
+          utm_source: utmSource
         }),
       })
       const data = await res.json()
