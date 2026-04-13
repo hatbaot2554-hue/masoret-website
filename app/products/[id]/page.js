@@ -32,10 +32,9 @@ export default async function ProductPage({ params }) {
   }
 
 const originalPrice = parseFloat(product.original_price || 0)
-const markup = Math.max(originalPrice * 0.15, 2)
-const finalPrice = Math.ceil(originalPrice + markup)
-const regularPrice = parseFloat(product.regular_price || originalPrice)
-const regularFinalPrice = Math.ceil(regularPrice + Math.max(regularPrice * 0.15, 2))
+const finalPrice = parseFloat(product.price || 0)
+const regularFinalPrice = parseFloat(product.regular_our_price || product.price || 0)
+const hasDiscount = regularFinalPrice > finalPrice
 
   return (
     <div style={{ padding: '56px 0' }}>
