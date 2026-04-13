@@ -70,9 +70,21 @@ const regularFinalPrice = Math.ceil(regularPrice + Math.max(regularPrice * 0.15,
               </p>
             )}
             <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontFamily: 'serif', fontSize: '2rem', color: '#8B6914', fontWeight: '700' }}>
-                ₪{finalPrice}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+  {regularFinalPrice > finalPrice && (
+    <span style={{ fontSize: '1.3rem', color: '#999', textDecoration: 'line-through' }}>
+      ₪{regularFinalPrice}
+    </span>
+  )}
+  <span style={{ fontFamily: 'serif', fontSize: '2rem', color: '#8B6914', fontWeight: '700' }}>
+    ₪{finalPrice}
+  </span>
+  {regularFinalPrice > finalPrice && (
+    <span style={{ background: '#e74c3c', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '13px', fontWeight: '600' }}>
+      מבצע!
+    </span>
+  )}
+</div>
               {!inStock && (
                 <span style={{ background: '#fff0f0', color: '#c0392b', padding: '4px 10px', fontSize: '13px', fontWeight: '600', border: '1px solid #fcc' }}>
                   חסר במלאי
