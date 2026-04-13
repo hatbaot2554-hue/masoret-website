@@ -31,11 +31,11 @@ export default async function ProductPage({ params }) {
     )
   }
 
-  const originalPrice = parseFloat(product.original_price || 0)
-  const markup15 = originalPrice * 0.15
-  const finalPrice = markup15 >= 2
-    ? Math.round(originalPrice * 1.15)
-    : Math.round(originalPrice + 2)
+const originalPrice = parseFloat(product.original_price || 0)
+const markup = Math.max(originalPrice * 0.15, 2)
+const finalPrice = Math.ceil(originalPrice + markup)
+const regularPrice = parseFloat(product.regular_price || originalPrice)
+const regularFinalPrice = Math.ceil(regularPrice + Math.max(regularPrice * 0.15, 2))
 
   return (
     <div style={{ padding: '56px 0' }}>
