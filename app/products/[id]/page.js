@@ -31,10 +31,9 @@ export default async function ProductPage({ params }) {
     )
   }
 
-const originalPrice = parseFloat(product.original_price || 0)
-const finalPrice = parseFloat(product.price || 0)
-const regularFinalPrice = parseFloat(product.regular_our_price || product.price || 0)
-const hasDiscount = regularFinalPrice > finalPrice
+  const finalPrice = parseFloat(product.price || 0)
+  const regularFinalPrice = parseFloat(product.regular_our_price || product.price || 0)
+  const hasDiscount = regularFinalPrice > finalPrice
 
   return (
     <div style={{ padding: '56px 0' }}>
@@ -58,11 +57,23 @@ const hasDiscount = regularFinalPrice > finalPrice
             ) : (
               <div style={{ aspectRatio: '3/4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '64px' }}>📖</div>
             )}
+            {/* גלריית תמונות נוספות */}
+            {product.images && product.images.length > 1 && (
+              <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+                {product.images.slice(1).map((img, i) => (
+                  <img key={i} src={img} alt={`${product.name} ${i + 2}`}
+                    style={{ width: '64px', height: '64px', objectFit: 'cover', border: '1px solid #C9A84C', cursor: 'pointer' }} />
+                ))}
+              </div>
+            )}
           </div>
           <div>
             <h1 style={{ fontFamily: 'serif', fontSize: '34px', fontWeight: '900', marginBottom: '16px', lineHeight: 1.3 }}>
               {product.name}
             </h1>
+            {product.sku && (
+              <p style={{ fontSize: '12px', color: '#999', marginBottom: '8px' }}>מק"ט: {product.sku}</p>
+            )}
             {product.category && (
               <p style={{ fontSize: '13px', color: '#6B5C3E', marginBottom: '16px' }}>
                 קטגוריה: <a href={`/products?category=${encodeURIComponent(product.category)}`} style={{ color: '#8B6914' }}>{product.category}</a>
@@ -70,20 +81,20 @@ const hasDiscount = regularFinalPrice > finalPrice
             )}
             <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-  {regularFinalPrice > finalPrice && (
-    <span style={{ fontSize: '1.3rem', color: '#999', textDecoration: 'line-through' }}>
-      ₪{regularFinalPrice}
-    </span>
-  )}
-  <span style={{ fontFamily: 'serif', fontSize: '2rem', color: '#8B6914', fontWeight: '700' }}>
-    ₪{finalPrice}
-  </span>
-  {regularFinalPrice > finalPrice && (
-    <span style={{ background: '#e74c3c', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '13px', fontWeight: '600' }}>
-      מבצע!
-    </span>
-  )}
-</div>
+                {hasDiscount && (
+                  <span style={{ fontSize: '1.3rem', color: '#999', textDecoration: 'line-through' }}>
+                    ₪{regularFinalPrice}
+                  </span>
+                )}
+                <span style={{ fontFamily: 'serif', fontSize: '2rem', color: '#8B6914', fontWeight: '700' }}>
+                  ₪{finalPrice}
+                </span>
+                {hasDiscount && (
+                  <span style={{ background: '#e74c3c', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '13px', fontWeight: '600' }}>
+                    מבצע!
+                  </span>
+                )}
+              </div>
               {!inStock && (
                 <span style={{ background: '#fff0f0', color: '#c0392b', padding: '4px 10px', fontSize: '13px', fontWeight: '600', border: '1px solid #fcc' }}>
                   חסר במלאי
@@ -96,7 +107,11 @@ const hasDiscount = regularFinalPrice > finalPrice
               </div>
             )}
             {inStock ? (
-              <OrderForm product={{ ...product, price: finalPrice, sourceProductId: product.url }} />
+              <OrderForm product={{
+                ...product,
+                price: finalPrice,
+                sourceProductId: product.product_id || product.url
+              }} />
             ) : (
               <div style={{ background: '#fff0f0', border: '1px solid #fcc', padding: '20px', textAlign: 'center', color: '#c0392b', fontSize: '16px' }}>
                 המוצר כרגע חסר במלאי — נשמח לעדכן אותך כשיחזור
