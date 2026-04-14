@@ -192,9 +192,8 @@ export default function Header() {
                       borderBottom: activeParent === parent ? '2px solid var(--gold)' : '2px solid transparent',
                       whiteSpace: 'nowrap'
                     }}>
-                    {parent}{hasChildren ? ' ▾' : ''}
+                    {parent}{hasChildren ? ' \u25be' : ''}
                   </a>
-
                   {activeParent === parent && hasChildren && (
                     <div style={{ position: 'absolute', top: '100%', right: 0, background: '#fff', border: '1px solid #EDE6D9', boxShadow: '0 6px 20px rgba(0,0,0,0.15)', zIndex: 999, minWidth: '200px' }}>
                       {categoryTree[parent].map(child => (
