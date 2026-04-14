@@ -1,6 +1,18 @@
 import { NextResponse } from 'next/server';
 const DASHBOARD_URL = 'https://masoret-dashboard.vercel.app';
 
+function generateOrderId(dbId) {
+  // אם יש ID מהDB — נשתמש בו אבל נוודא מינימום 5 ספרות
+  if (dbId) {
+    const numeric = String(dbId).replace(/\D/g, '')
+    if (numeric.length >= 5) return numeric
+    return numeric.padStart(5, '0')
+  }
+  // אחרת — נייצר מספר אקראי של 5 ספרות לפחות
+  const ts = Date.now().toString().slice(-5)
+  return ts
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -30,15 +42,11 @@ export async function POST(request) {
       body: JSON.stringify(orderData)
     });
     const saved = await response.json();
-
-    // מספר הזמנה ספרתי בלבד — 8 ספרות
-    const numericId = saved.id
-      ? String(saved.id).replace(/\D/g, '').padStart(8, '0').slice(-8)
-      : String(Date.now()).slice(-8)
+    const orderId = generateOrderId(saved.id)
 
     return NextResponse.json({
       success: true,
-      ourOrderId: numericId,
+      ourOrderId: orderId,
       fullId: saved.id,
       message: 'ההזמנה התקבלה בהצלחה!'
     });
@@ -57,10 +65,10 @@ export async function GET(request) {
     }
     const response = await fetch(`${DASHBOARD_URL}/api/orders`);
     const orders = await response.json();
-    const order = orders.find(o =>
-      o.customer_email === email &&
-      (o.id === orderNumber || String(o.id).replace(/\D/g, '').padStart(8, '0').slice(-8) === orderNumber)
-    );
+    const order = orders.find(o => {
+      const numeric = String(o.id || '').replace(/\D/g, '').padStart(5, '0')
+      return o.customer_email === email && (o.id === orderNumber || numeric === orderNumber)
+    });
     if (!order) {
       return NextResponse.json({ error: 'הזמנה לא נמצאה' }, { status: 404 });
     }
