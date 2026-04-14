@@ -9,23 +9,46 @@ export default function Header() {
   const [suggestions, setSuggestions] = useState([])
   const [allProducts, setAllProducts] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [categoryTree, setCategoryTree] = useState({})
+  const [activeParent, setActiveParent] = useState(null)
   const router = useRouter()
-  const wrapperRef = useRef(null)
+  const searchRef = useRef(null)
+  const catRef = useRef(null)
 
-  // טעינת מוצרים פעם אחת
   useEffect(() => {
     fetch('https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/products.json')
       .then(r => r.json())
-      .then(data => setAllProducts(data.map((p, i) => ({ ...p, index: i }))))
+      .then(data => {
+        const products = data.map((p, i) => ({ ...p, index: i }))
+        setAllProducts(products)
+
+        // בניית עץ קטגוריות
+        const tree = {}
+        products.forEach(p => {
+          const parent = p.parent_category || p.category || ''
+          const child = p.child_category || ''
+          if (!parent) return
+          if (!tree[parent]) tree[parent] = new Set()
+          if (child && child !== parent) tree[parent].add(child)
+        })
+        // המר Set למערך
+        const treeArr = {}
+        Object.entries(tree).forEach(([parent, children]) => {
+          treeArr[parent] = [...children]
+        })
+        setCategoryTree(treeArr)
+      })
       .catch(() => {})
   }, [])
 
   // סגירה בלחיצה מחוץ
   useEffect(() => {
     function handleClick(e) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
         setShowSuggestions(false)
+      }
+      if (catRef.current && !catRef.current.contains(e.target)) {
+        setActiveParent(null)
       }
     }
     document.addEventListener('mousedown', handleClick)
@@ -73,11 +96,16 @@ export default function Header() {
     router.push(`/products/${product.index}`)
   }
 
+  const parents = Object.keys(categoryTree)
+
   return (
     <header style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)' }}>
+      {/* סרגל עליון */}
       <div style={{ background: 'var(--gold)', color: 'var(--navy)', textAlign: 'center', fontSize: '13px', fontWeight: '500', padding: '6px' }}>
         משלוח חינם בהזמנה מעל ₪200 | שירות לקוחות: א׳-ה׳ 9:00-15:00
       </div>
+
+      {/* שורה ראשית */}
       <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', gap: '24px', flexWrap: 'wrap' }}>
         <a href="/" style={{ textDecoration: 'none' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
@@ -86,8 +114,8 @@ export default function Header() {
           </div>
         </a>
 
-        {/* שורת חיפוש עם הצעות */}
-        <div ref={wrapperRef} style={{ flex: 1, minWidth: '200px', maxWidth: '420px', position: 'relative' }}>
+        {/* חיפוש */}
+        <div ref={searchRef} style={{ flex: 1, minWidth: '200px', maxWidth: '420px', position: 'relative' }}>
           <form onSubmit={handleSearch} style={{ display: 'flex' }}>
             <input
               type="text"
@@ -108,7 +136,6 @@ export default function Header() {
             }}>🔍</button>
           </form>
 
-          {/* רשימת הצעות */}
           {showSuggestions && suggestions.length > 0 && (
             <div style={{
               position: 'absolute', top: '100%', right: 0, left: 0,
@@ -117,26 +144,15 @@ export default function Header() {
               maxHeight: '400px', overflowY: 'auto'
             }}>
               {suggestions.map(product => (
-                <div
-                  key={product.index}
-                  onClick={() => handleSelect(product)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '12px',
-                    padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f0ebe0',
-                    transition: 'background 0.15s'
-                  }}
+                <div key={product.index} onClick={() => handleSelect(product)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f0ebe0' }}
                   onMouseEnter={e => e.currentTarget.style.background = '#F8F4EE'}
-                  onMouseLeave={e => e.currentTarget.style.background = '#fff'}
-                >
-                  {/* תמונה */}
+                  onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
                   <div style={{ width: '44px', height: '44px', flexShrink: 0, background: '#EDE6D9', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {product.image
                       ? <img src={product.image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : <span style={{ fontSize: '20px' }}>📖</span>
-                    }
+                      : <span style={{ fontSize: '20px' }}>📖</span>}
                   </div>
-
-                  {/* פרטים */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '14px', fontWeight: '600', color: '#2C2416', lineHeight: 1.3, direction: 'rtl' }}>
                       {highlight(product.name, search)}
@@ -147,31 +163,22 @@ export default function Header() {
                       </div>
                     )}
                   </div>
-
-                  {/* מחיר */}
                   <div style={{ fontFamily: 'serif', fontSize: '15px', color: '#8B6914', fontWeight: '700', flexShrink: 0 }}>
                     ₪{Math.ceil(parseFloat(product.price || 0))}
                   </div>
                 </div>
               ))}
-
-              {/* כפתור לכל התוצאות */}
-              <div
-                onClick={handleSearch}
-                style={{
-                  padding: '10px 14px', textAlign: 'center', fontSize: '13px',
-                  color: '#8B6914', cursor: 'pointer', fontWeight: '600',
-                  background: '#F8F4EE', borderTop: '1px solid #EDE6D9'
-                }}
+              <div onClick={handleSearch}
+                style={{ padding: '10px 14px', textAlign: 'center', fontSize: '13px', color: '#8B6914', cursor: 'pointer', fontWeight: '600', background: '#F8F4EE', borderTop: '1px solid #EDE6D9' }}
                 onMouseEnter={e => e.currentTarget.style.background = '#EDE6D9'}
-                onMouseLeave={e => e.currentTarget.style.background = '#F8F4EE'}
-              >
+                onMouseLeave={e => e.currentTarget.style.background = '#F8F4EE'}>
                 לכל התוצאות עבור "{search}" ←
               </div>
             </div>
           )}
         </div>
 
+        {/* ניווט + עגלה */}
         <nav style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
           <a href="/products" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '15px' }}>כל הספרים</a>
           <a href="/track" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '15px' }}>מעקב הזמנה</a>
@@ -179,7 +186,7 @@ export default function Header() {
           <a href="/cart" style={{
             background: 'var(--gold)', color: 'var(--navy)', padding: '10px 20px',
             textDecoration: 'none', fontSize: '14px', fontWeight: '700',
-            display: 'flex', alignItems: 'center', gap: '6px', position: 'relative'
+            display: 'flex', alignItems: 'center', gap: '6px'
           }}>
             🛒
             {totalItems > 0 && (
@@ -193,6 +200,57 @@ export default function Header() {
           </a>
         </nav>
       </div>
+
+      {/* שורת קטגוריות */}
+      {parents.length > 0 && (
+        <div ref={catRef} style={{ background: 'rgba(0,0,0,0.25)', borderTop: '1px solid rgba(201,168,76,0.3)' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', gap: '0', flexWrap: 'wrap' }}>
+            {parents.map(parent => (
+              <div key={parent} style={{ position: 'relative' }}
+                onMouseEnter={() => setActiveParent(parent)}
+                onMouseLeave={() => setActiveParent(null)}>
+                
+                  href={`/products?category=${encodeURIComponent(parent)}`}
+                  style={{
+                    display: 'block', padding: '12px 18px', color: 'rgba(255,255,255,0.85)',
+                    textDecoration: 'none', fontSize: '14px', fontWeight: '500',
+                    borderBottom: activeParent === parent ? '2px solid var(--gold)' : '2px solid transparent',
+                    transition: 'all 0.15s', whiteSpace: 'nowrap'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.color = 'var(--gold)'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.85)'}
+                >
+                  {parent} {categoryTree[parent].length > 0 && '▾'}
+                </a>
+
+                {/* תפריט נפתח */}
+                {activeParent === parent && categoryTree[parent].length > 0 && (
+                  <div style={{
+                    position: 'absolute', top: '100%', right: 0,
+                    background: '#fff', border: '1px solid #EDE6D9',
+                    boxShadow: '0 6px 20px rgba(0,0,0,0.15)',
+                    zIndex: 999, minWidth: '200px'
+                  }}>
+                    {categoryTree[parent].map(child => (
+                      <a key={child}
+                        href={`/products?category=${encodeURIComponent(child)}`}
+                        style={{
+                          display: 'block', padding: '10px 18px', color: '#2C2416',
+                          textDecoration: 'none', fontSize: '14px',
+                          borderBottom: '1px solid #f0ebe0'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = '#F8F4EE'; e.currentTarget.style.color = '#8B6914' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#2C2416' }}>
+                        {child}
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </header>
   )
 }
