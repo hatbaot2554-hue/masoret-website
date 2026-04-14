@@ -21,8 +21,6 @@ export default function Header() {
       .then(data => {
         const products = data.map((p, i) => ({ ...p, index: i }))
         setAllProducts(products)
-
-        // בניית עץ קטגוריות
         const tree = {}
         products.forEach(p => {
           const parent = p.parent_category || p.category || ''
@@ -31,7 +29,6 @@ export default function Header() {
           if (!tree[parent]) tree[parent] = new Set()
           if (child && child !== parent) tree[parent].add(child)
         })
-        // המר Set למערך
         const treeArr = {}
         Object.entries(tree).forEach(([parent, children]) => {
           treeArr[parent] = [...children]
@@ -41,7 +38,6 @@ export default function Header() {
       .catch(() => {})
   }, [])
 
-  // סגירה בלחיצה מחוץ
   useEffect(() => {
     function handleClick(e) {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
@@ -55,7 +51,6 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  // חיפוש חי
   useEffect(() => {
     if (!search.trim() || search.length < 2) {
       setSuggestions([])
@@ -100,12 +95,10 @@ export default function Header() {
 
   return (
     <header style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)' }}>
-      {/* סרגל עליון */}
       <div style={{ background: 'var(--gold)', color: 'var(--navy)', textAlign: 'center', fontSize: '13px', fontWeight: '500', padding: '6px' }}>
         משלוח חינם בהזמנה מעל ₪200 | שירות לקוחות: א׳-ה׳ 9:00-15:00
       </div>
 
-      {/* שורה ראשית */}
       <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', gap: '24px', flexWrap: 'wrap' }}>
         <a href="/" style={{ textDecoration: 'none' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
@@ -114,7 +107,6 @@ export default function Header() {
           </div>
         </a>
 
-        {/* חיפוש */}
         <div ref={searchRef} style={{ flex: 1, minWidth: '200px', maxWidth: '420px', position: 'relative' }}>
           <form onSubmit={handleSearch} style={{ display: 'flex' }}>
             <input
@@ -178,7 +170,6 @@ export default function Header() {
           )}
         </div>
 
-        {/* ניווט + עגלה */}
         <nav style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
           <a href="/products" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '15px' }}>כל הספרים</a>
           <a href="/track" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '15px' }}>מעקב הזמנה</a>
@@ -201,10 +192,9 @@ export default function Header() {
         </nav>
       </div>
 
-      {/* שורת קטגוריות */}
       {parents.length > 0 && (
         <div ref={catRef} style={{ background: 'rgba(0,0,0,0.25)', borderTop: '1px solid rgba(201,168,76,0.3)' }}>
-          <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', gap: '0', flexWrap: 'wrap' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', flexWrap: 'wrap' }}>
             {parents.map(parent => (
               <div key={parent} style={{ position: 'relative' }}
                 onMouseEnter={() => setActiveParent(parent)}
@@ -212,18 +202,15 @@ export default function Header() {
                 
                   href={`/products?category=${encodeURIComponent(parent)}`}
                   style={{
-                    display: 'block', padding: '12px 18px', color: 'rgba(255,255,255,0.85)',
+                    display: 'block', padding: '12px 18px',
+                    color: activeParent === parent ? 'var(--gold)' : 'rgba(255,255,255,0.85)',
                     textDecoration: 'none', fontSize: '14px', fontWeight: '500',
                     borderBottom: activeParent === parent ? '2px solid var(--gold)' : '2px solid transparent',
                     transition: 'all 0.15s', whiteSpace: 'nowrap'
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.color = 'var(--gold)'}
-                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.85)'}
-                >
-                  {parent} {categoryTree[parent].length > 0 && '▾'}
+                  }}>
+                  {parent}{categoryTree[parent].length > 0 ? ' ▾' : ''}
                 </a>
 
-                {/* תפריט נפתח */}
                 {activeParent === parent && categoryTree[parent].length > 0 && (
                   <div style={{
                     position: 'absolute', top: '100%', right: 0,
