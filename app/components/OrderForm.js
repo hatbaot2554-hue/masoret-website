@@ -1,29 +1,34 @@
 'use client'
 import { useState } from 'react'
 
+function formatPrice(price) {
+  const p = parseFloat(price || 0)
+  if (p < 10) return Math.ceil(p * 2) / 2
+  return Math.ceil(p)
+}
+
 export default function OrderForm({ product }) {
   const hasVariations = product.variations && product.variations.length > 0
   const [selectedVariation, setSelectedVariation] = useState(null)
+  const [selectedAttrs, setSelectedAttrs] = useState({})
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', address: '', city: '', note: '' })
   const [quantity, setQuantity] = useState(1)
   const [status, setStatus] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
   const [orderIds, setOrderIds] = useState({ ours: null })
 
-  // מחיר לפי וריאציה שנבחרה או מחיר בסיסי
   const activePrice = selectedVariation
-    ? parseFloat(selectedVariation.price || 0)
-    : parseFloat(product.price || 0)
+    ? formatPrice(selectedVariation.price)
+    : formatPrice(product.price)
   const activeRegularPrice = selectedVariation
-    ? parseFloat(selectedVariation.regular_our_price || selectedVariation.price || 0)
-    : parseFloat(product.regular_our_price || product.price || 0)
+    ? formatPrice(selectedVariation.regular_our_price || selectedVariation.price)
+    : formatPrice(product.regular_our_price || product.price)
   const activeCost = selectedVariation
     ? parseFloat(selectedVariation.original_price || 0)
     : parseFloat(product.original_price || 0)
   const activeInStock = selectedVariation ? selectedVariation.in_stock : true
-  const totalPrice = (activePrice * quantity).toFixed(0)
+  const totalPrice = Math.ceil(activePrice * quantity)
 
-  // קיבוץ אופציות לפי שם התכונה
   function getAttributeOptions() {
     if (!hasVariations) return {}
     const options = {}
@@ -36,12 +41,9 @@ export default function OrderForm({ product }) {
     return options
   }
 
-  const [selectedAttrs, setSelectedAttrs] = useState({})
-
   function handleAttrChange(attrKey, value) {
     const newAttrs = { ...selectedAttrs, [attrKey]: value }
     setSelectedAttrs(newAttrs)
-    // מצא וריאציה תואמת
     const match = product.variations.find(v =>
       Object.entries(newAttrs).every(([k, val]) =>
         !v.attributes[k] || v.attributes[k] === val
@@ -54,7 +56,6 @@ export default function OrderForm({ product }) {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    // אם יש וריאציות — חובה לבחור
     if (hasVariations && !selectedVariation) {
       setErrorMsg('יש לבחור אפשרות לפני ההזמנה')
       return
@@ -122,7 +123,6 @@ export default function OrderForm({ product }) {
     <form onSubmit={handleSubmit}>
       <h3 style={{ fontFamily: 'serif', fontSize: '20px', marginBottom: '20px', color: '#2C2416' }}>פרטי הזמנה</h3>
 
-      {/* וריאציות */}
       {hasVariations && Object.entries(attributeOptions).map(([attrKey, values]) => (
         <div key={attrKey} style={{ marginBottom: '16px' }}>
           <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>
@@ -146,14 +146,12 @@ export default function OrderForm({ product }) {
         </div>
       ))}
 
-      {/* אזהרה אם וריאציה לא במלאי */}
       {selectedVariation && !activeInStock && (
         <div style={{ background: '#fff0f0', border: '1px solid #fcc', padding: '10px 14px', marginBottom: '16px', color: '#c0392b', fontSize: '14px' }}>
           האפשרות שבחרת חסרה במלאי
         </div>
       )}
 
-      {/* מחיר מעודכן לפי וריאציה */}
       {selectedVariation && (
         <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
           {activeRegularPrice > activePrice && (
