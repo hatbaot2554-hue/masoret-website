@@ -16,11 +16,22 @@ async function getAllProducts() {
 export default async function ProductsPage({ searchParams }) {
   const page = parseInt(searchParams?.page || '1')
   const category = searchParams?.category || ''
+  const search = searchParams?.search || ''
   const all = await getAllProducts()
 
-  // כל מוצר מקבל את האינדקס האמיתי שלו ברשימה הכללית
   const allWithIndex = all.map((p, i) => ({ ...p, index: i }))
-  const filtered = category ? allWithIndex.filter(p => p.category === category) : allWithIndex
+
+  let filtered = allWithIndex
+  if (category) filtered = filtered.filter(p => p.category === category)
+  if (search) {
+    const q = search.toLowerCase()
+    filtered = filtered.filter(p =>
+      p.name?.toLowerCase().includes(q) ||
+      p.sku?.toLowerCase().includes(q) ||
+      p.description?.toLowerCase().includes(q)
+    )
+  }
+
   const perPage = 20
   const start = (page - 1) * perPage
   const products = filtered.slice(start, start + perPage)
@@ -31,7 +42,9 @@ export default async function ProductsPage({ searchParams }) {
     <div style={{ padding: '48px 0' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
         <h1 style={{ fontFamily: 'serif', fontSize: '40px', fontWeight: '900', marginBottom: '8px' }}>כל הספרים</h1>
-        <p style={{ color: '#6B5C3E', marginBottom: '40px' }}>מבחר של למעלה מ-5,000 ספרי קודש ויהדות</p>
+        <p style={{ color: '#6B5C3E', marginBottom: '40px' }}>
+          {search ? `תוצאות חיפוש עבור "${search}" — ${filtered.length} מוצרים` : 'מבחר של למעלה מ-5,000 ספרי קודש ויהדות'}
+        </p>
         <div style={{ display: 'flex', gap: '40px' }}>
           <aside style={{ width: '200px', flexShrink: 0 }}>
             <h3 style={{ fontSize: '16px', marginBottom: '16px' }}>קטגוריות</h3>
@@ -59,19 +72,23 @@ export default async function ProductsPage({ searchParams }) {
                 </div>
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                   {page > 1 && (
-                    <a href={`/products?page=${page - 1}${category ? `&category=${encodeURIComponent(category)}` : ''}`}
+                    <a href={`/products?page=${page - 1}${category ? `&category=${encodeURIComponent(category)}` : ''}${search ? `&search=${encodeURIComponent(search)}` : ''}`}
                       style={{ background: 'transparent', color: '#C9A84C', border: '1.5px solid #C9A84C', padding: '10px 24px', textDecoration: 'none', fontSize: '14px' }}>← הקודם</a>
                   )}
                   {hasMore && (
-                    <a href={`/products?page=${page + 1}${category ? `&category=${encodeURIComponent(category)}` : ''}`}
+                    <a href={`/products?page=${page + 1}${category ? `&category=${encodeURIComponent(category)}` : ''}${search ? `&search=${encodeURIComponent(search)}` : ''}`}
                       style={{ background: '#C9A84C', color: '#1A2332', padding: '10px 24px', textDecoration: 'none', fontSize: '14px' }}>הבא →</a>
                   )}
                 </div>
               </>
             ) : (
               <div style={{ textAlign: 'center', padding: '80px', background: '#F8F4EE', color: '#6B5C3E' }}>
-                <p style={{ fontSize: '18px', marginBottom: '12px' }}>המוצרים בדרך אליך...</p>
-                <p style={{ fontSize: '14px' }}>הסריקה היומית תטען את כל הספרים בקרוב</p>
+                <p style={{ fontSize: '18px', marginBottom: '12px' }}>
+                  {search ? `לא נמצאו תוצאות עבור "${search}"` : 'המוצרים בדרך אליך...'}
+                </p>
+                <p style={{ fontSize: '14px' }}>
+                  {search ? 'נסה מילות חיפוש אחרות' : 'הסריקה היומית תטען את כל הספרים בקרוב'}
+                </p>
               </div>
             )}
           </div>
