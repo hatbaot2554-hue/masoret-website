@@ -40,12 +40,8 @@ export default function Header() {
 
   useEffect(() => {
     function handleClick(e) {
-      if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setShowSuggestions(false)
-      }
-      if (catRef.current && !catRef.current.contains(e.target)) {
-        setActiveParent(null)
-      }
+      if (searchRef.current && !searchRef.current.contains(e.target)) setShowSuggestions(false)
+      if (catRef.current && !catRef.current.contains(e.target)) setActiveParent(null)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
@@ -115,26 +111,15 @@ export default function Header() {
               onChange={e => setSearch(e.target.value)}
               onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
               placeholder='חיפוש לפי שם או מק"ט...'
-              style={{
-                flex: 1, padding: '9px 14px', border: 'none',
-                fontSize: '14px', fontFamily: 'Heebo, sans-serif',
-                outline: 'none', background: 'rgba(255,255,255,0.95)',
-                color: '#2C2416', direction: 'rtl', borderRadius: '0'
-              }}
+              style={{ flex: 1, padding: '9px 14px', border: 'none', fontSize: '14px', fontFamily: 'Heebo, sans-serif', outline: 'none', background: 'rgba(255,255,255,0.95)', color: '#2C2416', direction: 'rtl', borderRadius: '0' }}
             />
-            <button type="submit" style={{
-              background: 'var(--gold)', color: 'var(--navy)', border: 'none',
-              padding: '9px 16px', cursor: 'pointer', fontSize: '16px', fontWeight: '700'
-            }}>🔍</button>
+            <button type="submit" style={{ background: 'var(--gold)', color: 'var(--navy)', border: 'none', padding: '9px 16px', cursor: 'pointer', fontSize: '16px', fontWeight: '700' }}>
+              🔍
+            </button>
           </form>
 
           {showSuggestions && suggestions.length > 0 && (
-            <div style={{
-              position: 'absolute', top: '100%', right: 0, left: 0,
-              background: '#fff', border: '1px solid #EDE6D9',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.15)', zIndex: 1000,
-              maxHeight: '400px', overflowY: 'auto'
-            }}>
+            <div style={{ position: 'absolute', top: '100%', right: 0, left: 0, background: '#fff', border: '1px solid #EDE6D9', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', zIndex: 1000, maxHeight: '400px', overflowY: 'auto' }}>
               {suggestions.map(product => (
                 <div key={product.index} onClick={() => handleSelect(product)}
                   style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f0ebe0' }}
@@ -151,7 +136,7 @@ export default function Header() {
                     </div>
                     {product.sku && (
                       <div style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>
-                        מק"ט: {highlight(product.sku, search)}
+                        מק&quot;ט: {highlight(product.sku, search)}
                       </div>
                     )}
                   </div>
@@ -164,7 +149,7 @@ export default function Header() {
                 style={{ padding: '10px 14px', textAlign: 'center', fontSize: '13px', color: '#8B6914', cursor: 'pointer', fontWeight: '600', background: '#F8F4EE', borderTop: '1px solid #EDE6D9' }}
                 onMouseEnter={e => e.currentTarget.style.background = '#EDE6D9'}
                 onMouseLeave={e => e.currentTarget.style.background = '#F8F4EE'}>
-                לכל התוצאות עבור "{search}" ←
+                לכל התוצאות עבור &quot;{search}&quot; ←
               </div>
             </div>
           )}
@@ -174,18 +159,12 @@ export default function Header() {
           <a href="/products" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '15px' }}>כל הספרים</a>
           <a href="/track" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '15px' }}>מעקב הזמנה</a>
           <a href="/contact" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '15px' }}>צור קשר</a>
-          <a href="/cart" style={{
-            background: 'var(--gold)', color: 'var(--navy)', padding: '10px 20px',
-            textDecoration: 'none', fontSize: '14px', fontWeight: '700',
-            display: 'flex', alignItems: 'center', gap: '6px'
-          }}>
+          <a href="/cart" style={{ background: 'var(--gold)', color: 'var(--navy)', padding: '10px 20px', textDecoration: 'none', fontSize: '14px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
             🛒
             {totalItems > 0 && (
-              <span style={{
-                background: '#c0392b', color: '#fff', borderRadius: '50%',
-                width: '20px', height: '20px', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', fontSize: '11px', fontWeight: '700'
-              }}>{totalItems}</span>
+              <span style={{ background: '#c0392b', color: '#fff', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700' }}>
+                {totalItems}
+              </span>
             )}
             עגלה
           </a>
@@ -195,46 +174,43 @@ export default function Header() {
       {parents.length > 0 && (
         <div ref={catRef} style={{ background: 'rgba(0,0,0,0.25)', borderTop: '1px solid rgba(201,168,76,0.3)' }}>
           <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', flexWrap: 'wrap' }}>
-            {parents.map(parent => (
-              <div key={parent} style={{ position: 'relative' }}
-                onMouseEnter={() => setActiveParent(parent)}
-                onMouseLeave={() => setActiveParent(null)}>
-                
-                  href={`/products?category=${encodeURIComponent(parent)}`}
-                  style={{
-                    display: 'block', padding: '12px 18px',
-                    color: activeParent === parent ? 'var(--gold)' : 'rgba(255,255,255,0.85)',
-                    textDecoration: 'none', fontSize: '14px', fontWeight: '500',
-                    borderBottom: activeParent === parent ? '2px solid var(--gold)' : '2px solid transparent',
-                    transition: 'all 0.15s', whiteSpace: 'nowrap'
-                  }}>
-                  {parent}{categoryTree[parent].length > 0 ? ' ▾' : ''}
-                </a>
+            {parents.map(parent => {
+              const hasChildren = categoryTree[parent].length > 0
+              return (
+                <div key={parent} style={{ position: 'relative' }}
+                  onMouseEnter={() => setActiveParent(parent)}
+                  onMouseLeave={() => setActiveParent(null)}>
+                  
+                    href={`/products?category=${encodeURIComponent(parent)}`}
+                    style={{
+                      display: 'block',
+                      padding: '12px 18px',
+                      color: activeParent === parent ? 'var(--gold)' : 'rgba(255,255,255,0.85)',
+                      textDecoration: 'none',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      borderBottom: activeParent === parent ? '2px solid var(--gold)' : '2px solid transparent',
+                      whiteSpace: 'nowrap'
+                    }}>
+                    {parent}{hasChildren ? ' ▾' : ''}
+                  </a>
 
-                {activeParent === parent && categoryTree[parent].length > 0 && (
-                  <div style={{
-                    position: 'absolute', top: '100%', right: 0,
-                    background: '#fff', border: '1px solid #EDE6D9',
-                    boxShadow: '0 6px 20px rgba(0,0,0,0.15)',
-                    zIndex: 999, minWidth: '200px'
-                  }}>
-                    {categoryTree[parent].map(child => (
-                      <a key={child}
-                        href={`/products?category=${encodeURIComponent(child)}`}
-                        style={{
-                          display: 'block', padding: '10px 18px', color: '#2C2416',
-                          textDecoration: 'none', fontSize: '14px',
-                          borderBottom: '1px solid #f0ebe0'
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = '#F8F4EE'; e.currentTarget.style.color = '#8B6914' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#2C2416' }}>
-                        {child}
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+                  {activeParent === parent && hasChildren && (
+                    <div style={{ position: 'absolute', top: '100%', right: 0, background: '#fff', border: '1px solid #EDE6D9', boxShadow: '0 6px 20px rgba(0,0,0,0.15)', zIndex: 999, minWidth: '200px' }}>
+                      {categoryTree[parent].map(child => (
+                        <a key={child}
+                          href={`/products?category=${encodeURIComponent(child)}`}
+                          style={{ display: 'block', padding: '10px 18px', color: '#2C2416', textDecoration: 'none', fontSize: '14px', borderBottom: '1px solid #f0ebe0' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = '#F8F4EE'; e.currentTarget.style.color = '#8B6914' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#2C2416' }}>
+                          {child}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
