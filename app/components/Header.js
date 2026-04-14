@@ -182,6 +182,7 @@ export default function Header() {
                   onMouseLeave={() => setActiveParent(null)}>
                   
                     href={`/products?category=${encodeURIComponent(parent)}`}
+                <a href={`/products?category=${encodeURIComponent(parent)}`}
                     style={{
                       display: 'block',
                       padding: '12px 18px',
