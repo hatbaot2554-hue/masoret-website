@@ -24,12 +24,12 @@ export default function OrderForm({ product }) {
   const [errorMsg, setErrorMsg] = useState('')
   const [orderIds, setOrderIds] = useState({ ours: null })
 
-  // הטבעה
-  const [engravingType, setEngravingType] = useState('none') // none | single | bulk
-  const [letterColor, setLetterColor] = useState('')
+  // הטבעה — ברירת מחדל לצבע: לשיקול דעתו של המטביע
+  const [engravingType, setEngravingType] = useState('none')
+  const [letterColor, setLetterColor] = useState('לשיקול דעתו של המטביע')
   const [engravingText, setEngravingText] = useState('')
   const [engravingQty, setEngravingQty] = useState(1)
-  const [bulkType, setBulkType] = useState('') // up100 | over100
+  const [bulkType, setBulkType] = useState('')
   const [sketchText, setSketchText] = useState('')
   const [sketchFile, setSketchFile] = useState(null)
   const [extraQty, setExtraQty] = useState(1)
@@ -47,7 +47,7 @@ export default function OrderForm({ product }) {
     : parseFloat(product.original_price || 0)
   const activeInStock = selectedVariation ? selectedVariation.in_stock : true
 
-  // חישוב תוספת הטבעה
+  const bookTotal = Math.ceil(activePrice * quantity)
   const engravingExtra = (() => {
     if (engravingType === 'single') return engravingQty * 15
     if (engravingType === 'bulk') {
@@ -56,8 +56,19 @@ export default function OrderForm({ product }) {
     }
     return 0
   })()
+  const totalPrice = bookTotal + engravingExtra
 
-  const totalPrice = Math.ceil(activePrice * quantity) + engravingExtra
+  function buildBreakdown() {
+    const parts = []
+    parts.push(`ספרים: ₪${activePrice} × ${quantity} = ₪${bookTotal}`)
+    if (engravingType === 'single') {
+      parts.push(`הטבעה: ₪15 × ${engravingQty} = ₪${engravingQty * 15}`)
+    } else if (engravingType === 'bulk' && bulkType) {
+      if (bulkType === 'up100') parts.push(`גלופה: ₪170`)
+      if (bulkType === 'over100') parts.push(`גלופה: ₪170 + ${extraQty} × ₪1 = ₪${170 + extraQty}`)
+    }
+    return parts.join(' | ')
+  }
 
   function getAttributeOptions() {
     if (!hasVariations) return {}
@@ -184,6 +195,7 @@ export default function OrderForm({ product }) {
   const inputStyle = { width: '100%', padding: '11px 14px', border: '1px solid #EDE6D9', background: '#fff', fontSize: '15px', fontFamily: 'Heebo, sans-serif', color: '#2C2416', outline: 'none' }
   const attributeOptions = getAttributeOptions()
   const sectionStyle = { background: '#F8F4EE', border: '1px solid #EDE6D9', borderRadius: '4px', padding: '16px', marginBottom: '16px' }
+
   const colorBtnStyle = (val) => ({
     padding: '8px 16px', border: '1px solid', cursor: 'pointer', fontSize: '14px',
     borderColor: letterColor === val ? '#8B6914' : '#EDE6D9',
@@ -251,13 +263,12 @@ export default function OrderForm({ product }) {
       <div style={{ marginBottom: '20px' }}>
         <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>הטבעת הקדשה:</label>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button type="button" onClick={() => { setEngravingType('none'); setLetterColor(''); setEngravingText(''); setEngravingQty(1); setBulkType(''); setSketchText(''); setExtraQty(1) }} style={typeBtnStyle('none')}>ללא</button>
+          <button type="button" onClick={() => { setEngravingType('none'); setEngravingText(''); setEngravingQty(1); setBulkType(''); setSketchText(''); setExtraQty(1); setLetterColor('לשיקול דעתו של המטביע') }} style={typeBtnStyle('none')}>ללא</button>
           <button type="button" onClick={() => setEngravingType('single')} style={typeBtnStyle('single')}>הטבעה על ספרים בודדים (עד 13)</button>
           <button type="button" onClick={() => setEngravingType('bulk')} style={typeBtnStyle('bulk')}>הטבעת כמות (14 ומעלה)</button>
         </div>
       </div>
 
-      {/* תוכן לפי סוג הטבעה */}
       {(engravingType === 'single' || engravingType === 'bulk') && (
         <div style={sectionStyle}>
           {/* מחירון */}
@@ -276,7 +287,6 @@ export default function OrderForm({ product }) {
             </div>
           </div>
 
-          {/* שדות ספציפיים לסוג */}
           {engravingType === 'single' && (
             <>
               <div style={{ marginBottom: '16px' }}>
@@ -366,15 +376,22 @@ export default function OrderForm({ product }) {
         </div>
       )}
 
-      {/* כמות */}
-      <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+      {/* כמות + סה"כ עם פירוט */}
+      <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
         <label style={{ fontSize: '14px', color: '#6B5C3E', width: '60px' }}>כמות:</label>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} style={{ width: '32px', height: '32px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer', fontSize: '16px' }}>-</button>
           <span style={{ minWidth: '32px', textAlign: 'center', fontSize: '16px', fontWeight: '700' }}>{quantity}</span>
           <button type="button" onClick={() => setQuantity(quantity + 1)} style={{ width: '32px', height: '32px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer', fontSize: '16px' }}>+</button>
         </div>
-        <span style={{ fontSize: '18px', fontWeight: '700', color: '#8B6914' }}>סה"כ: ₪{totalPrice}</span>
+        <div>
+          <span style={{ fontSize: '18px', fontWeight: '700', color: '#8B6914' }}>סה"כ: ₪{totalPrice}</span>
+          {(quantity > 1 || engravingExtra > 0) && (
+            <div style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>
+              ({buildBreakdown()})
+            </div>
+          )}
+        </div>
       </div>
 
       {/* פרטים אישיים */}
