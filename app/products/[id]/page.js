@@ -1,5 +1,11 @@
 import OrderForm from '../../components/OrderForm'
 
+function formatPrice(price) {
+  const p = parseFloat(price || 0)
+  if (p < 10) return Math.ceil(p * 2) / 2
+  return Math.ceil(p)
+}
+
 async function getProduct(id) {
   try {
     const res = await fetch(
@@ -31,8 +37,8 @@ export default async function ProductPage({ params }) {
     )
   }
 
-  const finalPrice = parseFloat(product.price || 0)
-  const regularFinalPrice = parseFloat(product.regular_our_price || product.price || 0)
+  const finalPrice = formatPrice(product.price)
+  const regularFinalPrice = formatPrice(product.regular_our_price || product.price)
   const hasDiscount = regularFinalPrice > finalPrice
 
   return (
@@ -57,7 +63,6 @@ export default async function ProductPage({ params }) {
             ) : (
               <div style={{ aspectRatio: '3/4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '64px' }}>📖</div>
             )}
-            {/* גלריית תמונות נוספות */}
             {product.images && product.images.length > 1 && (
               <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
                 {product.images.slice(1).map((img, i) => (
@@ -110,6 +115,7 @@ export default async function ProductPage({ params }) {
               <OrderForm product={{
                 ...product,
                 price: finalPrice,
+                regular_our_price: regularFinalPrice,
                 sourceProductId: product.product_id || product.url
               }} />
             ) : (
