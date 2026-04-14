@@ -2,20 +2,63 @@
 import { useState } from 'react'
 
 export default function OrderForm({ product }) {
+  const hasVariations = product.variations && product.variations.length > 0
+  const [selectedVariation, setSelectedVariation] = useState(null)
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', address: '', city: '', note: '' })
   const [quantity, setQuantity] = useState(1)
   const [status, setStatus] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
   const [orderIds, setOrderIds] = useState({ ours: null })
 
-  const ourPrice = parseFloat(product.price || 0)
-  const sourcePrice = parseFloat(product.original_price || product.sourcePrice || 0)
-  const totalPrice = (ourPrice * quantity).toFixed(0)
+  // מחיר לפי וריאציה שנבחרה או מחיר בסיסי
+  const activePrice = selectedVariation
+    ? parseFloat(selectedVariation.price || 0)
+    : parseFloat(product.price || 0)
+  const activeRegularPrice = selectedVariation
+    ? parseFloat(selectedVariation.regular_our_price || selectedVariation.price || 0)
+    : parseFloat(product.regular_our_price || product.price || 0)
+  const activeCost = selectedVariation
+    ? parseFloat(selectedVariation.original_price || 0)
+    : parseFloat(product.original_price || 0)
+  const activeInStock = selectedVariation ? selectedVariation.in_stock : true
+  const totalPrice = (activePrice * quantity).toFixed(0)
+
+  // קיבוץ אופציות לפי שם התכונה
+  function getAttributeOptions() {
+    if (!hasVariations) return {}
+    const options = {}
+    product.variations.forEach(v => {
+      Object.entries(v.attributes || {}).forEach(([key, val]) => {
+        if (!options[key]) options[key] = new Set()
+        if (val) options[key].add(val)
+      })
+    })
+    return options
+  }
+
+  const [selectedAttrs, setSelectedAttrs] = useState({})
+
+  function handleAttrChange(attrKey, value) {
+    const newAttrs = { ...selectedAttrs, [attrKey]: value }
+    setSelectedAttrs(newAttrs)
+    // מצא וריאציה תואמת
+    const match = product.variations.find(v =>
+      Object.entries(newAttrs).every(([k, val]) =>
+        !v.attributes[k] || v.attributes[k] === val
+      )
+    )
+    setSelectedVariation(match || null)
+  }
 
   function handleChange(e) { setForm({ ...form, [e.target.name]: e.target.value }) }
 
   async function handleSubmit(e) {
     e.preventDefault()
+    // אם יש וריאציות — חובה לבחור
+    if (hasVariations && !selectedVariation) {
+      setErrorMsg('יש לבחור אפשרות לפני ההזמנה')
+      return
+    }
     setStatus('loading')
     setErrorMsg('')
     try {
@@ -29,10 +72,13 @@ export default function OrderForm({ product }) {
         body: JSON.stringify({
           ...form,
           items: [{
-            sourceProductId: product.sourceProductId || product.url,
-            name: product.name || product.title || '',
-            price: ourPrice,
-            cost: sourcePrice,
+            sourceProductId: product.product_id || product.sourceProductId || product.url,
+            variationId: selectedVariation?.variation_id || null,
+            name: product.name || '',
+            sku: selectedVariation?.sku || product.sku || '',
+            selectedAttributes: selectedAttrs,
+            price: activePrice,
+            cost: activeCost,
             quantity,
           }],
           utm_source: utmSource
@@ -70,10 +116,56 @@ export default function OrderForm({ product }) {
   }
 
   const inputStyle = { width: '100%', padding: '11px 14px', border: '1px solid #EDE6D9', background: '#fff', fontSize: '15px', fontFamily: 'Heebo, sans-serif', color: '#2C2416', outline: 'none' }
+  const attributeOptions = getAttributeOptions()
 
   return (
     <form onSubmit={handleSubmit}>
       <h3 style={{ fontFamily: 'serif', fontSize: '20px', marginBottom: '20px', color: '#2C2416' }}>פרטי הזמנה</h3>
+
+      {/* וריאציות */}
+      {hasVariations && Object.entries(attributeOptions).map(([attrKey, values]) => (
+        <div key={attrKey} style={{ marginBottom: '16px' }}>
+          <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+            {product.attribute_labels?.[attrKey] || attrKey.replace('attribute_', '')}:
+          </label>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {[...values].map(val => (
+              <button key={val} type="button"
+                onClick={() => handleAttrChange(attrKey, val)}
+                style={{
+                  padding: '8px 16px', border: '1px solid',
+                  borderColor: selectedAttrs[attrKey] === val ? '#8B6914' : '#EDE6D9',
+                  background: selectedAttrs[attrKey] === val ? '#8B6914' : '#fff',
+                  color: selectedAttrs[attrKey] === val ? '#fff' : '#2C2416',
+                  cursor: 'pointer', fontSize: '14px'
+                }}>
+                {val}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      {/* אזהרה אם וריאציה לא במלאי */}
+      {selectedVariation && !activeInStock && (
+        <div style={{ background: '#fff0f0', border: '1px solid #fcc', padding: '10px 14px', marginBottom: '16px', color: '#c0392b', fontSize: '14px' }}>
+          האפשרות שבחרת חסרה במלאי
+        </div>
+      )}
+
+      {/* מחיר מעודכן לפי וריאציה */}
+      {selectedVariation && (
+        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {activeRegularPrice > activePrice && (
+            <span style={{ fontSize: '1.1rem', color: '#999', textDecoration: 'line-through' }}>₪{activeRegularPrice}</span>
+          )}
+          <span style={{ fontSize: '1.5rem', color: '#8B6914', fontWeight: '700' }}>₪{activePrice}</span>
+          {activeRegularPrice > activePrice && (
+            <span style={{ background: '#e74c3c', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' }}>מבצע!</span>
+          )}
+        </div>
+      )}
+
       <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
         <label style={{ fontSize: '14px', color: '#6B5C3E', width: '60px' }}>כמות:</label>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -83,6 +175,7 @@ export default function OrderForm({ product }) {
         </div>
         <span style={{ fontSize: '18px', fontWeight: '700', color: '#8B6914' }}>סה"כ: ₪{totalPrice}</span>
       </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
         <div>
           <label style={{ fontSize: '13px', color: '#6B5C3E', display: 'block', marginBottom: '4px' }}>שם פרטי *</label>
@@ -118,7 +211,9 @@ export default function OrderForm({ product }) {
         <textarea name="note" value={form.note} onChange={handleChange} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
       </div>
       {status === 'error' && <p style={{ color: 'red', marginBottom: '12px' }}>{errorMsg}</p>}
-      <button type="submit" disabled={status === 'loading'} style={{ width: '100%', padding: '14px', background: '#8B6914', color: '#fff', border: 'none', fontSize: '16px', fontFamily: 'serif', cursor: 'pointer' }}>
+      <button type="submit"
+        disabled={status === 'loading' || (selectedVariation && !activeInStock)}
+        style={{ width: '100%', padding: '14px', background: '#8B6914', color: '#fff', border: 'none', fontSize: '16px', fontFamily: 'serif', cursor: 'pointer', opacity: (selectedVariation && !activeInStock) ? 0.5 : 1 }}>
         {status === 'loading' ? 'שולח...' : 'הזמן עכשיו'}
       </button>
     </form>
