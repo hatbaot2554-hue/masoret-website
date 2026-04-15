@@ -23,7 +23,7 @@ export default function Header() {
         setAllProducts(products)
         const tree = {}
         products.forEach(p => {
-          const parent = p.parent_category || p.category || ''
+          const parent = p.parent_category || ''
           const child = p.child_category || ''
           if (!parent) return
           if (!tree[parent]) tree[parent] = new Set()
@@ -88,6 +88,7 @@ export default function Header() {
   }
 
   const parents = Object.keys(categoryTree)
+  const hasRealCategories = false
 
   return (
     <header style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)' }}>
@@ -171,21 +172,19 @@ export default function Header() {
         </nav>
       </div>
 
-      {parents.length > 0 && (
-        <div ref={catRef} style={{ background: 'rgba(0,0,0,0.25)', borderTop: '1px solid rgba(201,168,76,0.3)' }}>
-          <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', flexWrap: 'wrap' }}>
+      {hasRealCategories && (
+        <div ref={catRef} style={{ background: 'rgba(0,0,0,0.25)', borderTop: '1px solid rgba(201,168,76,0.3)', overflowX: 'auto' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', flexWrap: 'nowrap' }}>
             {parents.map(parent => {
               const hasChildren = categoryTree[parent].length > 0
               return (
-                <div key={parent} style={{ position: 'relative' }}
+                <div key={parent} style={{ position: 'relative', flexShrink: 0 }}
                   onMouseEnter={() => setActiveParent(parent)}
                   onMouseLeave={() => setActiveParent(null)}>
-                  
-                    href={`/products?category=${encodeURIComponent(parent)}`}
-                <a href={`/products?category=${encodeURIComponent(parent)}`}
+                  <a href={`/products?category=${encodeURIComponent(parent)}`}
                     style={{
                       display: 'block',
-                      padding: '12px 18px',
+                      padding: '12px 16px',
                       color: activeParent === parent ? 'var(--gold)' : 'rgba(255,255,255,0.85)',
                       textDecoration: 'none',
                       fontSize: '14px',
