@@ -1,10 +1,14 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useCart } from './CartContext'
 import { useRouter } from 'next/navigation'
 
-function CatLink({ cat, isActive, onEnter, onLeave }) {
-  var style = {
+function CatLink(props) {
+  var cat = props.cat
+  var isActive = props.isActive
+  var onEnter = props.onEnter
+  var onLeave = props.onLeave
+  var linkStyle = {
     display: 'block',
     padding: '12px 16px',
     color: isActive ? 'var(--gold)' : 'rgba(255,255,255,0.85)',
@@ -14,16 +18,19 @@ function CatLink({ cat, isActive, onEnter, onLeave }) {
     borderBottom: isActive ? '2px solid var(--gold)' : '2px solid transparent',
     whiteSpace: 'nowrap'
   }
-  return (
-    <div style={{ position: 'relative', flexShrink: 0 }}>
-      
-        href={'/products?category=' + encodeURIComponent(cat)}
-        style={style}
-        onMouseEnter={onEnter}
-        onMouseLeave={onLeave}>
-        {cat}
-      </a>
-    </div>
+  return React.createElement(
+    'div',
+    { style: { position: 'relative', flexShrink: 0 } },
+    React.createElement(
+      'a',
+      {
+        href: '/products?category=' + encodeURIComponent(cat),
+        style: linkStyle,
+        onMouseEnter: onEnter,
+        onMouseLeave: onLeave
+      },
+      cat
+    )
   )
 }
 
