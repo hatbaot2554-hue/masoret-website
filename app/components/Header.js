@@ -3,6 +3,30 @@ import { useState, useEffect, useRef } from 'react'
 import { useCart } from './CartContext'
 import { useRouter } from 'next/navigation'
 
+function CatLink({ cat, isActive, onEnter, onLeave }) {
+  var style = {
+    display: 'block',
+    padding: '12px 16px',
+    color: isActive ? 'var(--gold)' : 'rgba(255,255,255,0.85)',
+    textDecoration: 'none',
+    fontSize: '14px',
+    fontWeight: '500',
+    borderBottom: isActive ? '2px solid var(--gold)' : '2px solid transparent',
+    whiteSpace: 'nowrap'
+  }
+  return (
+    <div style={{ position: 'relative', flexShrink: 0 }}>
+      
+        href={'/products?category=' + encodeURIComponent(cat)}
+        style={style}
+        onMouseEnter={onEnter}
+        onMouseLeave={onLeave}>
+        {cat}
+      </a>
+    </div>
+  )
+}
+
 export default function Header() {
   const { totalItems } = useCart()
   const [search, setSearch] = useState('')
@@ -168,30 +192,15 @@ export default function Header() {
       {hasRealCategories && (
         <div ref={catRef} style={{ background: 'rgba(0,0,0,0.25)', borderTop: '1px solid rgba(201,168,76,0.3)', overflowX: 'auto' }}>
           <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', flexWrap: 'nowrap' }}>
-            {categories.map(function(cat) {
-              var isActive = activeCategory === cat
-              var linkStyle = {
-                display: 'block',
-                padding: '12px 16px',
-                color: isActive ? 'var(--gold)' : 'rgba(255,255,255,0.85)',
-                textDecoration: 'none',
-                fontSize: '14px',
-                fontWeight: '500',
-                borderBottom: isActive ? '2px solid var(--gold)' : '2px solid transparent',
-                whiteSpace: 'nowrap'
-              }
-              return (
-                <div key={cat} style={{ position: 'relative', flexShrink: 0 }}>
-                  
-                    href={'/products?category=' + encodeURIComponent(cat)}
-                    style={linkStyle}
-                    onMouseEnter={function() { setActiveCategory(cat) }}
-                    onMouseLeave={function() { setActiveCategory(null) }}>
-                    {cat}
-                  </a>
-                </div>
-              )
-            })}
+            {categories.map(cat => (
+              <CatLink
+                key={cat}
+                cat={cat}
+                isActive={activeCategory === cat}
+                onEnter={() => setActiveCategory(cat)}
+                onLeave={() => setActiveCategory(null)}
+              />
+            ))}
           </div>
         </div>
       )}
