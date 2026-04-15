@@ -21,14 +21,21 @@ export default function Header() {
       .then(data => {
         const products = data.map((p, i) => ({ ...p, index: i }))
         setAllProducts(products)
+
+        // ✅ תיקון: בונה עץ קטגוריות מתוך שדה categories במקום parent_category
         const tree = {}
         products.forEach(p => {
-          const parent = p.parent_category || ''
-          const child = p.child_category || ''
-          if (!parent) return
+          const cats = p.categories || []
+          if (cats.length === 0) return
+
+          // אם יש רק קטגוריה אחת — היא גם parent
+          const parent = cats.length >= 2 ? cats[cats.length - 1] : cats[0]
+          const child = cats.length >= 2 ? cats[0] : null
+
           if (!tree[parent]) tree[parent] = new Set()
           if (child && child !== parent) tree[parent].add(child)
         })
+
         const treeArr = {}
         Object.entries(tree).forEach(([parent, children]) => {
           treeArr[parent] = [...children]
@@ -88,7 +95,7 @@ export default function Header() {
   }
 
   const parents = Object.keys(categoryTree)
-  const hasRealCategories = false
+  const hasRealCategories = parents.length > 0
 
   return (
     <header style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)' }}>
@@ -192,7 +199,7 @@ export default function Header() {
                       borderBottom: activeParent === parent ? '2px solid var(--gold)' : '2px solid transparent',
                       whiteSpace: 'nowrap'
                     }}>
-                    {parent}{hasChildren ? ' \u25be' : ''}
+                    {parent}{hasChildren ? ' ▾' : ''}
                   </a>
                   {activeParent === parent && hasChildren && (
                     <div style={{ position: 'absolute', top: '100%', right: 0, background: '#fff', border: '1px solid #EDE6D9', boxShadow: '0 6px 20px rgba(0,0,0,0.15)', zIndex: 999, minWidth: '200px' }}>
