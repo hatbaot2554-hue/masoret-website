@@ -21,8 +21,6 @@ export default function Header() {
       .then(data => {
         const products = data.map((p, i) => ({ ...p, index: i }))
         setAllProducts(products)
-
-        // בונה רשימת קטגוריות ייחודיות מתוך parent_category
         const catSet = new Set()
         products.forEach(p => {
           if (p.parent_category && p.parent_category.trim()) {
@@ -119,8 +117,8 @@ export default function Header() {
               {suggestions.map(product => (
                 <div key={product.index} onClick={() => handleSelect(product)}
                   style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f0ebe0' }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#F8F4EE'}
-                  onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
+                  onMouseEnter={e => { e.currentTarget.style.background = '#F8F4EE' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = '#fff' }}>
                   <div style={{ width: '44px', height: '44px', flexShrink: 0, background: '#EDE6D9', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {product.image
                       ? <img src={product.image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -143,8 +141,8 @@ export default function Header() {
               ))}
               <div onClick={handleSearch}
                 style={{ padding: '10px 14px', textAlign: 'center', fontSize: '13px', color: '#8B6914', cursor: 'pointer', fontWeight: '600', background: '#F8F4EE', borderTop: '1px solid #EDE6D9' }}
-                onMouseEnter={e => e.currentTarget.style.background = '#EDE6D9'}
-                onMouseLeave={e => e.currentTarget.style.background = '#F8F4EE'}>
+                onMouseEnter={e => { e.currentTarget.style.background = '#EDE6D9' }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#F8F4EE' }}>
                 לכל התוצאות עבור &quot;{search}&quot; ←
               </div>
             </div>
@@ -174,6 +172,8 @@ export default function Header() {
               <div key={cat} style={{ position: 'relative', flexShrink: 0 }}>
                 
                   href={`/products?category=${encodeURIComponent(cat)}`}
+                  onMouseEnter={function() { setActiveCategory(cat) }}
+                  onMouseLeave={function() { setActiveCategory(null) }}
                   style={{
                     display: 'block',
                     padding: '12px 16px',
@@ -183,9 +183,7 @@ export default function Header() {
                     fontWeight: '500',
                     borderBottom: activeCategory === cat ? '2px solid var(--gold)' : '2px solid transparent',
                     whiteSpace: 'nowrap'
-                  }}
-                  onMouseEnter={() => setActiveCategory(cat)}
-                  onMouseLeave={() => setActiveCategory(null)}>
+                  }}>
                   {cat}
                 </a>
               </div>
