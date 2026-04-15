@@ -9,8 +9,8 @@ export default function Header() {
   const [suggestions, setSuggestions] = useState([])
   const [allProducts, setAllProducts] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const [categoryTree, setCategoryTree] = useState({})
-  const [activeParent, setActiveParent] = useState(null)
+  const [categories, setCategories] = useState([])
+  const [activeCategory, setActiveCategory] = useState(null)
   const router = useRouter()
   const searchRef = useRef(null)
   const catRef = useRef(null)
@@ -22,25 +22,14 @@ export default function Header() {
         const products = data.map((p, i) => ({ ...p, index: i }))
         setAllProducts(products)
 
-        // ✅ תיקון: בונה עץ קטגוריות מתוך שדה categories במקום parent_category
-        const tree = {}
+        // בונה רשימת קטגוריות ייחודיות מתוך parent_category
+        const catSet = new Set()
         products.forEach(p => {
-          const cats = p.categories || []
-          if (cats.length === 0) return
-
-          // אם יש רק קטגוריה אחת — היא גם parent
-          const parent = cats.length >= 2 ? cats[cats.length - 1] : cats[0]
-          const child = cats.length >= 2 ? cats[0] : null
-
-          if (!tree[parent]) tree[parent] = new Set()
-          if (child && child !== parent) tree[parent].add(child)
+          if (p.parent_category && p.parent_category.trim()) {
+            catSet.add(p.parent_category.trim())
+          }
         })
-
-        const treeArr = {}
-        Object.entries(tree).forEach(([parent, children]) => {
-          treeArr[parent] = [...children]
-        })
-        setCategoryTree(treeArr)
+        setCategories([...catSet].sort())
       })
       .catch(() => {})
   }, [])
@@ -48,7 +37,7 @@ export default function Header() {
   useEffect(() => {
     function handleClick(e) {
       if (searchRef.current && !searchRef.current.contains(e.target)) setShowSuggestions(false)
-      if (catRef.current && !catRef.current.contains(e.target)) setActiveParent(null)
+      if (catRef.current && !catRef.current.contains(e.target)) setActiveCategory(null)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
@@ -94,8 +83,7 @@ export default function Header() {
     router.push(`/products/${product.index}`)
   }
 
-  const parents = Object.keys(categoryTree)
-  const hasRealCategories = parents.length > 0
+  const hasRealCategories = categories.length > 0
 
   return (
     <header style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)' }}>
@@ -182,41 +170,26 @@ export default function Header() {
       {hasRealCategories && (
         <div ref={catRef} style={{ background: 'rgba(0,0,0,0.25)', borderTop: '1px solid rgba(201,168,76,0.3)', overflowX: 'auto' }}>
           <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', flexWrap: 'nowrap' }}>
-            {parents.map(parent => {
-              const hasChildren = categoryTree[parent].length > 0
-              return (
-                <div key={parent} style={{ position: 'relative', flexShrink: 0 }}
-                  onMouseEnter={() => setActiveParent(parent)}
-                  onMouseLeave={() => setActiveParent(null)}>
-                  <a href={`/products?category=${encodeURIComponent(parent)}`}
-                    style={{
-                      display: 'block',
-                      padding: '12px 16px',
-                      color: activeParent === parent ? 'var(--gold)' : 'rgba(255,255,255,0.85)',
-                      textDecoration: 'none',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      borderBottom: activeParent === parent ? '2px solid var(--gold)' : '2px solid transparent',
-                      whiteSpace: 'nowrap'
-                    }}>
-                    {parent}{hasChildren ? ' ▾' : ''}
-                  </a>
-                  {activeParent === parent && hasChildren && (
-                    <div style={{ position: 'absolute', top: '100%', right: 0, background: '#fff', border: '1px solid #EDE6D9', boxShadow: '0 6px 20px rgba(0,0,0,0.15)', zIndex: 999, minWidth: '200px' }}>
-                      {categoryTree[parent].map(child => (
-                        <a key={child}
-                          href={`/products?category=${encodeURIComponent(child)}`}
-                          style={{ display: 'block', padding: '10px 18px', color: '#2C2416', textDecoration: 'none', fontSize: '14px', borderBottom: '1px solid #f0ebe0' }}
-                          onMouseEnter={e => { e.currentTarget.style.background = '#F8F4EE'; e.currentTarget.style.color = '#8B6914' }}
-                          onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#2C2416' }}>
-                          {child}
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
+            {categories.map(cat => (
+              <div key={cat} style={{ position: 'relative', flexShrink: 0 }}>
+                
+                  href={`/products?category=${encodeURIComponent(cat)}`}
+                  style={{
+                    display: 'block',
+                    padding: '12px 16px',
+                    color: activeCategory === cat ? 'var(--gold)' : 'rgba(255,255,255,0.85)',
+                    textDecoration: 'none',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    borderBottom: activeCategory === cat ? '2px solid var(--gold)' : '2px solid transparent',
+                    whiteSpace: 'nowrap'
+                  }}
+                  onMouseEnter={() => setActiveCategory(cat)}
+                  onMouseLeave={() => setActiveCategory(null)}>
+                  {cat}
+                </a>
+              </div>
+            ))}
           </div>
         </div>
       )}
