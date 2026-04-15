@@ -168,26 +168,30 @@ export default function Header() {
       {hasRealCategories && (
         <div ref={catRef} style={{ background: 'rgba(0,0,0,0.25)', borderTop: '1px solid rgba(201,168,76,0.3)', overflowX: 'auto' }}>
           <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', flexWrap: 'nowrap' }}>
-            {categories.map(cat => (
-              <div key={cat} style={{ position: 'relative', flexShrink: 0 }}>
-                
-                  href={`/products?category=${encodeURIComponent(cat)}`}
-                  onMouseEnter={function() { setActiveCategory(cat) }}
-                  onMouseLeave={function() { setActiveCategory(null) }}
-                  style={{
-                    display: 'block',
-                    padding: '12px 16px',
-                    color: activeCategory === cat ? 'var(--gold)' : 'rgba(255,255,255,0.85)',
-                    textDecoration: 'none',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    borderBottom: activeCategory === cat ? '2px solid var(--gold)' : '2px solid transparent',
-                    whiteSpace: 'nowrap'
-                  }}>
-                  {cat}
-                </a>
-              </div>
-            ))}
+            {categories.map(function(cat) {
+              var isActive = activeCategory === cat
+              var linkStyle = {
+                display: 'block',
+                padding: '12px 16px',
+                color: isActive ? 'var(--gold)' : 'rgba(255,255,255,0.85)',
+                textDecoration: 'none',
+                fontSize: '14px',
+                fontWeight: '500',
+                borderBottom: isActive ? '2px solid var(--gold)' : '2px solid transparent',
+                whiteSpace: 'nowrap'
+              }
+              return (
+                <div key={cat} style={{ position: 'relative', flexShrink: 0 }}>
+                  
+                    href={'/products?category=' + encodeURIComponent(cat)}
+                    style={linkStyle}
+                    onMouseEnter={function() { setActiveCategory(cat) }}
+                    onMouseLeave={function() { setActiveCategory(null) }}>
+                    {cat}
+                  </a>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
