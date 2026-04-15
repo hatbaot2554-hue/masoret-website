@@ -4,11 +4,10 @@ const DASHBOARD_URL = 'https://masoret-dashboard.vercel.app';
 function generateOrderId(dbId) {
   if (dbId) {
     const numeric = String(dbId).replace(/\D/g, '')
-    if (numeric.length >= 5) return numeric
-    return numeric.padStart(5, '0')
+    // ✅ תיקון: לוקחים רק 5 ספרות אחרונות ומוודאים מינימום 5
+    return numeric.slice(-5).padStart(5, '0')
   }
-  const ts = Date.now().toString().slice(-5)
-  return ts
+  return String(Date.now()).slice(-5)
 }
 
 export async function POST(request) {
@@ -44,7 +43,6 @@ export async function POST(request) {
       body: JSON.stringify(orderData)
     });
 
-    // ✅ תיקון: בודק שה-Dashboard החזיר תשובה תקינה
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}))
       throw new Error(errData.error || `שגיאה מהשרת (${response.status})`)
@@ -52,7 +50,6 @@ export async function POST(request) {
 
     const saved = await response.json();
 
-    // ✅ תיקון: מוודא ש-id קיים לפני שמייצרים מספר הזמנה
     if (!saved?.id) {
       throw new Error('לא התקבל מזהה הזמנה מהשרת')
     }
@@ -83,7 +80,6 @@ export async function GET(request) {
 
     const response = await fetch(`${DASHBOARD_URL}/api/orders`);
 
-    // ✅ תיקון: בודק תשובה תקינה גם ב-GET
     if (!response.ok) {
       throw new Error('שגיאה בטעינת הזמנות')
     }
@@ -91,8 +87,8 @@ export async function GET(request) {
     const orders = await response.json();
 
     const order = orders.find(o => {
-      const numeric = String(o.id || '').replace(/\D/g, '').padStart(5, '0')
-      return o.customer_email === email && (o.id === orderNumber || numeric === orderNumber)
+      const numeric = String(o.id || '').replace(/\D/g, '').slice(-5).padStart(5, '0')
+      return o.customer_email === email && (numeric === orderNumber)
     });
 
     if (!order) {
