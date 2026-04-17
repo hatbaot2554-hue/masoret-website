@@ -1,5 +1,4 @@
 import ProductCard from '../components/ProductCard'
-import Sidebar from './Sidebar'
 
 async function getAllProducts() {
   try {
@@ -34,18 +33,33 @@ export default async function ProductsPage({ searchParams }) {
 
   const all = await getAllProducts()
   const categoryTree = await getCategoryTree()
-
   const allWithIndex = all.map(function(p, i) { return Object.assign({}, p, { index: i }) })
 
   var filtered = allWithIndex
   if (category) {
-    filtered = filtered.filter(function(p) {
-      return p.category === category ||
-        p.parent_category === category ||
-        p.child_category === category ||
-        (p.categories && p.categories.indexOf(category) !== -1)
-    })
+    // אם זו קטגוריה ראשית — מביא את כל המוצרים של כל תתי הקטגוריות שלה
+    var parentItem = categoryTree.find(function(item) { return item.parent === category })
+    if (parentItem && parentItem.children && parentItem.children.length > 0) {
+      var allChildren = parentItem.children
+      filtered = filtered.filter(function(p) {
+        return allChildren.indexOf(p.category) !== -1 ||
+          allChildren.indexOf(p.parent_category) !== -1 ||
+          allChildren.indexOf(p.child_category) !== -1 ||
+          (p.categories && p.categories.some(function(c) { return allChildren.indexOf(c) !== -1 })) ||
+          p.category === category ||
+          p.parent_category === category
+      })
+    } else {
+      // תת קטגוריה — מביא רק את המוצרים שלה
+      filtered = filtered.filter(function(p) {
+        return p.category === category ||
+          p.parent_category === category ||
+          p.child_category === category ||
+          (p.categories && p.categories.indexOf(category) !== -1)
+      })
+    }
   }
+
   if (search) {
     var q = search.toLowerCase()
     filtered = filtered.filter(function(p) {
@@ -63,7 +77,7 @@ export default async function ProductsPage({ searchParams }) {
   var title = category || 'כל הספרים'
   var subtitle = search
     ? 'תוצאות חיפוש עבור "' + search + '" — ' + filtered.length + ' מוצרים'
-    : filtered.length + ' ספרים'
+    : category ? filtered.length + ' ספרים' : 'מבחר של למעלה מ-5,000 ספרי קודש ויהדות'
 
   var prevHref = '/products?page=' + (page - 1) + (category ? '&category=' + encodeURIComponent(category) : '') + (search ? '&search=' + encodeURIComponent(search) : '')
   var nextHref = '/products?page=' + (page + 1) + (category ? '&category=' + encodeURIComponent(category) : '') + (search ? '&search=' + encodeURIComponent(search) : '')
@@ -73,41 +87,36 @@ export default async function ProductsPage({ searchParams }) {
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
         <h1 style={{ fontFamily: 'serif', fontSize: '40px', fontWeight: '900', marginBottom: '8px' }}>{title}</h1>
         <p style={{ color: '#6B5C3E', marginBottom: '40px' }}>{subtitle}</p>
-        <div style={{ display: 'flex', gap: '40px' }}>
-          <Sidebar categoryTree={categoryTree} category={category} />
-          <div style={{ flex: 1 }}>
-            {products.length > 0 ? (
-              <div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '40px' }}>
-                  {products.map(function(product) {
-                    return <ProductCard key={product.index} product={product} index={product.index} />
-                  })}
-                </div>
-                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                  {page > 1 && (
-                    <a href={prevHref} style={{ background: 'transparent', color: '#C9A84C', border: '1.5px solid #C9A84C', padding: '10px 24px', textDecoration: 'none', fontSize: '14px' }}>
-                      ← הקודם
-                    </a>
-                  )}
-                  {hasMore && (
-                    <a href={nextHref} style={{ background: '#C9A84C', color: '#1A2332', padding: '10px 24px', textDecoration: 'none', fontSize: '14px' }}>
-                      הבא →
-                    </a>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '80px', background: '#F8F4EE', color: '#6B5C3E' }}>
-                <p style={{ fontSize: '18px', marginBottom: '12px' }}>
-                  {search ? 'לא נמצאו תוצאות עבור "' + search + '"' : 'לא נמצאו מוצרים בקטגוריה זו'}
-                </p>
-                <p style={{ fontSize: '14px' }}>
-                  {search ? 'נסה מילות חיפוש אחרות' : 'נסה קטגוריה אחרת'}
-                </p>
-              </div>
-            )}
+        {products.length > 0 ? (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '40px' }}>
+              {products.map(function(product) {
+                return <ProductCard key={product.index} product={product} index={product.index} />
+              })}
+            </div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+              {page > 1 && (
+                <a href={prevHref} style={{ background: 'transparent', color: '#C9A84C', border: '1.5px solid #C9A84C', padding: '10px 24px', textDecoration: 'none', fontSize: '14px' }}>
+                  ← הקודם
+                </a>
+              )}
+              {hasMore && (
+                <a href={nextHref} style={{ background: '#C9A84C', color: '#1A2332', padding: '10px 24px', textDecoration: 'none', fontSize: '14px' }}>
+                  הבא →
+                </a>
+              )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '80px', background: '#F8F4EE', color: '#6B5C3E' }}>
+            <p style={{ fontSize: '18px', marginBottom: '12px' }}>
+              {search ? 'לא נמצאו תוצאות עבור "' + search + '"' : 'לא נמצאו מוצרים בקטגוריה זו'}
+            </p>
+            <p style={{ fontSize: '14px' }}>
+              {search ? 'נסה מילות חיפוש אחרות' : 'נסה קטגוריה אחרת'}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )
