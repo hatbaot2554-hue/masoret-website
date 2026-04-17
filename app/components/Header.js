@@ -3,45 +3,14 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useCart } from './CartContext'
 import { useRouter } from 'next/navigation'
 
-function CatLink(props) {
-  var cat = props.cat
-  var isActive = props.isActive
-  var onEnter = props.onEnter
-  var onLeave = props.onLeave
-  var linkStyle = {
-    display: 'block',
-    padding: '12px 16px',
-    color: isActive ? 'var(--gold)' : 'rgba(255,255,255,0.85)',
-    textDecoration: 'none',
-    fontSize: '14px',
-    fontWeight: '500',
-    borderBottom: isActive ? '2px solid var(--gold)' : '2px solid transparent',
-    whiteSpace: 'nowrap'
-  }
-  return React.createElement(
-    'div',
-    { style: { position: 'relative', flexShrink: 0 } },
-    React.createElement(
-      'a',
-      {
-        href: '/products?category=' + encodeURIComponent(cat),
-        style: linkStyle,
-        onMouseEnter: onEnter,
-        onMouseLeave: onLeave
-      },
-      cat
-    )
-  )
-}
-
 export default function Header() {
   const { totalItems } = useCart()
   const [search, setSearch] = useState('')
   const [suggestions, setSuggestions] = useState([])
   const [allProducts, setAllProducts] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const [categories, setCategories] = useState([])
-  const [activeCategory, setActiveCategory] = useState(null)
+  const [categoryTree, setCategoryTree] = useState([])
+  const [activeParent, setActiveParent] = useState(null)
   const router = useRouter()
   const searchRef = useRef(null)
   const catRef = useRef(null)
@@ -50,23 +19,20 @@ export default function Header() {
     fetch('https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/products.json')
       .then(r => r.json())
       .then(data => {
-        const products = data.map((p, i) => ({ ...p, index: i }))
-        setAllProducts(products)
-        const catSet = new Set()
-        products.forEach(p => {
-          if (p.parent_category && p.parent_category.trim()) {
-            catSet.add(p.parent_category.trim())
-          }
-        })
-        setCategories([...catSet].sort())
+        setAllProducts(data.map((p, i) => ({ ...p, index: i })))
       })
+      .catch(() => {})
+
+    fetch('https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/categories.json')
+      .then(r => r.json())
+      .then(data => setCategoryTree(data))
       .catch(() => {})
   }, [])
 
   useEffect(() => {
     function handleClick(e) {
       if (searchRef.current && !searchRef.current.contains(e.target)) setShowSuggestions(false)
-      if (catRef.current && !catRef.current.contains(e.target)) setActiveCategory(null)
+      if (catRef.current && !catRef.current.contains(e.target)) setActiveParent(null)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
@@ -102,17 +68,15 @@ export default function Header() {
     e.preventDefault()
     if (search.trim()) {
       setShowSuggestions(false)
-      router.push(`/products?search=${encodeURIComponent(search.trim())}`)
+      router.push('/products?search=' + encodeURIComponent(search.trim()))
     }
   }
 
   function handleSelect(product) {
     setShowSuggestions(false)
     setSearch('')
-    router.push(`/products/${product.index}`)
+    router.push('/products/' + product.index)
   }
-
-  const hasRealCategories = categories.length > 0
 
   return (
     <header style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)' }}>
@@ -196,18 +160,55 @@ export default function Header() {
         </nav>
       </div>
 
-      {hasRealCategories && (
+      {categoryTree.length > 0 && (
         <div ref={catRef} style={{ background: 'rgba(0,0,0,0.25)', borderTop: '1px solid rgba(201,168,76,0.3)', overflowX: 'auto' }}>
           <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', flexWrap: 'nowrap' }}>
-            {categories.map(cat => (
-              <CatLink
-                key={cat}
-                cat={cat}
-                isActive={activeCategory === cat}
-                onEnter={() => setActiveCategory(cat)}
-                onLeave={() => setActiveCategory(null)}
-              />
-            ))}
+            {categoryTree.map(function(item) {
+              var isActive = activeParent === item.parent
+              var hasChildren = item.children && item.children.length > 0
+              return React.createElement('div', {
+                key: item.parent,
+                style: { position: 'relative', flexShrink: 0 },
+                onMouseEnter: function() { setActiveParent(item.parent) },
+                onMouseLeave: function() { setActiveParent(null) }
+              },
+                React.createElement('a', {
+                  href: '/products?category=' + encodeURIComponent(item.parent),
+                  style: {
+                    display: 'block',
+                    padding: '12px 16px',
+                    color: isActive ? 'var(--gold)' : 'rgba(255,255,255,0.85)',
+                    textDecoration: 'none',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    borderBottom: isActive ? '2px solid var(--gold)' : '2px solid transparent',
+                    whiteSpace: 'nowrap'
+                  }
+                }, item.parent, hasChildren ? ' ▾' : ''),
+                isActive && hasChildren ? React.createElement('div', {
+                  style: {
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    background: '#fff',
+                    border: '1px solid #EDE6D9',
+                    boxShadow: '0 6px 20px rgba(0,0,0,0.15)',
+                    zIndex: 999,
+                    minWidth: '200px'
+                  }
+                },
+                  item.children.map(function(child) {
+                    return React.createElement('a', {
+                      key: child,
+                      href: '/products?category=' + encodeURIComponent(child),
+                      style: { display: 'block', padding: '10px 18px', color: '#2C2416', textDecoration: 'none', fontSize: '14px', borderBottom: '1px solid #f0ebe0' },
+                      onMouseEnter: function(e) { e.currentTarget.style.background = '#F8F4EE'; e.currentTarget.style.color = '#8B6914' },
+                      onMouseLeave: function(e) { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#2C2416' }
+                    }, child)
+                  })
+                ) : null
+              )
+            })}
           </div>
         </div>
       )}
