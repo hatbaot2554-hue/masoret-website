@@ -14,13 +14,12 @@ export default function Header() {
   const router = useRouter()
   const searchRef = useRef(null)
   const catRef = useRef(null)
+  const leaveTimer = useRef(null)
 
   useEffect(() => {
     fetch('https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/products.json')
       .then(r => r.json())
-      .then(data => {
-        setAllProducts(data.map((p, i) => ({ ...p, index: i })))
-      })
+      .then(data => setAllProducts(data.map((p, i) => ({ ...p, index: i }))))
       .catch(() => {})
 
     fetch('https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/categories.json')
@@ -76,6 +75,17 @@ export default function Header() {
     setShowSuggestions(false)
     setSearch('')
     router.push('/products/' + product.index)
+  }
+
+  function handleMenuEnter(parentName) {
+    if (leaveTimer.current) clearTimeout(leaveTimer.current)
+    setActiveParent(parentName)
+  }
+
+  function handleMenuLeave() {
+    leaveTimer.current = setTimeout(function() {
+      setActiveParent(null)
+    }, 150)
   }
 
   return (
@@ -169,8 +179,8 @@ export default function Header() {
               return React.createElement('div', {
                 key: item.parent,
                 style: { position: 'relative', flexShrink: 0 },
-                onMouseEnter: function() { setActiveParent(item.parent) },
-                onMouseLeave: function() { setActiveParent(null) }
+                onMouseEnter: function() { handleMenuEnter(item.parent) },
+                onMouseLeave: handleMenuLeave
               },
                 React.createElement('a', {
                   href: '/products?category=' + encodeURIComponent(item.parent),
@@ -195,7 +205,9 @@ export default function Header() {
                     boxShadow: '0 6px 20px rgba(0,0,0,0.15)',
                     zIndex: 999,
                     minWidth: '200px'
-                  }
+                  },
+                  onMouseEnter: function() { handleMenuEnter(item.parent) },
+                  onMouseLeave: handleMenuLeave
                 },
                   item.children.map(function(child) {
                     return React.createElement('a', {
