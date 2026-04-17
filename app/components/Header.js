@@ -11,13 +11,15 @@ export default function Header() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [categoryTree, setCategoryTree] = useState([])
   const [activeParent, setActiveParent] = useState(null)
-  const [scrollIndex, setScrollIndex] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const router = useRouter()
   const searchRef = useRef(null)
   const catRef = useRef(null)
   const leaveTimer = useRef(null)
   const scrollTimer = useRef(null)
   const catBarRef = useRef(null)
+  const isHoveringMenu = useRef(false)
 
   useEffect(() => {
     fetch('https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/products.json')
@@ -29,16 +31,24 @@ export default function Header() {
       .then(r => r.json())
       .then(data => setCategoryTree(data))
       .catch(() => {})
+
+    function checkMobile() {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return function() { window.removeEventListener('resize', checkMobile) }
   }, [])
 
-  // גלילה אוטומטית כל 2 שניות
   useEffect(() => {
     if (categoryTree.length === 0) return
     scrollTimer.current = setInterval(function() {
-      if (catBarRef.current) {
-        catBarRef.current.scrollLeft -= 120
-        if (catBarRef.current.scrollLeft <= 0) {
-          catBarRef.current.scrollLeft = catBarRef.current.scrollWidth
+      if (catBarRef.current && !isHoveringMenu.current) {
+        var bar = catBarRef.current
+        var itemWidth = 140
+        bar.scrollLeft = bar.scrollLeft - itemWidth
+        if (bar.scrollLeft <= 0) {
+          bar.scrollLeft = bar.scrollWidth
         }
       }
     }, 2000)
@@ -95,16 +105,79 @@ export default function Header() {
   }
 
   function handleMenuEnter(parentName) {
+    isHoveringMenu.current = true
     if (leaveTimer.current) clearTimeout(leaveTimer.current)
     setActiveParent(parentName)
   }
 
   function handleMenuLeave() {
+    isHoveringMenu.current = false
     leaveTimer.current = setTimeout(function() {
       setActiveParent(null)
     }, 200)
   }
 
+  // מובייל — תפריט המבורגר
+  if (isMobile) {
+    return (
+      <header style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)' }}>
+        <div style={{ background: 'var(--gold)', color: 'var(--navy)', textAlign: 'center', fontSize: '12px', fontWeight: '500', padding: '5px' }}>
+          משלוח חינם מעל ₪200 | א׳-ה׳ 9:00-15:00
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px' }}>
+          <button onClick={() => setMenuOpen(!menuOpen)} style={{ background: 'none', border: 'none', color: 'var(--gold)', fontSize: '24px', cursor: 'pointer' }}>
+            {menuOpen ? '✕' : '☰'}
+          </button>
+          <a href="/" style={{ textDecoration: 'none' }}>
+            <span style={{ fontFamily: 'serif', fontSize: '18px', fontWeight: '900', color: 'var(--gold)' }}>המרכז למסורת יהודית</span>
+          </a>
+          <a href="/cart" style={{ color: 'var(--gold)', textDecoration: 'none', fontSize: '20px', position: 'relative' }}>
+            🛒
+            {totalItems > 0 && (
+              <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#c0392b', color: '#fff', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>
+                {totalItems}
+              </span>
+            )}
+          </a>
+        </div>
+        <div style={{ padding: '0 16px 8px' }}>
+          <form onSubmit={handleSearch} style={{ display: 'flex' }}>
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+              placeholder='חיפוש...'
+              style={{ flex: 1, padding: '8px 12px', border: 'none', fontSize: '14px', fontFamily: 'Heebo, sans-serif', outline: 'none', background: 'rgba(255,255,255,0.95)', color: '#2C2416', direction: 'rtl' }} />
+            <button type="submit" style={{ background: 'var(--gold)', color: 'var(--navy)', border: 'none', padding: '8px 12px', cursor: 'pointer' }}>🔍</button>
+          </form>
+        </div>
+        {menuOpen && (
+          <div style={{ background: '#1A2332', padding: '8px 0', borderTop: '1px solid rgba(201,168,76,0.3)' }}>
+            <a href="/products" style={{ display: 'block', padding: '12px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>כל הספרים</a>
+            {categoryTree.map(function(item) {
+              return (
+                <div key={item.parent}>
+                  <a href={'/products?category=' + encodeURIComponent(item.parent)}
+                    style={{ display: 'block', padding: '12px 20px', color: 'var(--gold)', textDecoration: 'none', fontSize: '14px', fontWeight: '700', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    {item.parent}
+                  </a>
+                  {item.children && item.children.map(function(child) {
+                    return (
+                      <a key={child} href={'/products?category=' + encodeURIComponent(child)}
+                        style={{ display: 'block', padding: '10px 36px', color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '13px', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                        {child}
+                      </a>
+                    )
+                  })}
+                </div>
+              )
+            })}
+            <a href="/track" style={{ display: 'block', padding: '12px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>מעקב הזמנה</a>
+            <a href="/contact" style={{ display: 'block', padding: '12px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px' }}>צור קשר</a>
+          </div>
+        )}
+      </header>
+    )
+  }
+
+  // דסקטופ
   return (
     <header style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)' }}>
       <div style={{ background: 'var(--gold)', color: 'var(--navy)', textAlign: 'center', fontSize: '13px', fontWeight: '500', padding: '6px' }}>
@@ -121,17 +194,11 @@ export default function Header() {
 
         <div ref={searchRef} style={{ flex: 1, minWidth: '200px', maxWidth: '420px', position: 'relative' }}>
           <form onSubmit={handleSearch} style={{ display: 'flex' }}>
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)}
               onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
               placeholder='חיפוש לפי שם או מק"ט...'
-              style={{ flex: 1, padding: '9px 14px', border: 'none', fontSize: '14px', fontFamily: 'Heebo, sans-serif', outline: 'none', background: 'rgba(255,255,255,0.95)', color: '#2C2416', direction: 'rtl', borderRadius: '0' }}
-            />
-            <button type="submit" style={{ background: 'var(--gold)', color: 'var(--navy)', border: 'none', padding: '9px 16px', cursor: 'pointer', fontSize: '16px', fontWeight: '700' }}>
-              🔍
-            </button>
+              style={{ flex: 1, padding: '9px 14px', border: 'none', fontSize: '14px', fontFamily: 'Heebo, sans-serif', outline: 'none', background: 'rgba(255,255,255,0.95)', color: '#2C2416', direction: 'rtl', borderRadius: '0' }} />
+            <button type="submit" style={{ background: 'var(--gold)', color: 'var(--navy)', border: 'none', padding: '9px 16px', cursor: 'pointer', fontSize: '16px', fontWeight: '700' }}>🔍</button>
           </form>
 
           {showSuggestions && suggestions.length > 0 && (
@@ -142,23 +209,13 @@ export default function Header() {
                   onMouseEnter={e => { e.currentTarget.style.background = '#F8F4EE' }}
                   onMouseLeave={e => { e.currentTarget.style.background = '#fff' }}>
                   <div style={{ width: '44px', height: '44px', flexShrink: 0, background: '#EDE6D9', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {product.image
-                      ? <img src={product.image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : <span style={{ fontSize: '20px' }}>📖</span>}
+                    {product.image ? <img src={product.image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: '20px' }}>📖</span>}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#2C2416', lineHeight: 1.3, direction: 'rtl' }}>
-                      {highlight(product.name, search)}
-                    </div>
-                    {product.sku && (
-                      <div style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>
-                        מק&quot;ט: {highlight(product.sku, search)}
-                      </div>
-                    )}
+                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#2C2416', lineHeight: 1.3, direction: 'rtl' }}>{highlight(product.name, search)}</div>
+                    {product.sku && <div style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>מק&quot;ט: {highlight(product.sku, search)}</div>}
                   </div>
-                  <div style={{ fontFamily: 'serif', fontSize: '15px', color: '#8B6914', fontWeight: '700', flexShrink: 0 }}>
-                    ₪{Math.ceil(parseFloat(product.price || 0))}
-                  </div>
+                  <div style={{ fontFamily: 'serif', fontSize: '15px', color: '#8B6914', fontWeight: '700', flexShrink: 0 }}>₪{Math.ceil(parseFloat(product.price || 0))}</div>
                 </div>
               ))}
               <div onClick={handleSearch}
@@ -189,19 +246,8 @@ export default function Header() {
 
       {categoryTree.length > 0 && (
         <div ref={catRef} style={{ background: 'rgba(0,0,0,0.25)', borderTop: '1px solid rgba(201,168,76,0.3)', position: 'relative' }}>
-          <div
-            ref={catBarRef}
-            style={{
-              maxWidth: '1200px',
-              margin: '0 auto',
-              padding: '0 24px',
-              display: 'flex',
-              flexWrap: 'nowrap',
-              overflowX: 'auto',
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-              WebkitScrollbar: 'none'
-            }}>
+          <div ref={catBarRef}
+            style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {categoryTree.map(function(item) {
               var isActive = activeParent === item.parent
               var hasChildren = item.children && item.children.length > 0
@@ -213,28 +259,10 @@ export default function Header() {
               },
                 React.createElement('a', {
                   href: '/products?category=' + encodeURIComponent(item.parent),
-                  style: {
-                    display: 'block',
-                    padding: '12px 16px',
-                    color: isActive ? 'var(--gold)' : 'rgba(255,255,255,0.85)',
-                    textDecoration: 'none',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    borderBottom: isActive ? '2px solid var(--gold)' : '2px solid transparent',
-                    whiteSpace: 'nowrap'
-                  }
+                  style: { display: 'block', padding: '12px 16px', color: isActive ? 'var(--gold)' : 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '14px', fontWeight: '500', borderBottom: isActive ? '2px solid var(--gold)' : '2px solid transparent', whiteSpace: 'nowrap' }
                 }, item.parent, hasChildren ? ' ▾' : ''),
                 isActive && hasChildren ? React.createElement('div', {
-                  style: {
-                    position: 'fixed',
-                    top: 'auto',
-                    background: '#fff',
-                    border: '1px solid #EDE6D9',
-                    boxShadow: '0 6px 20px rgba(0,0,0,0.15)',
-                    zIndex: 9999,
-                    minWidth: '200px',
-                    marginTop: '-2px'
-                  },
+                  style: { position: 'fixed', background: '#fff', border: '1px solid #EDE6D9', boxShadow: '0 6px 20px rgba(0,0,0,0.15)', zIndex: 9999, minWidth: '200px' },
                   onMouseEnter: function() { handleMenuEnter(item.parent) },
                   onMouseLeave: handleMenuLeave
                 },
