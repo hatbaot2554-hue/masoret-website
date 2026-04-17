@@ -11,10 +11,13 @@ export default function Header() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [categoryTree, setCategoryTree] = useState([])
   const [activeParent, setActiveParent] = useState(null)
+  const [scrollIndex, setScrollIndex] = useState(0)
   const router = useRouter()
   const searchRef = useRef(null)
   const catRef = useRef(null)
   const leaveTimer = useRef(null)
+  const scrollTimer = useRef(null)
+  const catBarRef = useRef(null)
 
   useEffect(() => {
     fetch('https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/products.json')
@@ -27,6 +30,20 @@ export default function Header() {
       .then(data => setCategoryTree(data))
       .catch(() => {})
   }, [])
+
+  // גלילה אוטומטית כל 2 שניות
+  useEffect(() => {
+    if (categoryTree.length === 0) return
+    scrollTimer.current = setInterval(function() {
+      if (catBarRef.current) {
+        catBarRef.current.scrollLeft -= 120
+        if (catBarRef.current.scrollLeft <= 0) {
+          catBarRef.current.scrollLeft = catBarRef.current.scrollWidth
+        }
+      }
+    }, 2000)
+    return function() { clearInterval(scrollTimer.current) }
+  }, [categoryTree])
 
   useEffect(() => {
     function handleClick(e) {
@@ -85,7 +102,7 @@ export default function Header() {
   function handleMenuLeave() {
     leaveTimer.current = setTimeout(function() {
       setActiveParent(null)
-    }, 150)
+    }, 200)
   }
 
   return (
@@ -171,14 +188,26 @@ export default function Header() {
       </div>
 
       {categoryTree.length > 0 && (
-        <div ref={catRef} style={{ background: 'rgba(0,0,0,0.25)', borderTop: '1px solid rgba(201,168,76,0.3)', overflowX: 'auto' }}>
-          <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', flexWrap: 'nowrap' }}>
+        <div ref={catRef} style={{ background: 'rgba(0,0,0,0.25)', borderTop: '1px solid rgba(201,168,76,0.3)', position: 'relative' }}>
+          <div
+            ref={catBarRef}
+            style={{
+              maxWidth: '1200px',
+              margin: '0 auto',
+              padding: '0 24px',
+              display: 'flex',
+              flexWrap: 'nowrap',
+              overflowX: 'auto',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              WebkitScrollbar: 'none'
+            }}>
             {categoryTree.map(function(item) {
               var isActive = activeParent === item.parent
               var hasChildren = item.children && item.children.length > 0
               return React.createElement('div', {
                 key: item.parent,
-                style: { position: 'relative', flexShrink: 0 },
+                style: { position: 'static', flexShrink: 0 },
                 onMouseEnter: function() { handleMenuEnter(item.parent) },
                 onMouseLeave: handleMenuLeave
               },
@@ -197,14 +226,14 @@ export default function Header() {
                 }, item.parent, hasChildren ? ' ▾' : ''),
                 isActive && hasChildren ? React.createElement('div', {
                   style: {
-                    position: 'absolute',
-                    top: '100%',
-                    right: 0,
+                    position: 'fixed',
+                    top: 'auto',
                     background: '#fff',
                     border: '1px solid #EDE6D9',
                     boxShadow: '0 6px 20px rgba(0,0,0,0.15)',
-                    zIndex: 999,
-                    minWidth: '200px'
+                    zIndex: 9999,
+                    minWidth: '200px',
+                    marginTop: '-2px'
                   },
                   onMouseEnter: function() { handleMenuEnter(item.parent) },
                   onMouseLeave: handleMenuLeave
