@@ -37,9 +37,74 @@ h1, h2, h3, h4 {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 24px;
+}
+
+/* רשת מוצרים — רספונסיבית */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+@media (max-width: 1200px) {
+  .products-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .products-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
+@media (max-width: 380px) {
+  .products-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* דף מוצר — רספונסיבי */
+.product-layout {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 56px;
+}
+
+@media (max-width: 900px) {
+  .product-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+/* זום תמונה */
+.zoom-container {
+  position: relative;
+  overflow: hidden;
+  cursor: zoom-in;
+}
+
+.zoom-container img {
+  transition: transform 0.15s ease;
+  transform-origin: var(--zoom-x, 50%) var(--zoom-y, 50%);
+  display: block;
+  width: 100%;
+}
+
+.zoom-container:hover img {
+  transform: scale(2.2);
 }
 
 /* כפתורים */
@@ -114,4 +179,19 @@ h1, h2, h3, h4 {
   color: #b71c1c;
   padding: 16px 20px;
   border-radius: 4px;
+}
+
+/* מובייל כללי */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+
+  h1 {
+    font-size: 28px !important;
+  }
+
+  .container {
+    padding: 0 16px;
+  }
 }
