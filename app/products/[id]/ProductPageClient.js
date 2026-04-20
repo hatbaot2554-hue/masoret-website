@@ -22,6 +22,7 @@ export default function ProductPageClient({ product }) {
   const [selectedAttrs, setSelectedAttrs] = useState({})
   const [showOrderForm, setShowOrderForm] = useState(false)
   const [addedToCart, setAddedToCart] = useState(false)
+  const [engravingError, setEngravingError] = useState('')
 
   const [engravingType, setEngravingType] = useState('none')
   const [letterColor, setLetterColor] = useState('לשיקול דעתו של המטביע')
@@ -70,7 +71,6 @@ export default function ProductPageClient({ product }) {
     setSelectedVariation(match || null)
   }
 
-  // ✅ תיקון: שומר הטבעה בעגלה
   function buildEngravingNote() {
     if (engravingType === 'none') return ''
     let note = 'הטבעת הקדשה: '
@@ -85,6 +85,17 @@ export default function ProductPageClient({ product }) {
   }
 
   function handleAddToCart() {
+    setEngravingError('')
+
+    if (engravingType === 'single' && !engravingText.trim()) {
+      setEngravingError('יש להזין טקסט להטבעה לפני ההוספה לסל')
+      return
+    }
+    if (engravingType === 'bulk' && !bulkType) {
+      setEngravingError('יש לבחור סוג גלופה לפני ההוספה לסל')
+      return
+    }
+
     const engravingNote = buildEngravingNote()
     const engravingData = engravingType !== 'none' ? {
       type: engravingType,
@@ -98,7 +109,6 @@ export default function ProductPageClient({ product }) {
       note: engravingNote,
     } : null
 
-    // ✅ שומר הטבעה ב-selectedAttrs כדי שתופיע בעגלה
     const attrsWithEngraving = {
       ...selectedAttrs,
       ...(engravingNote ? { הטבעה: engravingNote } : {})
@@ -160,22 +170,16 @@ export default function ProductPageClient({ product }) {
                   חסר במלאי
                 </div>
               )}
-              {activeImg ? (
-                <img src={activeImg} alt={product.name} style={{ width: '100%', height: 'auto', display: 'block' }} />
-              ) : (
-                <div style={{ aspectRatio: '3/4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '64px' }}>📖</div>
-              )}
+              {activeImg
+                ? <img src={activeImg} alt={product.name} style={{ width: '100%', height: 'auto', display: 'block' }} />
+                : <div style={{ aspectRatio: '3/4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '64px' }}>📖</div>}
             </div>
             {product.images && product.images.length > 1 && (
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {product.images.map((img, i) => (
                   <img key={i} src={img} alt={`${product.name} ${i + 1}`}
                     onClick={() => setActiveImg(img)}
-                    style={{
-                      width: '64px', height: '64px', objectFit: 'cover', cursor: 'pointer',
-                      border: `2px solid ${activeImg === img ? '#8B6914' : '#EDE6D9'}`,
-                      opacity: activeImg === img ? 1 : 0.7
-                    }} />
+                    style={{ width: '64px', height: '64px', objectFit: 'cover', cursor: 'pointer', border: `2px solid ${activeImg === img ? '#8B6914' : '#EDE6D9'}`, opacity: activeImg === img ? 1 : 0.7 }} />
                 ))}
               </div>
             )}
@@ -223,12 +227,13 @@ export default function ProductPageClient({ product }) {
               )}
             </div>
 
+            {/* הטבעת הקדשה */}
             <div style={{ marginBottom: '24px' }}>
               <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>הטבעת הקדשה:</label>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <button type="button" onClick={() => { setEngravingType('none'); setEngravingText(''); setEngravingQty(1); setBulkType(''); setSketchText(''); setExtraQty(1); setLetterColor('לשיקול דעתו של המטביע') }} style={typeBtnStyle('none')}>ללא</button>
-                <button type="button" onClick={() => setEngravingType('single')} style={typeBtnStyle('single')}>הטבעה על ספרים בודדים (עד 13)</button>
-                <button type="button" onClick={() => setEngravingType('bulk')} style={typeBtnStyle('bulk')}>הטבעת כמות (14 ומעלה)</button>
+                <button type="button" onClick={() => { setEngravingType('none'); setEngravingText(''); setEngravingQty(1); setBulkType(''); setSketchText(''); setExtraQty(1); setLetterColor('לשיקול דעתו של המטביע'); setEngravingError('') }} style={typeBtnStyle('none')}>ללא</button>
+                <button type="button" onClick={() => { setEngravingType('single'); setEngravingError('') }} style={typeBtnStyle('single')}>הטבעה על ספרים בודדים (עד 13)</button>
+                <button type="button" onClick={() => { setEngravingType('bulk'); setEngravingError('') }} style={typeBtnStyle('bulk')}>הטבעת כמות (14 ומעלה)</button>
               </div>
 
               {(engravingType === 'single' || engravingType === 'bulk') && (
@@ -249,11 +254,13 @@ export default function ProductPageClient({ product }) {
                   {engravingType === 'single' && (
                     <>
                       <div style={{ marginBottom: '16px' }}>
-                        <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '4px', fontWeight: '600' }}>הוספת טקסט להטבעה:</label>
+                        <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '4px', fontWeight: '600' }}>
+                          הוספת טקסט להטבעה: <span style={{ color: '#e74c3c' }}>*</span>
+                        </label>
                         <input type="text" value={engravingText} maxLength={MAX_CHARS}
-                          onChange={e => setEngravingText(e.target.value)}
-                          style={{ width: '100%', padding: '11px 14px', border: '1px solid #EDE6D9', background: '#fff', fontSize: '15px', fontFamily: 'Heebo, sans-serif', color: '#2C2416', outline: 'none' }}
-                          placeholder="הזן טקסט להטבעה" />
+                          onChange={e => { setEngravingText(e.target.value); setEngravingError('') }}
+                          style={{ width: '100%', padding: '11px 14px', border: `1px solid ${engravingError && !engravingText.trim() ? '#e74c3c' : '#EDE6D9'}`, background: '#fff', fontSize: '15px', fontFamily: 'Heebo, sans-serif', color: '#2C2416', outline: 'none' }}
+                          placeholder="הזן טקסט להטבעה (חובה)" />
                         <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>{MAX_CHARS - engravingText.length} תווים נותרו</div>
                       </div>
                       <div>
@@ -269,10 +276,12 @@ export default function ProductPageClient({ product }) {
                   {engravingType === 'bulk' && (
                     <>
                       <div style={{ marginBottom: '16px' }}>
-                        <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>בחר:</label>
+                        <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                          בחר: <span style={{ color: '#e74c3c' }}>*</span>
+                        </label>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                          <button type="button" onClick={() => setBulkType('up100')} style={bulkBtnStyle('up100')}>הטבעת גלופה עד 100 ספרים</button>
-                          <button type="button" onClick={() => setBulkType('over100')} style={bulkBtnStyle('over100')}>הטבעת גלופה מעל 100 ספרים</button>
+                          <button type="button" onClick={() => { setBulkType('up100'); setEngravingError('') }} style={bulkBtnStyle('up100')}>הטבעת גלופה עד 100 ספרים</button>
+                          <button type="button" onClick={() => { setBulkType('over100'); setEngravingError('') }} style={bulkBtnStyle('over100')}>הטבעת גלופה מעל 100 ספרים</button>
                         </div>
                         {bulkType && <div style={{ fontSize: '13px', color: '#8B6914', marginTop: '6px', fontWeight: '600' }}>170.00 ש"ח</div>}
                       </div>
@@ -303,6 +312,12 @@ export default function ProductPageClient({ product }) {
                       )}
                     </>
                   )}
+                </div>
+              )}
+
+              {engravingError && (
+                <div style={{ color: '#e74c3c', fontSize: '14px', marginTop: '8px', fontWeight: '600' }}>
+                  ⚠️ {engravingError}
                 </div>
               )}
             </div>
