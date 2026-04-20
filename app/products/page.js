@@ -82,26 +82,6 @@ export default async function ProductsPage({ searchParams }) {
 
   return (
     <div style={{ padding: '48px 0' }}>
-      <style>{`
-        .products-grid {
-          display: grid;
-          grid-template-columns: repeat(5, 1fr);
-          gap: 16px;
-          margin-bottom: 40px;
-        }
-        @media (max-width: 1200px) {
-          .products-grid { grid-template-columns: repeat(4, 1fr); }
-        }
-        @media (max-width: 900px) {
-          .products-grid { grid-template-columns: repeat(3, 1fr); }
-        }
-        @media (max-width: 600px) {
-          .products-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        }
-        @media (max-width: 380px) {
-          .products-grid { grid-template-columns: 1fr; }
-        }
-      `}</style>
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 24px' }}>
         <h1 style={{ fontFamily: 'serif', fontSize: '40px', fontWeight: '900', marginBottom: '8px' }}>{title}</h1>
         <p style={{ color: '#6B5C3E', marginBottom: '40px' }}>{subtitle}</p>
