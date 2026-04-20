@@ -25,8 +25,6 @@ export default function ProductPageClient({ product }) {
   const [engravingError, setEngravingError] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [lightboxOpen, setLightboxOpen] = useState(false)
-  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 })
-  const [isZooming, setIsZooming] = useState(false)
 
   const [engravingType, setEngravingType] = useState('none')
   const [letterColor, setLetterColor] = useState('לשיקול דעתו של המטביע')
@@ -118,13 +116,6 @@ export default function ProductPageClient({ product }) {
     setTimeout(() => setAddedToCart(false), 2000)
   }
 
-  function handleMouseMove(e) {
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = ((e.clientX - rect.left) / rect.width) * 100
-    const y = ((e.clientY - rect.top) / rect.height) * 100
-    setZoomPos({ x, y })
-  }
-
   const attributeOptions = getAttributeOptions()
   const activePrice = selectedVariation ? formatPrice(selectedVariation.price) : finalPrice
   const activeRegularPrice = selectedVariation ? formatPrice(selectedVariation.regular_our_price || selectedVariation.price) : regularFinalPrice
@@ -152,20 +143,6 @@ export default function ProductPageClient({ product }) {
 
   return (
     <div style={{ padding: '40px 0' }}>
-      <style>{`
-        .zoom-container { position: relative; overflow: hidden; cursor: zoom-in; }
-        .zoom-container img { transition: transform 0.1s; transform-origin: var(--zoom-x, 50%) var(--zoom-y, 50%); }
-        .zoom-container:hover img { transform: scale(2.2); }
-        .product-layout { display: grid; grid-template-columns: 380px 1fr; gap: 56px; }
-        @media (max-width: 900px) {
-          .product-layout { grid-template-columns: 1fr; gap: 24px; }
-        }
-        @media (max-width: 600px) {
-          .product-layout { gap: 16px; }
-        }
-      `}</style>
-
-      {/* Lightbox */}
       {lightboxOpen && (
         <div onClick={() => setLightboxOpen(false)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}>
@@ -189,8 +166,6 @@ export default function ProductPageClient({ product }) {
         </p>
 
         <div className="product-layout">
-
-          {/* תמונות */}
           <div>
             <div
               className="zoom-container"
@@ -223,7 +198,6 @@ export default function ProductPageClient({ product }) {
             )}
           </div>
 
-          {/* פרטי מוצר */}
           <div>
             <h1 style={{ fontFamily: 'serif', fontSize: '32px', fontWeight: '900', marginBottom: '12px', lineHeight: 1.3 }}>
               {product.name}
@@ -266,7 +240,6 @@ export default function ProductPageClient({ product }) {
               )}
             </div>
 
-            {/* הטבעת הקדשה */}
             <div style={{ marginBottom: '24px' }}>
               <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>הטבעת הקדשה:</label>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -361,7 +334,6 @@ export default function ProductPageClient({ product }) {
               )}
             </div>
 
-            {/* כמות */}
             {inStock && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
                 <label style={{ fontSize: '14px', color: '#6B5C3E', fontWeight: '600' }}>כמות:</label>
@@ -378,15 +350,13 @@ export default function ProductPageClient({ product }) {
               </div>
             )}
 
-            {/* כפתורי פעולה */}
             {inStock ? (
               <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
                 <button onClick={handleAddToCart}
                   style={{
                     flex: 2, minWidth: '200px', padding: '16px 24px',
                     background: addedToCart ? '#27ae60' : '#C9A84C',
-                    color: '#1A2332',
-                    border: 'none',
+                    color: '#1A2332', border: 'none',
                     fontSize: '17px', fontFamily: 'serif', fontWeight: '700',
                     cursor: 'pointer', transition: 'all 0.2s',
                     boxShadow: addedToCart ? 'none' : '0 4px 12px rgba(201,168,76,0.4)',
