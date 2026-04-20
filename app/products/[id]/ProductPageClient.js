@@ -23,6 +23,10 @@ export default function ProductPageClient({ product }) {
   const [showOrderForm, setShowOrderForm] = useState(false)
   const [addedToCart, setAddedToCart] = useState(false)
   const [engravingError, setEngravingError] = useState('')
+  const [quantity, setQuantity] = useState(1)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 })
+  const [isZooming, setIsZooming] = useState(false)
 
   const [engravingType, setEngravingType] = useState('none')
   const [letterColor, setLetterColor] = useState('לשיקול דעתו של המטביע')
@@ -86,7 +90,6 @@ export default function ProductPageClient({ product }) {
 
   function handleAddToCart() {
     setEngravingError('')
-
     if (engravingType === 'single' && !engravingText.trim()) {
       setEngravingError('יש להזין טקסט להטבעה לפני ההוספה לסל')
       return
@@ -95,28 +98,18 @@ export default function ProductPageClient({ product }) {
       setEngravingError('יש לבחור סוג גלופה לפני ההוספה לסל')
       return
     }
-
     const engravingNote = buildEngravingNote()
     const engravingData = engravingType !== 'none' ? {
-      type: engravingType,
-      letterColor,
-      text: engravingText,
-      qty: engravingQty,
-      bulkType,
-      sketchText,
-      extraQty,
-      extraCost: engravingExtra,
-      note: engravingNote,
+      type: engravingType, letterColor, text: engravingText, qty: engravingQty,
+      bulkType, sketchText, extraQty, extraCost: engravingExtra, note: engravingNote,
     } : null
-
     const attrsWithEngraving = {
       ...selectedAttrs,
       ...(engravingNote ? { הטבעה: engravingNote } : {})
     }
-
     addItem(
       { ...product, price: activePrice, original_price: product.original_price },
-      1,
+      quantity,
       attrsWithEngraving,
       selectedVariation,
       engravingData
@@ -125,9 +118,17 @@ export default function ProductPageClient({ product }) {
     setTimeout(() => setAddedToCart(false), 2000)
   }
 
+  function handleMouseMove(e) {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+    setZoomPos({ x, y })
+  }
+
   const attributeOptions = getAttributeOptions()
   const activePrice = selectedVariation ? formatPrice(selectedVariation.price) : finalPrice
   const activeRegularPrice = selectedVariation ? formatPrice(selectedVariation.regular_our_price || selectedVariation.price) : regularFinalPrice
+  const totalPrice = activePrice * quantity + engravingExtra
 
   const sectionStyle = { background: '#F8F4EE', border: '1px solid #EDE6D9', borderRadius: '4px', padding: '16px', marginBottom: '16px' }
   const colorBtnStyle = (val) => ({
@@ -151,8 +152,34 @@ export default function ProductPageClient({ product }) {
 
   return (
     <div style={{ padding: '40px 0' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+      <style>{`
+        .zoom-container { position: relative; overflow: hidden; cursor: zoom-in; }
+        .zoom-container img { transition: transform 0.1s; transform-origin: var(--zoom-x, 50%) var(--zoom-y, 50%); }
+        .zoom-container:hover img { transform: scale(2.2); }
+        .product-layout { display: grid; grid-template-columns: 380px 1fr; gap: 56px; }
+        @media (max-width: 900px) {
+          .product-layout { grid-template-columns: 1fr; gap: 24px; }
+        }
+        @media (max-width: 600px) {
+          .product-layout { gap: 16px; }
+        }
+      `}</style>
 
+      {/* Lightbox */}
+      {lightboxOpen && (
+        <div onClick={() => setLightboxOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}>
+          <button onClick={() => setLightboxOpen(false)}
+            style={{ position: 'absolute', top: '20px', left: '20px', background: 'none', border: 'none', color: '#fff', fontSize: '32px', cursor: 'pointer', lineHeight: 1 }}>
+            ✕
+          </button>
+          <img src={activeImg} alt={product.name}
+            style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain' }}
+            onClick={e => e.stopPropagation()} />
+        </div>
+      )}
+
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
         <p style={{ fontSize: '13px', color: '#6B5C3E', marginBottom: '24px' }}>
           <a href="/" style={{ color: 'inherit', textDecoration: 'none' }}>בית</a>
           {' > '}
@@ -161,12 +188,23 @@ export default function ProductPageClient({ product }) {
           {product.name}
         </p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '56px' }}>
+        <div className="product-layout">
 
+          {/* תמונות */}
           <div>
-            <div style={{ background: '#EDE6D9', padding: '24px', position: 'relative', marginBottom: '12px' }}>
+            <div
+              className="zoom-container"
+              style={{ background: '#EDE6D9', padding: '24px', position: 'relative', marginBottom: '12px' }}
+              onMouseMove={e => {
+                const rect = e.currentTarget.getBoundingClientRect()
+                const x = ((e.clientX - rect.left) / rect.width) * 100
+                const y = ((e.clientY - rect.top) / rect.height) * 100
+                e.currentTarget.style.setProperty('--zoom-x', x + '%')
+                e.currentTarget.style.setProperty('--zoom-y', y + '%')
+              }}
+              onClick={() => setLightboxOpen(true)}>
               {!inStock && (
-                <div style={{ position: 'absolute', top: '16px', right: '16px', background: '#c0392b', color: '#fff', padding: '6px 14px', fontSize: '13px', fontWeight: '700' }}>
+                <div style={{ position: 'absolute', top: '16px', right: '16px', background: '#c0392b', color: '#fff', padding: '6px 14px', fontSize: '13px', fontWeight: '700', zIndex: 2 }}>
                   חסר במלאי
                 </div>
               )}
@@ -185,6 +223,7 @@ export default function ProductPageClient({ product }) {
             )}
           </div>
 
+          {/* פרטי מוצר */}
           <div>
             <h1 style={{ fontFamily: 'serif', fontSize: '32px', fontWeight: '900', marginBottom: '12px', lineHeight: 1.3 }}>
               {product.name}
@@ -322,26 +361,47 @@ export default function ProductPageClient({ product }) {
               )}
             </div>
 
+            {/* כמות */}
+            {inStock && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+                <label style={{ fontSize: '14px', color: '#6B5C3E', fontWeight: '600' }}>כמות:</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    style={{ width: '36px', height: '36px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                  <span style={{ minWidth: '36px', textAlign: 'center', fontSize: '18px', fontWeight: '700' }}>{quantity}</span>
+                  <button type="button" onClick={() => setQuantity(quantity + 1)}
+                    style={{ width: '36px', height: '36px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                </div>
+                <div style={{ fontSize: '16px', color: '#8B6914', fontWeight: '700' }}>
+                  סה"כ: ₪{totalPrice}
+                </div>
+              </div>
+            )}
+
+            {/* כפתורי פעולה */}
             {inStock ? (
               <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
                 <button onClick={handleAddToCart}
                   style={{
-                    flex: 1, minWidth: '160px', padding: '14px 20px',
-                    background: addedToCart ? '#27ae60' : '#fff',
-                    color: addedToCart ? '#fff' : '#8B6914',
-                    border: '2px solid', borderColor: addedToCart ? '#27ae60' : '#8B6914',
-                    fontSize: '15px', fontFamily: 'serif', cursor: 'pointer', transition: 'all 0.2s',
+                    flex: 2, minWidth: '200px', padding: '16px 24px',
+                    background: addedToCart ? '#27ae60' : '#C9A84C',
+                    color: '#1A2332',
+                    border: 'none',
+                    fontSize: '17px', fontFamily: 'serif', fontWeight: '700',
+                    cursor: 'pointer', transition: 'all 0.2s',
+                    boxShadow: addedToCart ? 'none' : '0 4px 12px rgba(201,168,76,0.4)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
                   }}>
                   {addedToCart ? '✓ נוסף לסל!' : '🛒 הוסף לסל'}
                 </button>
                 <button onClick={() => setShowOrderForm(!showOrderForm)}
                   style={{
-                    flex: 1, minWidth: '160px', padding: '14px 20px',
-                    background: '#8B6914', color: '#fff', border: 'none',
+                    flex: 1, minWidth: '140px', padding: '16px 20px',
+                    background: '#1A2332', color: '#C9A84C',
+                    border: '2px solid #C9A84C',
                     fontSize: '15px', fontFamily: 'serif', cursor: 'pointer'
                   }}>
-                  ⚡ לרכישה מהירה
+                  ⚡ רכישה מהירה
                 </button>
               </div>
             ) : (
