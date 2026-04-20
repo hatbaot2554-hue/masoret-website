@@ -1,197 +1,121 @@
-@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500&display=swap');
+import ProductCard from '../components/ProductCard'
 
-:root {
-  --gold: #C9A84C;
-  --gold-light: #E8C97A;
-  --gold-dark: #8B6914;
-  --navy: #1A2332;
-  --navy-light: #243040;
-  --cream: #F8F4EE;
-  --cream-dark: #EDE6D9;
-  --text: #2C2416;
-  --text-muted: #6B5C3E;
-  --white: #FFFFFF;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html {
-  direction: rtl;
-  font-size: 16px;
-}
-
-body {
-  font-family: 'Heebo', sans-serif;
-  background-color: var(--cream);
-  color: var(--text);
-  line-height: 1.7;
-}
-
-h1, h2, h3, h4 {
-  font-family: 'Frank Ruhl Libre', serif;
-  font-weight: 700;
-}
-
-.container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 24px;
-}
-
-/* רשת מוצרים — רספונסיבית */
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 16px;
-  margin-bottom: 40px;
-}
-
-@media (max-width: 1200px) {
-  .products-grid {
-    grid-template-columns: repeat(4, 1fr);
+async function getAllProducts() {
+  try {
+    const res = await fetch(
+      'https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/products.json',
+      { next: { revalidate: 3600 } }
+    )
+    if (!res.ok) return []
+    return await res.json()
+  } catch {
+    return []
   }
 }
 
-@media (max-width: 900px) {
-  .products-grid {
-    grid-template-columns: repeat(3, 1fr);
+async function getCategoryTree() {
+  try {
+    const res = await fetch(
+      'https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/categories.json',
+      { next: { revalidate: 3600 } }
+    )
+    if (!res.ok) return []
+    return await res.json()
+  } catch {
+    return []
   }
 }
 
-@media (max-width: 600px) {
-  .products-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-  }
-}
+export default async function ProductsPage({ searchParams }) {
+  const page = parseInt(searchParams?.page || '1')
+  const category = searchParams?.category || ''
+  const search = searchParams?.search || ''
 
-@media (max-width: 380px) {
-  .products-grid {
-    grid-template-columns: 1fr;
-  }
-}
+  const all = await getAllProducts()
+  const categoryTree = await getCategoryTree()
+  const allWithIndex = all.map(function(p, i) { return Object.assign({}, p, { index: i }) })
 
-/* דף מוצר — רספונסיבי */
-.product-layout {
-  display: grid;
-  grid-template-columns: 380px 1fr;
-  gap: 56px;
-}
-
-@media (max-width: 900px) {
-  .product-layout {
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
-}
-
-/* זום תמונה */
-.zoom-container {
-  position: relative;
-  overflow: hidden;
-  cursor: zoom-in;
-}
-
-.zoom-container img {
-  transition: transform 0.15s ease;
-  transform-origin: var(--zoom-x, 50%) var(--zoom-y, 50%);
-  display: block;
-  width: 100%;
-}
-
-.zoom-container:hover img {
-  transform: scale(2.2);
-}
-
-/* כפתורים */
-.btn-primary {
-  background: var(--gold);
-  color: var(--navy);
-  border: none;
-  padding: 12px 28px;
-  font-family: 'Heebo', sans-serif;
-  font-weight: 500;
-  font-size: 15px;
-  cursor: pointer;
-  transition: all 0.2s;
-  letter-spacing: 0.02em;
-}
-
-.btn-primary:hover {
-  background: var(--gold-light);
-  transform: translateY(-1px);
-}
-
-.btn-outline {
-  background: transparent;
-  color: var(--gold);
-  border: 1.5px solid var(--gold);
-  padding: 10px 24px;
-  font-family: 'Heebo', sans-serif;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-outline:hover {
-  background: var(--gold);
-  color: var(--navy);
-}
-
-/* כרטיסי מוצר */
-.product-card {
-  background: var(--white);
-  border: 1px solid var(--cream-dark);
-  transition: all 0.25s;
-  overflow: hidden;
-}
-
-.product-card:hover {
-  border-color: var(--gold);
-  box-shadow: 0 8px 32px rgba(201,168,76,0.15);
-  transform: translateY(-2px);
-}
-
-/* מחיר */
-.price {
-  font-family: 'Frank Ruhl Libre', serif;
-  font-size: 1.4rem;
-  color: var(--gold-dark);
-  font-weight: 700;
-}
-
-/* הודעות */
-.alert-success {
-  background: #f0faf0;
-  border: 1px solid #4caf50;
-  color: #2e7d32;
-  padding: 16px 20px;
-  border-radius: 4px;
-}
-
-.alert-error {
-  background: #fff5f5;
-  border: 1px solid #ef5350;
-  color: #b71c1c;
-  padding: 16px 20px;
-  border-radius: 4px;
-}
-
-/* מובייל כללי */
-@media (max-width: 768px) {
-  html {
-    font-size: 14px;
+  var filtered = allWithIndex
+  if (category) {
+    var parentItem = categoryTree.find(function(item) { return item.parent === category })
+    if (parentItem && parentItem.children && parentItem.children.length > 0) {
+      var allChildren = parentItem.children
+      filtered = filtered.filter(function(p) {
+        return allChildren.indexOf(p.category) !== -1 ||
+          allChildren.indexOf(p.parent_category) !== -1 ||
+          allChildren.indexOf(p.child_category) !== -1 ||
+          (p.categories && p.categories.some(function(c) { return allChildren.indexOf(c) !== -1 })) ||
+          p.category === category ||
+          p.parent_category === category
+      })
+    } else {
+      filtered = filtered.filter(function(p) {
+        return p.category === category ||
+          p.parent_category === category ||
+          p.child_category === category ||
+          (p.categories && p.categories.indexOf(category) !== -1)
+      })
+    }
   }
 
-  h1 {
-    font-size: 28px !important;
+  if (search) {
+    var q = search.toLowerCase()
+    filtered = filtered.filter(function(p) {
+      return (p.name && p.name.toLowerCase().indexOf(q) !== -1) ||
+        (p.sku && p.sku.toLowerCase().indexOf(q) !== -1) ||
+        (p.description && p.description.toLowerCase().indexOf(q) !== -1)
+    })
   }
 
-  .container {
-    padding: 0 16px;
-  }
+  var perPage = 20
+  var start = (page - 1) * perPage
+  var products = filtered.slice(start, start + perPage)
+  var hasMore = start + perPage < filtered.length
+
+  var title = category || 'כל הספרים'
+  var subtitle = search
+    ? 'תוצאות חיפוש עבור "' + search + '" — ' + filtered.length + ' מוצרים'
+    : category ? filtered.length + ' ספרים' : 'מבחר של למעלה מ-5,000 ספרי קודש ויהדות'
+
+  var prevHref = '/products?page=' + (page - 1) + (category ? '&category=' + encodeURIComponent(category) : '') + (search ? '&search=' + encodeURIComponent(search) : '')
+  var nextHref = '/products?page=' + (page + 1) + (category ? '&category=' + encodeURIComponent(category) : '') + (search ? '&search=' + encodeURIComponent(search) : '')
+
+  return (
+    <div style={{ padding: '48px 0' }}>
+      <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '0 32px' }}>
+        <h1 style={{ fontFamily: 'serif', fontSize: '40px', fontWeight: '900', marginBottom: '8px' }}>{title}</h1>
+        <p style={{ color: '#6B5C3E', marginBottom: '40px' }}>{subtitle}</p>
+        {products.length > 0 ? (
+          <div>
+            <div className="products-grid">
+              {products.map(function(product) {
+                return <ProductCard key={product.index} product={product} index={product.index} />
+              })}
+            </div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+              {page > 1 && (
+                <a href={prevHref} style={{ background: 'transparent', color: '#C9A84C', border: '1.5px solid #C9A84C', padding: '10px 24px', textDecoration: 'none', fontSize: '14px' }}>
+                  ← הקודם
+                </a>
+              )}
+              {hasMore && (
+                <a href={nextHref} style={{ background: '#C9A84C', color: '#1A2332', padding: '10px 24px', textDecoration: 'none', fontSize: '14px' }}>
+                  הבא →
+                </a>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '80px', background: '#F8F4EE', color: '#6B5C3E' }}>
+            <p style={{ fontSize: '18px', marginBottom: '12px' }}>
+              {search ? 'לא נמצאו תוצאות עבור "' + search + '"' : 'לא נמצאו מוצרים בקטגוריה זו'}
+            </p>
+            <p style={{ fontSize: '14px' }}>
+              {search ? 'נסה מילות חיפוש אחרות' : 'נסה קטגוריה אחרת'}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
