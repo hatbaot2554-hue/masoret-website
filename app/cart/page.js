@@ -37,9 +37,10 @@ export default function CartPage() {
             name: i.name,
             sku: i.sku || '',
             selectedAttributes: i.selectedAttrs,
-            price: formatPrice(i.price),
+            price: formatPrice(i.price) + (i.engravingExtra || 0),
             cost: parseFloat(i.original_price || 0),
             quantity: i.quantity,
+            engraving: i.engravingData || null,
           })),
           utm_source: utmSource
         }),
@@ -93,7 +94,6 @@ export default function CartPage() {
         <h1 style={{ fontFamily: 'serif', fontSize: '36px', fontWeight: '900', marginBottom: '32px' }}>עגלת קניות</h1>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '40px', alignItems: 'start' }}>
 
-          {/* פריטים */}
           <div>
             {items.map(item => (
               <div key={item.key} style={{ display: 'grid', gridTemplateColumns: '80px 1fr auto', gap: '16px', padding: '20px 0', borderBottom: '1px solid #EDE6D9', alignItems: 'center' }}>
@@ -103,9 +103,19 @@ export default function CartPage() {
                 <div>
                   <a href={`/products/${item.index}`} style={{ textDecoration: 'none', color: '#2C2416', fontWeight: '600', fontSize: '15px' }}>{item.name}</a>
                   {item.sku && <div style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>מק"ט: {item.sku}</div>}
-                  {Object.keys(item.selectedAttrs || {}).length > 0 && (
+                  {Object.keys(item.selectedAttrs || {}).filter(k => k !== 'הטבעה').length > 0 && (
                     <div style={{ fontSize: '12px', color: '#6B5C3E', marginTop: '4px' }}>
-                      {Object.values(item.selectedAttrs).join(' | ')}
+                      {Object.entries(item.selectedAttrs).filter(([k]) => k !== 'הטבעה').map(([k, v]) => v).join(' | ')}
+                    </div>
+                  )}
+                  {item.selectedAttrs?.הטבעה && (
+                    <div style={{ fontSize: '12px', color: '#8B6914', marginTop: '4px', background: '#FFF8E8', padding: '4px 8px', borderRadius: '3px' }}>
+                      ✍️ {item.selectedAttrs.הטבעה}
+                    </div>
+                  )}
+                  {item.engravingExtra > 0 && (
+                    <div style={{ fontSize: '12px', color: '#8B6914', marginTop: '2px' }}>
+                      תוספת הטבעה: ₪{item.engravingExtra}
                     </div>
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
@@ -115,7 +125,9 @@ export default function CartPage() {
                   </div>
                 </div>
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontFamily: 'serif', fontSize: '1.3rem', color: '#8B6914', fontWeight: '700' }}>₪{formatPrice(item.price * item.quantity)}</div>
+                  <div style={{ fontFamily: 'serif', fontSize: '1.3rem', color: '#8B6914', fontWeight: '700' }}>
+                    ₪{formatPrice(item.price * item.quantity) + (item.engravingExtra || 0)}
+                  </div>
                   <button type="button" onClick={() => removeItem(item.key)} style={{ background: 'none', border: 'none', color: '#c0392b', cursor: 'pointer', fontSize: '13px', marginTop: '8px' }}>הסר</button>
                 </div>
               </div>
@@ -125,7 +137,6 @@ export default function CartPage() {
             </div>
           </div>
 
-          {/* טופס הזמנה */}
           <div style={{ background: '#F8F4EE', border: '1px solid #EDE6D9', padding: '24px', position: 'sticky', top: '24px' }}>
             <h3 style={{ fontFamily: 'serif', fontSize: '20px', marginBottom: '20px' }}>פרטי הזמנה</h3>
             <form onSubmit={handleSubmit}>
