@@ -23,7 +23,6 @@ export default function ProductPageClient({ product }) {
   const [showOrderForm, setShowOrderForm] = useState(false)
   const [addedToCart, setAddedToCart] = useState(false)
 
-  // הטבעה
   const [engravingType, setEngravingType] = useState('none')
   const [letterColor, setLetterColor] = useState('לשיקול דעתו של המטביע')
   const [engravingText, setEngravingText] = useState('')
@@ -37,7 +36,6 @@ export default function ProductPageClient({ product }) {
   const inStock = product.in_stock !== false
   const finalPrice = formatPrice(product.price)
   const regularFinalPrice = formatPrice(product.regular_our_price || product.price)
-  const hasDiscount = regularFinalPrice > finalPrice
   const hasVariations = product.variations && product.variations.length > 0
 
   const engravingExtra = (() => {
@@ -72,8 +70,47 @@ export default function ProductPageClient({ product }) {
     setSelectedVariation(match || null)
   }
 
+  // ✅ תיקון: שומר הטבעה בעגלה
+  function buildEngravingNote() {
+    if (engravingType === 'none') return ''
+    let note = 'הטבעת הקדשה: '
+    if (engravingType === 'single') {
+      note += `ספרים בודדים | צבע: ${letterColor} | טקסט: "${engravingText}" | כמות: ${engravingQty}`
+    } else if (engravingType === 'bulk') {
+      note += `גלופה | צבע: ${letterColor} | סוג: ${bulkType === 'up100' ? 'עד 100' : 'מעל 100'}`
+      if (sketchText) note += ` | טקסט לסקיצה: "${sketchText}"`
+      if (bulkType === 'over100') note += ` | כמות נוספת: ${extraQty}`
+    }
+    return note
+  }
+
   function handleAddToCart() {
-    addItem(product, 1, selectedAttrs, selectedVariation)
+    const engravingNote = buildEngravingNote()
+    const engravingData = engravingType !== 'none' ? {
+      type: engravingType,
+      letterColor,
+      text: engravingText,
+      qty: engravingQty,
+      bulkType,
+      sketchText,
+      extraQty,
+      extraCost: engravingExtra,
+      note: engravingNote,
+    } : null
+
+    // ✅ שומר הטבעה ב-selectedAttrs כדי שתופיע בעגלה
+    const attrsWithEngraving = {
+      ...selectedAttrs,
+      ...(engravingNote ? { הטבעה: engravingNote } : {})
+    }
+
+    addItem(
+      { ...product, price: activePrice, original_price: product.original_price },
+      1,
+      attrsWithEngraving,
+      selectedVariation,
+      engravingData
+    )
     setAddedToCart(true)
     setTimeout(() => setAddedToCart(false), 2000)
   }
@@ -106,7 +143,6 @@ export default function ProductPageClient({ product }) {
     <div style={{ padding: '40px 0' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
 
-        {/* breadcrumb */}
         <p style={{ fontSize: '13px', color: '#6B5C3E', marginBottom: '24px' }}>
           <a href="/" style={{ color: 'inherit', textDecoration: 'none' }}>בית</a>
           {' > '}
@@ -117,7 +153,6 @@ export default function ProductPageClient({ product }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '56px' }}>
 
-          {/* תמונות */}
           <div>
             <div style={{ background: '#EDE6D9', padding: '24px', position: 'relative', marginBottom: '12px' }}>
               {!inStock && (
@@ -146,22 +181,17 @@ export default function ProductPageClient({ product }) {
             )}
           </div>
 
-          {/* פרטי מוצר */}
           <div>
-
-            {/* 1. שם */}
             <h1 style={{ fontFamily: 'serif', fontSize: '32px', fontWeight: '900', marginBottom: '12px', lineHeight: 1.3 }}>
               {product.name}
             </h1>
 
-            {/* 2. תיאור קצר */}
             {product.description && (
               <p style={{ fontSize: '15px', color: '#2C2416', lineHeight: 1.8, marginBottom: '20px' }}>
                 {product.description}
               </p>
             )}
 
-            {/* 3. וריאציות */}
             {hasVariations && Object.entries(attributeOptions).map(([attrKey, values]) => (
               <div key={attrKey} style={{ marginBottom: '16px' }}>
                 <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>
@@ -183,7 +213,6 @@ export default function ProductPageClient({ product }) {
               </div>
             ))}
 
-            {/* 4. מחיר */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
               {activeRegularPrice > activePrice && (
                 <span style={{ fontSize: '1.3rem', color: '#999', textDecoration: 'line-through' }}>₪{activeRegularPrice}</span>
@@ -194,7 +223,6 @@ export default function ProductPageClient({ product }) {
               )}
             </div>
 
-            {/* 5. הטבעת הקדשה */}
             <div style={{ marginBottom: '24px' }}>
               <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>הטבעת הקדשה:</label>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -279,7 +307,6 @@ export default function ProductPageClient({ product }) {
               )}
             </div>
 
-            {/* 6. כפתורי פעולה */}
             {inStock ? (
               <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
                 <button onClick={handleAddToCart}
@@ -308,12 +335,10 @@ export default function ProductPageClient({ product }) {
               </div>
             )}
 
-            {/* 7. מק"ט */}
             {product.sku && (
               <p style={{ fontSize: '13px', color: '#999', marginBottom: '16px' }}>מק"ט: {product.sku}</p>
             )}
 
-            {/* 8. מידע משלוח */}
             <div style={{ background: '#F8F4EE', border: '1px solid #EDE6D9', borderRadius: '4px', padding: '16px', marginBottom: '24px', fontSize: '14px', color: '#2C2416', lineHeight: 2 }}>
               <div>📦 אספקה: 2-10 ימי עסקים (למעט מקרים חריגים)</div>
               <div>💳 עד 6 תשלומים ללא ריבית</div>
@@ -321,7 +346,6 @@ export default function ProductPageClient({ product }) {
               <div>🏠 אפשרות לאיסוף עצמי, משלוח עד הבית או לנקודת חלוקה</div>
             </div>
 
-            {/* 9. טופס רכישה מהירה */}
             {showOrderForm && inStock && (
               <div style={{ borderTop: '2px solid #EDE6D9', paddingTop: '24px' }}>
                 <OrderForm product={{
@@ -333,7 +357,6 @@ export default function ProductPageClient({ product }) {
               </div>
             )}
 
-            {/* 10. תיאור מפורט */}
             {product.full_description && (
               <div style={{ borderTop: '1px solid #EDE6D9', paddingTop: '24px', marginTop: '24px' }}>
                 <h3 style={{ fontFamily: 'serif', fontSize: '20px', marginBottom: '12px', color: '#2C2416' }}>אודות הספר</h3>
@@ -342,7 +365,6 @@ export default function ProductPageClient({ product }) {
                 </div>
               </div>
             )}
-
           </div>
         </div>
       </div>
