@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useCart } from './CartContext'
+import { useWishlist } from './WishlistContext'
 
 function formatPrice(price) {
   const p = parseFloat(price || 0)
@@ -10,6 +11,7 @@ function formatPrice(price) {
 
 export default function ProductCard({ product, index }) {
   const { addItem } = useCart()
+  const { toggleItem, isInWishlist } = useWishlist()
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
 
@@ -18,6 +20,7 @@ export default function ProductCard({ product, index }) {
   const regularFinalPrice = formatPrice(product.regular_our_price || product.price)
   const hasDiscount = regularFinalPrice > finalPrice
   const inStock = product.in_stock !== false
+  const wished = isInWishlist(index)
 
   function handleAdd(e) {
     e.preventDefault()
@@ -33,6 +36,12 @@ export default function ProductCard({ product, index }) {
     setQuantity(prev => Math.max(1, prev + delta))
   }
 
+  function handleWishlist(e) {
+    e.preventDefault()
+    e.stopPropagation()
+    toggleItem({ ...product, index })
+  }
+
   return (
     <a href={'/products/' + index} style={{ textDecoration: 'none', color: 'inherit', display: 'block', opacity: inStock ? 1 : 0.7 }}>
       <div
@@ -40,6 +49,7 @@ export default function ProductCard({ product, index }) {
         onMouseEnter={e => { e.currentTarget.style.borderColor = '#C9A84C'; e.currentTarget.style.transform = 'translateY(-2px)' }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = '#EDE6D9'; e.currentTarget.style.transform = 'translateY(0)' }}>
 
+        {/* תגיות */}
         {!inStock && (
           <div style={{ position: 'absolute', top: '12px', right: '12px', background: '#c0392b', color: '#fff', padding: '4px 10px', fontSize: '12px', fontWeight: '700', zIndex: 1 }}>
             חסר במלאי
@@ -51,6 +61,13 @@ export default function ProductCard({ product, index }) {
           </div>
         )}
 
+        {/* כפתור לב */}
+        <button onClick={handleWishlist}
+          style={{ position: 'absolute', top: '12px', left: hasDiscount && inStock ? '60px' : '12px', background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2, fontSize: '16px', boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }}>
+          {wished ? '❤️' : '🤍'}
+        </button>
+
+        {/* תמונה */}
         <div style={{ aspectRatio: '3/4', overflow: 'hidden', background: '#EDE6D9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {image
             ? <img src={image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
