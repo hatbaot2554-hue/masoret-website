@@ -392,32 +392,25 @@ export default function ProductPageClient({ product }) {
             </div>
 
             {showOrderForm && inStock && (
-  <div style={{ borderTop: '2px solid #EDE6D9', paddingTop: '24px' }}>
-    <OrderForm
-      product={{
-        ...product,
-        price: activePrice,
-        regular_our_price: activeRegularPrice,
-        sourceProductId: product.product_id || product.url,
-      }}
-      preSelectedVariation={selectedVariation}
-      preSelectedAttrs={selectedAttrs}
-      preQuantity={quantity}
-      preEngravingType={engravingType}
-      preLetterColor={letterColor}
-      preEngravingText={engravingText}
-      preEngravingQty={engravingQty}
-      preBulkType={bulkType}
-      preSketchText={sketchText}
-      preExtraQty={extraQty}
-    />
-  </div>
-)}
-                  ...product,
-                  price: activePrice,
-                  regular_our_price: activeRegularPrice,
-                  sourceProductId: product.product_id || product.url,
-                }} preSelectedVariation={selectedVariation} preSelectedAttrs={selectedAttrs} />
+              <div style={{ borderTop: '2px solid #EDE6D9', paddingTop: '24px' }}>
+                <OrderForm
+                  product={{
+                    ...product,
+                    price: activePrice,
+                    regular_our_price: activeRegularPrice,
+                    sourceProductId: product.product_id || product.url,
+                  }}
+                  preSelectedVariation={selectedVariation}
+                  preSelectedAttrs={selectedAttrs}
+                  preQuantity={quantity}
+                  preEngravingType={engravingType}
+                  preLetterColor={letterColor}
+                  preEngravingText={engravingText}
+                  preEngravingQty={engravingQty}
+                  preBulkType={bulkType}
+                  preSketchText={sketchText}
+                  preExtraQty={extraQty}
+                />
               </div>
             )}
 
