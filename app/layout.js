@@ -1,5 +1,6 @@
 import './globals.css'
 import { CartProvider } from './components/CartContext'
+import { WishlistProvider } from './components/WishlistContext'
 import Header from './components/Header'
 
 export const metadata = {
@@ -12,13 +13,15 @@ export default function RootLayout({ children }) {
     <html lang="he" dir="rtl">
       <body>
         <CartProvider>
-          <Header />
-          <main>{children}</main>
-          <footer style={{ background: 'var(--navy)', borderTop: '2px solid var(--gold)', color: 'rgba(255,255,255,0.7)', padding: '32px 0 24px', marginTop: '80px' }}>
-            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', textAlign: 'center', fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>
-              © 2024 המרכז למסורת יהודית — כל הזכויות שמורות
-            </div>
-          </footer>
+          <WishlistProvider>
+            <Header />
+            <main>{children}</main>
+            <footer style={{ background: 'var(--navy)', borderTop: '2px solid var(--gold)', color: 'rgba(255,255,255,0.7)', padding: '32px 0 24px', marginTop: '80px' }}>
+              <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '0 32px', textAlign: 'center', fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>
+                © 2024 המרכז למסורת יהודית — כל הזכויות שמורות
+              </div>
+            </footer>
+          </WishlistProvider>
         </CartProvider>
       </body>
     </html>
