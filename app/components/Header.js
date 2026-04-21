@@ -113,7 +113,6 @@ export default function Header() {
     if (catBarRef.current) catBarRef.current.scrollLeft += dir * 150
   }
 
-  // מובייל
   if (isMobile) {
     return (
       <header style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)', width: '100%' }}>
@@ -128,14 +127,17 @@ export default function Header() {
           <a href="/" style={{ textDecoration: 'none', textAlign: 'center' }}>
             <span style={{ fontFamily: 'serif', fontSize: '17px', fontWeight: '900', color: 'var(--gold)' }}>המרכז למסורת יהודית</span>
           </a>
-          <a href="/cart" style={{ color: 'var(--gold)', textDecoration: 'none', fontSize: '22px', position: 'relative', padding: '4px 8px' }}>
-            🛒
-            {totalItems > 0 && (
-              <span style={{ position: 'absolute', top: '0', right: '0', background: '#c0392b', color: '#fff', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '700' }}>
-                {totalItems}
-              </span>
-            )}
-          </a>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <a href="/wishlist" style={{ color: 'var(--gold)', textDecoration: 'none', fontSize: '22px' }}>❤️</a>
+            <a href="/cart" style={{ color: 'var(--gold)', textDecoration: 'none', fontSize: '22px', position: 'relative', padding: '4px 8px' }}>
+              🛒
+              {totalItems > 0 && (
+                <span style={{ position: 'absolute', top: '0', right: '0', background: '#c0392b', color: '#fff', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '700' }}>
+                  {totalItems}
+                </span>
+              )}
+            </a>
+          </div>
         </div>
         <div style={{ padding: '0 12px 10px' }}>
           <form onSubmit={handleSearch} style={{ display: 'flex' }}>
@@ -147,9 +149,7 @@ export default function Header() {
         </div>
         {menuOpen && (
           <div style={{ background: '#1A2332', borderTop: '1px solid rgba(201,168,76,0.3)', maxHeight: '70vh', overflowY: 'auto' }}>
-            <a href="/products" style={{ display: 'block', padding: '13px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-              כל הספרים
-            </a>
+            <a href="/products" style={{ display: 'block', padding: '13px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>כל הספרים</a>
             {categoryTree.map(function(item) {
               var isExpanded = expandedMobile === item.parent
               return (
@@ -178,6 +178,7 @@ export default function Header() {
               )
             })}
             <a href="/track" style={{ display: 'block', padding: '13px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>מעקב הזמנה</a>
+            <a href="/wishlist" style={{ display: 'block', padding: '13px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>❤️ מועדפים</a>
             <a href="/contact" style={{ display: 'block', padding: '13px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px' }}>צור קשר</a>
           </div>
         )}
@@ -185,7 +186,6 @@ export default function Header() {
     )
   }
 
-  // דסקטופ
   return (
     <header style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)', width: '100%' }}>
       <div style={{ background: 'var(--gold)', color: 'var(--navy)', textAlign: 'center', fontSize: '13px', fontWeight: '500', padding: '6px' }}>
@@ -240,6 +240,7 @@ export default function Header() {
           <a href="/products" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px' }}>כל הספרים</a>
           <a href="/track" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px' }}>מעקב הזמנה</a>
           <a href="/contact" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px' }}>צור קשר</a>
+          <a href="/wishlist" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px' }}>❤️ מועדפים</a>
           <a href="/cart" style={{ background: 'var(--gold)', color: 'var(--navy)', padding: '9px 18px', textDecoration: 'none', fontSize: '14px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
             🛒
             {totalItems > 0 && (
@@ -256,13 +257,10 @@ export default function Header() {
         <div ref={catRef} style={{ background: 'rgba(0,0,0,0.25)', borderTop: '1px solid rgba(201,168,76,0.3)', position: 'relative' }}
           onMouseEnter={() => { isHovering.current = true }}
           onMouseLeave={() => { isHovering.current = false }}>
-
-          {/* כפתור גלילה ימין */}
           <button onClick={() => scrollBar(-1)}
             style={{ position: 'absolute', left: '4px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(201,168,76,0.3)', border: 'none', color: 'var(--gold)', cursor: 'pointer', zIndex: 10, padding: '4px 8px', fontSize: '14px', borderRadius: '3px' }}>
             ‹
           </button>
-
           <div ref={catBarRef}
             style={{ margin: '0 36px', display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', scrollBehavior: 'smooth' }}>
             {categoryTree.map(function(item) {
@@ -296,8 +294,6 @@ export default function Header() {
               )
             })}
           </div>
-
-          {/* כפתור גלילה שמאל */}
           <button onClick={() => scrollBar(1)}
             style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(201,168,76,0.3)', border: 'none', color: 'var(--gold)', cursor: 'pointer', zIndex: 10, padding: '4px 8px', fontSize: '14px', borderRadius: '3px' }}>
             ›
