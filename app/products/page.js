@@ -82,7 +82,7 @@ export default async function ProductsPage({ searchParams }) {
 
   return (
     <div style={{ padding: '48px 0' }}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 24px' }}>
+      <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '0 32px' }}>
         <h1 style={{ fontFamily: 'serif', fontSize: '40px', fontWeight: '900', marginBottom: '8px' }}>{title}</h1>
         <p style={{ color: '#6B5C3E', marginBottom: '40px' }}>{subtitle}</p>
         {products.length > 0 ? (
