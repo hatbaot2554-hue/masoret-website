@@ -14,25 +14,36 @@ const ENGRAVING_PRICING_TEXT = `מחירון:
 - לא לשכוח להוסיף לסל גם את כמות הספרים לרכישה
 - במידה ובחרתם בהטבעת גלופה, ואתם רוכשים כמה סוגי מוצרים, נא להוסיף בהערת הרכישה על אלו מוצרים תרצו להטביע.`
 
-export default function OrderForm({ product }) {
+export default function OrderForm({
+  product,
+  preSelectedVariation = null,
+  preSelectedAttrs = {},
+  preQuantity = 1,
+  preEngravingType = 'none',
+  preLetterColor = 'לשיקול דעתו של המטביע',
+  preEngravingText = '',
+  preEngravingQty = 1,
+  preBulkType = '',
+  preSketchText = '',
+  preExtraQty = 1,
+}) {
   const hasVariations = product.variations && product.variations.length > 0
-  const [selectedVariation, setSelectedVariation] = useState(null)
-  const [selectedAttrs, setSelectedAttrs] = useState({})
+  const [selectedVariation, setSelectedVariation] = useState(preSelectedVariation)
+  const [selectedAttrs, setSelectedAttrs] = useState(preSelectedAttrs)
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', address: '', city: '', note: '' })
-  const [quantity, setQuantity] = useState(1)
+  const [quantity, setQuantity] = useState(preQuantity)
   const [status, setStatus] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
   const [orderIds, setOrderIds] = useState({ ours: null })
 
-  // הטבעה — ברירת מחדל לצבע: לשיקול דעתו של המטביע
-  const [engravingType, setEngravingType] = useState('none')
-  const [letterColor, setLetterColor] = useState('לשיקול דעתו של המטביע')
-  const [engravingText, setEngravingText] = useState('')
-  const [engravingQty, setEngravingQty] = useState(1)
-  const [bulkType, setBulkType] = useState('')
-  const [sketchText, setSketchText] = useState('')
+  const [engravingType, setEngravingType] = useState(preEngravingType)
+  const [letterColor, setLetterColor] = useState(preLetterColor)
+  const [engravingText, setEngravingText] = useState(preEngravingText)
+  const [engravingQty, setEngravingQty] = useState(preEngravingQty)
+  const [bulkType, setBulkType] = useState(preBulkType)
+  const [sketchText, setSketchText] = useState(preSketchText)
   const [sketchFile, setSketchFile] = useState(null)
-  const [extraQty, setExtraQty] = useState(1)
+  const [extraQty, setExtraQty] = useState(preExtraQty)
 
   const MAX_CHARS = 21
 
@@ -114,12 +125,12 @@ export default function OrderForm({ product }) {
       setErrorMsg('יש לבחור אפשרות לפני ההזמנה')
       return
     }
-    if (engravingType === 'single' && !letterColor) {
-      setErrorMsg('יש לבחור צבע אותיות להטבעה')
+    if (engravingType === 'single' && !engravingText.trim()) {
+      setErrorMsg('יש להזין טקסט להטבעה')
       return
     }
-    if (engravingType === 'bulk' && (!letterColor || !bulkType)) {
-      setErrorMsg('יש לבחור צבע אותיות וסוג גלופה')
+    if (engravingType === 'bulk' && !bulkType) {
+      setErrorMsg('יש לבחור סוג גלופה')
       return
     }
     setStatus('loading')
@@ -144,7 +155,7 @@ export default function OrderForm({ product }) {
             name: product.name || '',
             sku: selectedVariation?.sku || product.sku || '',
             selectedAttributes: selectedAttrs,
-            price: activePrice,
+            price: activePrice + engravingExtra,
             cost: activeCost,
             quantity,
             engraving: engravingType !== 'none' ? {
@@ -186,7 +197,7 @@ export default function OrderForm({ product }) {
         </div>
         <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
           <a href="/products" style={{ color: '#8B6914', textDecoration: 'none', fontWeight: '500' }}>← המשך לקנות</a>
-          <a href={`/track?order=${orderIds.ours}&email=${encodeURIComponent(form.email)}`} style={{ color: '#1A2332', textDecoration: 'none', fontWeight: '500' }}>🔍 עקוב אחרי ההזמנה</a>
+          <a href={'/track?order=' + orderIds.ours + '&email=' + encodeURIComponent(form.email)} style={{ color: '#1A2332', textDecoration: 'none', fontWeight: '500' }}>🔍 עקוב אחרי ההזמנה</a>
         </div>
       </div>
     )
@@ -219,7 +230,6 @@ export default function OrderForm({ product }) {
     <form onSubmit={handleSubmit}>
       <h3 style={{ fontFamily: 'serif', fontSize: '20px', marginBottom: '20px', color: '#2C2416' }}>פרטי הזמנה</h3>
 
-      {/* וריאציות */}
       {hasVariations && Object.entries(attributeOptions).map(([attrKey, values]) => (
         <div key={attrKey} style={{ marginBottom: '16px' }}>
           <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>
@@ -247,17 +257,18 @@ export default function OrderForm({ product }) {
         </div>
       )}
 
-      {selectedVariation && (
-        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {activeRegularPrice > activePrice && (
-            <span style={{ fontSize: '1.1rem', color: '#999', textDecoration: 'line-through' }}>₪{activeRegularPrice}</span>
-          )}
-          <span style={{ fontSize: '1.5rem', color: '#8B6914', fontWeight: '700' }}>₪{activePrice}</span>
-          {activeRegularPrice > activePrice && (
-            <span style={{ background: '#e74c3c', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' }}>מבצע!</span>
-          )}
-        </div>
-      )}
+      {/* סיכום נתונים שהועברו מהדף */}
+      <div style={{ background: '#F8F4EE', border: '1px solid #EDE6D9', borderRadius: '4px', padding: '14px', marginBottom: '20px', fontSize: '14px', color: '#2C2416' }}>
+        <div style={{ fontWeight: '600', marginBottom: '8px', color: '#8B6914' }}>סיכום הזמנה:</div>
+        <div>📚 כמות: {quantity}</div>
+        {engravingType !== 'none' && (
+          <div>✍️ הטבעה: {engravingType === 'single' ? 'ספרים בודדים' : 'גלופה'} | צבע: {letterColor}{engravingText ? ` | טקסט: "${engravingText}"` : ''}</div>
+        )}
+        <div style={{ fontWeight: '700', marginTop: '8px', color: '#8B6914', fontSize: '16px' }}>סה"כ: ₪{totalPrice}</div>
+        {(quantity > 1 || engravingExtra > 0) && (
+          <div style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>({buildBreakdown()})</div>
+        )}
+      </div>
 
       {/* הטבעת הקדשה */}
       <div style={{ marginBottom: '20px' }}>
@@ -271,13 +282,11 @@ export default function OrderForm({ product }) {
 
       {(engravingType === 'single' || engravingType === 'bulk') && (
         <div style={sectionStyle}>
-          {/* מחירון */}
           <div style={{ background: '#fff8e8', border: '1px solid #f0d080', borderRadius: '4px', padding: '14px', marginBottom: '16px', fontSize: '13px', lineHeight: 2, color: '#2C2416', whiteSpace: 'pre-line' }}>
             <strong>מחירון:</strong>{'\n'}
             {ENGRAVING_PRICING_TEXT.split('\n').slice(1).join('\n')}
           </div>
 
-          {/* צבע אותיות */}
           <div style={{ marginBottom: '16px' }}>
             <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>צבע אותיות:</label>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -290,30 +299,20 @@ export default function OrderForm({ product }) {
           {engravingType === 'single' && (
             <>
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '4px', fontWeight: '600' }}>הוספת טקסט להטבעה:</label>
-                <input
-                  type="text"
-                  value={engravingText}
-                  maxLength={MAX_CHARS}
+                <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '4px', fontWeight: '600' }}>
+                  הוספת טקסט להטבעה: <span style={{ color: '#e74c3c' }}>*</span>
+                </label>
+                <input type="text" value={engravingText} maxLength={MAX_CHARS}
                   onChange={e => setEngravingText(e.target.value)}
-                  style={inputStyle}
-                  placeholder="הזן טקסט להטבעה"
-                />
+                  style={inputStyle} placeholder="הזן טקסט להטבעה (חובה)" />
                 <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>{MAX_CHARS - engravingText.length} תווים נותרו</div>
               </div>
               <div style={{ marginBottom: '8px' }}>
                 <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '4px', fontWeight: '600' }}>כמות ספרים להטבעה:</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="13"
-                  value={engravingQty}
+                <input type="number" min="1" max="13" value={engravingQty}
                   onChange={e => setEngravingQty(Math.max(1, Math.min(13, parseInt(e.target.value) || 1)))}
-                  style={{ ...inputStyle, width: '100px' }}
-                />
-                <div style={{ fontSize: '13px', color: '#8B6914', marginTop: '4px', fontWeight: '600' }}>
-                  {engravingQty * 15} ש"ח
-                </div>
+                  style={{ ...inputStyle, width: '100px' }} />
+                <div style={{ fontSize: '13px', color: '#8B6914', marginTop: '4px', fontWeight: '600' }}>{engravingQty * 15} ש"ח</div>
               </div>
             </>
           )}
@@ -321,52 +320,35 @@ export default function OrderForm({ product }) {
           {engravingType === 'bulk' && (
             <>
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>בחר:</label>
+                <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                  בחר: <span style={{ color: '#e74c3c' }}>*</span>
+                </label>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   <button type="button" onClick={() => setBulkType('up100')} style={bulkBtnStyle('up100')}>הטבעת גלופה עד 100 ספרים</button>
                   <button type="button" onClick={() => setBulkType('over100')} style={bulkBtnStyle('over100')}>הטבעת גלופה מעל 100 ספרים</button>
                 </div>
-                {bulkType && (
-                  <div style={{ fontSize: '13px', color: '#8B6914', marginTop: '6px', fontWeight: '600' }}>170.00 ש"ח</div>
-                )}
+                {bulkType && <div style={{ fontSize: '13px', color: '#8B6914', marginTop: '6px', fontWeight: '600' }}>170.00 ש"ח</div>}
               </div>
-
               {bulkType && (
                 <>
                   <div style={{ marginBottom: '16px' }}>
                     <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '4px', fontWeight: '600' }}>הוספת טקסט לסקיצה:</label>
-                    <input
-                      type="text"
-                      value={sketchText}
-                      onChange={e => setSketchText(e.target.value)}
-                      style={inputStyle}
-                      placeholder="הזן טקסט לסקיצה"
-                    />
+                    <input type="text" value={sketchText} onChange={e => setSketchText(e.target.value)}
+                      style={inputStyle} placeholder="הזן טקסט לסקיצה" />
                   </div>
-
                   <div style={{ marginBottom: '16px' }}>
-                    <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '4px', fontWeight: '600' }}>יש לך סקיצה מוכנה? תוכל להעלות אותה כאן:</label>
-                    <input
-                      type="file"
-                      accept="image/*,.pdf,.ai,.eps,.svg,.png,.jpg,.jpeg"
+                    <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '4px', fontWeight: '600' }}>יש לך סקיצה מוכנה?</label>
+                    <input type="file" accept="image/*,.pdf,.ai,.eps,.svg,.png,.jpg,.jpeg"
                       onChange={e => setSketchFile(e.target.files[0] || null)}
-                      style={{ fontSize: '14px', color: '#2C2416' }}
-                    />
+                      style={{ fontSize: '14px', color: '#2C2416' }} />
                   </div>
-
                   {bulkType === 'over100' && (
                     <div style={{ marginBottom: '8px' }}>
                       <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '4px', fontWeight: '600' }}>כמות נוספת מלבד ה-100:</label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={extraQty}
+                      <input type="number" min="1" value={extraQty}
                         onChange={e => setExtraQty(Math.max(1, parseInt(e.target.value) || 1))}
-                        style={{ ...inputStyle, width: '100px' }}
-                      />
-                      <div style={{ fontSize: '13px', color: '#8B6914', marginTop: '4px', fontWeight: '600' }}>
-                        {extraQty} ש"ח
-                      </div>
+                        style={{ ...inputStyle, width: '100px' }} />
+                      <div style={{ fontSize: '13px', color: '#8B6914', marginTop: '4px', fontWeight: '600' }}>{extraQty} ש"ח</div>
                     </div>
                   )}
                 </>
@@ -376,7 +358,7 @@ export default function OrderForm({ product }) {
         </div>
       )}
 
-      {/* כמות + סה"כ עם פירוט */}
+      {/* כמות */}
       <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
         <label style={{ fontSize: '14px', color: '#6B5C3E', width: '60px' }}>כמות:</label>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -387,9 +369,7 @@ export default function OrderForm({ product }) {
         <div>
           <span style={{ fontSize: '18px', fontWeight: '700', color: '#8B6914' }}>סה"כ: ₪{totalPrice}</span>
           {(quantity > 1 || engravingExtra > 0) && (
-            <div style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>
-              ({buildBreakdown()})
-            </div>
+            <div style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>({buildBreakdown()})</div>
           )}
         </div>
       </div>
