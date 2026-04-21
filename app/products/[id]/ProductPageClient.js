@@ -211,7 +211,6 @@ export default function ProductPageClient({ product }) {
         </p>
 
         <div className="product-layout">
-          {/* תמונות */}
           <div>
             <div className="zoom-container"
               style={{ background: '#EDE6D9', padding: '24px', position: 'relative', marginBottom: '12px' }}
@@ -236,13 +235,11 @@ export default function ProductPageClient({ product }) {
             )}
           </div>
 
-          {/* פרטים */}
           <div>
             <h1 style={{ fontFamily: 'serif', fontSize: '32px', fontWeight: '900', marginBottom: '12px', lineHeight: 1.3 }}>{product.name}</h1>
 
             {product.description && <p style={{ fontSize: '15px', color: '#2C2416', lineHeight: 1.8, marginBottom: '20px' }}>{product.description}</p>}
 
-            {/* וריאציות */}
             {hasVariations && Object.entries(attributeOptions).map(([attrKey, values]) => (
               <div key={attrKey} style={{ marginBottom: '16px' }}>
                 <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>
@@ -260,11 +257,28 @@ export default function ProductPageClient({ product }) {
             ))}
 
             {/* מחיר */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
               {activeRegularPrice > activePrice && <span style={{ fontSize: '1.3rem', color: '#999', textDecoration: 'line-through' }}>₪{activeRegularPrice}</span>}
               <span style={{ fontFamily: 'serif', fontSize: '2.2rem', color: '#8B6914', fontWeight: '700' }}>₪{activePrice}</span>
               {activeRegularPrice > activePrice && <span style={{ background: '#e74c3c', color: '#fff', padding: '3px 10px', borderRadius: '4px', fontSize: '13px', fontWeight: '700' }}>מבצע!</span>}
             </div>
+
+            {/* ✅ כמות — אחרי מחיר, לפני הטבעה */}
+            {inStock && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px', background: '#F8F4EE', padding: '12px 16px', borderRadius: '4px' }}>
+                <label style={{ fontSize: '14px', color: '#6B5C3E', fontWeight: '600' }}>כמות:</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    style={{ width: '36px', height: '36px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                  <span style={{ minWidth: '36px', textAlign: 'center', fontSize: '18px', fontWeight: '700' }}>{quantity}</span>
+                  <button type="button" onClick={() => setQuantity(quantity + 1)}
+                    style={{ width: '36px', height: '36px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                </div>
+                <div style={{ fontSize: '16px', color: '#8B6914', fontWeight: '700' }}>
+                  סה"כ: ₪{totalPrice}
+                </div>
+              </div>
+            )}
 
             {/* הטבעה */}
             <div style={{ marginBottom: '24px' }}>
@@ -343,19 +357,6 @@ export default function ProductPageClient({ product }) {
               {engravingError && <div style={{ color: '#e74c3c', fontSize: '14px', marginTop: '8px', fontWeight: '600' }}>⚠️ {engravingError}</div>}
             </div>
 
-            {/* כמות */}
-            {inStock && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
-                <label style={{ fontSize: '14px', color: '#6B5C3E', fontWeight: '600' }}>כמות:</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} style={{ width: '36px', height: '36px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                  <span style={{ minWidth: '36px', textAlign: 'center', fontSize: '18px', fontWeight: '700' }}>{quantity}</span>
-                  <button type="button" onClick={() => setQuantity(quantity + 1)} style={{ width: '36px', height: '36px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
-                </div>
-                <div style={{ fontSize: '16px', color: '#8B6914', fontWeight: '700' }}>סה"כ: ₪{totalPrice}</div>
-              </div>
-            )}
-
             {/* כפתורי פעולה */}
             {inStock ? (
               <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
@@ -383,7 +384,6 @@ export default function ProductPageClient({ product }) {
               <div>🏠 אפשרות לאיסוף עצמי, משלוח עד הבית או לנקודת חלוקה</div>
             </div>
 
-            {/* טופס רכישה מהירה */}
             {showQuickBuy && inStock && (
               <div style={{ borderTop: '2px solid #EDE6D9', paddingTop: '24px' }}>
                 <h3 style={{ fontFamily: 'serif', fontSize: '20px', marginBottom: '20px', color: '#2C2416' }}>פרטי הזמנה</h3>
