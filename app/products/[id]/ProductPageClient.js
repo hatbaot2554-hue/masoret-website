@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useCart } from '../../components/CartContext'
 import { useWishlist } from '../../components/WishlistContext'
 import ReviewsCarousel from '../../components/ReviewsCarousel'
+import RecentlyViewed from '../../components/RecentlyViewed'
 
 function formatPrice(price) {
   const p = parseFloat(price || 0)
@@ -16,11 +17,44 @@ const ENGRAVING_PRICING_TEXT = `• הקדשה על ספרים בודדים - 15
 - לא לשכוח להוסיף לסל גם את כמות הספרים לרכישה
 - במידה ובחרתם בהטבעת גלופה, ואתם רוכשים כמה סוגי מוצרים, נא להוסיף בהערת הרכישה על אלו מוצרים תרצו להטביע.`
 
+const FAQ_ITEMS = [
+  { q: 'כמה זמן לוקח המשלוח?', a: 'המשלוח מגיע תוך 2-8 ימי עסקים. במקרים חריגים ייתכן עיכוב קצר.' },
+  { q: 'מה מדיניות הביטול?', a: 'ניתן לבטל הזמנה בהודעה בכתב לדוא"ל hatbaot2554@gmail.com. דמי ביטול: 5% מסכום העסקה או 100 ש"ח (לפי הנמוך).' },
+  { q: 'האם ניתן להזמין הטבעה אישית?', a: 'כן! ניתן להוסיף הטבעת הקדשה — על ספרים בודדים (עד 13) או גלופה לכמות גדולה. פרטים ומחירון מופיעים בדף המוצר.' },
+  { q: 'האם יש אפשרות לאיסוף עצמי?', a: 'כן, ניתן לאסוף מהחנות שלנו: מנחם בגין 52, בני ברק. ללא עלות משלוח.' },
+  { q: 'אילו אמצעי תשלום מתקבלים?', a: 'אנו מקבלים תשלום בכרטיס אשראי — עד 6 תשלומים ללא ריבית.' },
+]
+
 function StarRating({ count = 5, size = 14 }) {
   return (
     <span style={{ color: '#C9A84C', fontSize: `${size}px`, letterSpacing: '1px' }}>
       {'★'.repeat(count)}{'☆'.repeat(5 - count)}
     </span>
+  )
+}
+
+function FAQSection() {
+  const [open, setOpen] = useState(null)
+  return (
+    <div style={{ borderTop: '1px solid #EDE6D9', paddingTop: '40px', marginTop: '40px' }}>
+      <h3 style={{ fontFamily: 'Frank Ruhl Libre, serif', fontSize: '22px', fontWeight: '900', marginBottom: '20px' }}>שאלות נפוצות</h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {FAQ_ITEMS.map((item, i) => (
+          <div key={i} style={{ border: '1px solid #EDE6D9', borderRadius: '4px', overflow: 'hidden' }}>
+            <button type="button" onClick={() => setOpen(open === i ? null : i)}
+              style={{ width: '100%', padding: '14px 16px', background: open === i ? '#F8F4EE' : '#fff', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'Heebo, sans-serif', fontSize: '14px', fontWeight: '600', color: '#2C2416', textAlign: 'right' }}>
+              <span>{item.q}</span>
+              <span style={{ color: '#8B6914', fontSize: '18px', flexShrink: 0, marginRight: '8px' }}>{open === i ? '−' : '+'}</span>
+            </button>
+            {open === i && (
+              <div style={{ padding: '12px 16px', background: '#F8F4EE', fontSize: '14px', color: '#6B5C3E', lineHeight: 1.8 }}>
+                {item.a}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -62,6 +96,13 @@ export default function ProductPageClient({ product }) {
   useEffect(() => {
     const onScroll = () => setShowStickyBar(window.scrollY > 400)
     window.addEventListener('scroll', onScroll)
+    // שמירת צפייה
+    try {
+      const viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]')
+      const filtered = viewed.filter(p => p.index !== product.index)
+      filtered.unshift({ index: product.index, name: product.name, image: product.image, price: product.price })
+      localStorage.setItem('recentlyViewed', JSON.stringify(filtered.slice(0, 10)))
+    } catch {}
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
@@ -158,7 +199,7 @@ export default function ProductPageClient({ product }) {
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({
+        body: JSON.stringify({
           ...form,
           note: fullNote,
           items: [{
@@ -238,15 +279,7 @@ body: JSON.stringify({
             <div style={{ fontSize: '16px', fontWeight: '700', color: '#8B6914', fontFamily: 'serif' }}>₪{totalPrice}</div>
           </div>
           <button onClick={handleAddToCart}
-            style={{
-              background: addedToCart ? '#27ae60' : '#C9A84C',
-              color: '#1A2332', border: 'none',
-              padding: '12px 20px', fontSize: '15px',
-              fontWeight: '700', cursor: 'pointer',
-              fontFamily: 'Frank Ruhl Libre, serif',
-              flexShrink: 0, transition: 'background 0.2s',
-              borderRadius: '4px',
-            }}>
+            style={{ background: addedToCart ? '#27ae60' : '#C9A84C', color: '#1A2332', border: 'none', padding: '12px 20px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Frank Ruhl Libre, serif', flexShrink: 0, transition: 'background 0.2s', borderRadius: '4px' }}>
             {addedToCart ? '✓ נוסף!' : '🛒 הוסף לסל'}
           </button>
         </div>
@@ -257,9 +290,7 @@ body: JSON.stringify({
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}>
           <button onClick={() => setLightboxOpen(false)}
             style={{ position: 'absolute', top: '20px', left: '20px', background: 'none', border: 'none', color: '#fff', fontSize: '32px', cursor: 'pointer' }}>✕</button>
-          <img src={activeImg} alt={product.name}
-            style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain' }}
-            onClick={e => e.stopPropagation()} />
+          <img src={activeImg} alt={product.name} style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain' }} onClick={e => e.stopPropagation()} />
         </div>
       )}
 
@@ -529,7 +560,13 @@ body: JSON.stringify({
           </div>
         </div>
 
-        {/* ===== ביקורות לקוחות — קרוסלה ===== */}
+        {/* FAQ */}
+        <FAQSection />
+
+        {/* צפית לאחרונה */}
+        <RecentlyViewed currentIndex={product.index} />
+
+        {/* ביקורות */}
         <div style={{ borderTop: '1px solid #EDE6D9', paddingTop: '48px', marginTop: '48px', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px', flexWrap: 'wrap', padding: '0 4px' }}>
             <h2 style={{ fontFamily: 'serif', fontSize: '26px', fontWeight: '900' }}>ביקורות לקוחות</h2>
