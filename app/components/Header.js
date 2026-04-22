@@ -129,6 +129,7 @@ export default function Header() {
           </a>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <a href="/wishlist" style={{ color: 'var(--gold)', textDecoration: 'none', fontSize: '22px' }}>❤️</a>
+            <a href="/account" style={{ color: 'var(--gold)', textDecoration: 'none', fontSize: '22px' }}>👤</a>
             <a href="/cart" style={{ color: 'var(--gold)', textDecoration: 'none', fontSize: '22px', position: 'relative', padding: '4px 8px' }}>
               🛒
               {totalItems > 0 && (
@@ -179,6 +180,7 @@ export default function Header() {
             })}
             <a href="/track" style={{ display: 'block', padding: '13px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>מעקב הזמנה</a>
             <a href="/wishlist" style={{ display: 'block', padding: '13px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>❤️ מועדפים</a>
+            <a href="/account" style={{ display: 'block', padding: '13px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>👤 אזור אישי</a>
             <a href="/contact" style={{ display: 'block', padding: '13px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px' }}>צור קשר</a>
           </div>
         )}
@@ -236,11 +238,14 @@ export default function Header() {
           )}
         </div>
 
-        <nav style={{ display: 'flex', gap: '20px', alignItems: 'center', flexShrink: 0 }}>
+        {/* ===== NAV ===== */}
+        <nav style={{ display: 'flex', gap: '16px', alignItems: 'center', flexShrink: 0 }}>
           <a href="/products" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px' }}>כל הספרים</a>
           <a href="/track" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px' }}>מעקב הזמנה</a>
           <a href="/contact" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px' }}>צור קשר</a>
           <a href="/wishlist" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px' }}>❤️ מועדפים</a>
+
+          {/* עגלה */}
           <a href="/cart" style={{ background: 'var(--gold)', color: 'var(--navy)', padding: '9px 18px', textDecoration: 'none', fontSize: '14px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
             🛒
             {totalItems > 0 && (
@@ -249,6 +254,20 @@ export default function Header() {
               </span>
             )}
             עגלה
+          </a>
+
+          {/* אזור אישי — מרוחק מהעגלה */}
+          <a href="/account"
+            style={{
+              marginRight: '8px',
+              color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px',
+              display: 'flex', alignItems: 'center', gap: '5px',
+              border: '1px solid rgba(255,255,255,0.2)', borderRadius: '20px',
+              padding: '7px 14px', transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.color = 'rgba(255,255,255,0.8)' }}>
+            👤 אזור אישי
           </a>
         </nav>
       </div>
