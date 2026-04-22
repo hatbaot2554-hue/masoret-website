@@ -1,4 +1,5 @@
 import ProductCard from './components/ProductCard'
+import ReviewsCarousel from './components/ReviewsCarousel'
 
 async function getProducts() {
   try {
@@ -8,13 +9,13 @@ async function getProducts() {
     )
     if (!res.ok) return []
     const all = await res.json()
-    return all.slice(0, 10).map((p, i) => ({ ...p, index: i }))
+    const withIndex = all.map((p, i) => ({ ...p, index: i }))
+    // מסנן חסרי מלאי + לוקח 10 ראשונים
+    return withIndex.filter(p => p.in_stock !== false).slice(0, 10)
   } catch {
     return []
   }
 }
-
-import ReviewsCarousel from './components/ReviewsCarousel'
 
 export default async function HomePage() {
   const products = await getProducts()
