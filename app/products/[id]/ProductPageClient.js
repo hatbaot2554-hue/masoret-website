@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useCart } from '../../components/CartContext'
 import { useWishlist } from '../../components/WishlistContext'
+import ReviewsCarousel from '../../components/ReviewsCarousel'
 
 function formatPrice(price) {
   const p = parseFloat(price || 0)
@@ -15,68 +16,11 @@ const ENGRAVING_PRICING_TEXT = `• הקדשה על ספרים בודדים - 15
 - לא לשכוח להוסיף לסל גם את כמות הספרים לרכישה
 - במידה ובחרתם בהטבעת גלופה, ואתם רוכשים כמה סוגי מוצרים, נא להוסיף בהערת הרכישה על אלו מוצרים תרצו להטביע.`
 
-const ALL_PRODUCT_REVIEWS = [
-  { name: 'א. שטרן', city: 'בני ברק', stars: 5, text: 'ספר מעולה, הגיע מהיר ובמצב מושלם. ממליץ בחום!' },
-  { name: 'י. כהן', city: 'ירושלים', stars: 5, text: 'איכות מצוינת, המחיר הוגן. קנייה נעימה.' },
-  { name: 'מ. לוי', city: 'אשדוד', stars: 5, text: 'שירות אישי ומקצועי. הטבעת ההקדשה יצאה יפה מאוד.' },
-  { name: 'ד. פרידמן', city: 'פתח תקווה', stars: 5, text: 'הגיע תוך יומיים! אריזה מהודרת ומוצר מושלם.' },
-  { name: 'ש. רוזנברג', city: 'בית שמש', stars: 5, text: 'קניתי כמה פעמים ותמיד מרוצה. שירות אמין לחלוטין.' },
-  { name: 'פ. אדלר', city: 'מודיעין עילית', stars: 5, text: 'הזמנתי 20 ספרים עם הטבעה לחתונה — כולם התפעלו!' },
-  { name: 'ח. וינברג', city: 'אלעד', stars: 5, text: 'מחירים הכי טובים שמצאתי, ומוצרים אמיתיים. אין על זה.' },
-  { name: 'נ. פרידמן', city: 'ביתר עילית', stars: 5, text: 'קניתי שש מחזורים לבר המצווה של הנכד. כולם שמחו מאוד.' },
-  { name: 'א. גולדברג', city: 'רחובות', stars: 5, text: 'שירות הלקוחות ענה לי מייד ועזר לבחור. קנייה מהנה!' },
-  { name: 'י. קופמן', city: 'נתניה', stars: 5, text: 'הזמנה ראשונה ובטח לא אחרונה. כל כך קל ונוח לקנות כאן.' },
-  { name: 'מ. זילברשטיין', city: 'גבעת שמואל', stars: 5, text: 'קניתי סט תנ"ך שלם — איכות מדהימה במחיר שלא מצאתי בשום מקום.' },
-  { name: 'א. ביינוש', city: 'טבריה', stars: 5, text: 'הטבעת הגלופה יצאה מושלמת. קיבלנו המון מחמאות בחתונה.' },
-  { name: 'ב. שטיינמץ', city: 'צפת', stars: 5, text: 'הזמנתי ספר נדיר שלא מצאתי בשום חנות — כאן מצאתי!' },
-  { name: 'ג. טננבאום', city: 'חיפה', stars: 5, text: 'אתר נוח, תמונות ברורות, ומשלוח מהיר. בדיוק מה שחיפשתי.' },
-  { name: 'ש. ליפשיץ', city: 'ראשון לציון', stars: 5, text: 'עשרות ספרים לאורחי השמחה עם הקדשה — כולם קיבלו ביידיים.' },
-  { name: 'י. הורוביץ', city: 'קרית גת', stars: 5, text: 'קיבלתי את החבילה ביום למחרת! שירות מדהים, ממליץ לכולם.' },
-  { name: 'מ. שורר', city: 'לוד', stars: 5, text: 'ספרים איכותיים מאוד, בדיוק כמו בתמונה. כל הכבוד.' },
-  { name: 'ז. קרויס', city: 'אשקלון', stars: 5, text: 'קניתי כאן כמה פעמים ותמיד מרוצה. אמינות מלאה.' },
-  { name: 'ד. ריינר', city: 'ירושלים', stars: 5, text: 'האתר הכי מסודר שנתקלתי בו. חיפוש קל ומשלוח מהיר.' },
-  { name: 'י. שוורץ', city: 'בני ברק', stars: 5, text: 'מבחר הספרים פשוט עצום. מצאתי ספרים שלא ידעתי שקיימים!' },
-]
-
 function StarRating({ count = 5, size = 14 }) {
   return (
     <span style={{ color: '#C9A84C', fontSize: `${size}px`, letterSpacing: '1px' }}>
       {'★'.repeat(count)}{'☆'.repeat(5 - count)}
     </span>
-  )
-}
-
-function ProductReviewsCarousel() {
-  return (
-    <div className="reviews-carousel-wrapper">
-      <div className="reviews-carousel-track">
-        {[...ALL_PRODUCT_REVIEWS, ...ALL_PRODUCT_REVIEWS].map((r, i) => (
-          <div key={i} className="review-card-carousel" style={{ background: '#F8F4EE', border: '1px solid #EDE6D9' }}>
-            <div style={{ color: '#C9A84C', fontSize: '14px', letterSpacing: '2px', marginBottom: '10px' }}>
-              {'★'.repeat(r.stars)}
-            </div>
-            <p style={{ fontSize: '13px', color: '#2C2416', lineHeight: 1.8, marginBottom: '14px', flex: 1 }}>
-              "{r.text}"
-            </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{
-                width: '32px', height: '32px', borderRadius: '50%',
-                background: 'linear-gradient(135deg, #C9A84C, #8B6914)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#fff', fontWeight: '700', fontSize: '13px', flexShrink: 0,
-              }}>
-                {r.name[0]}
-              </div>
-              <div>
-                <div style={{ color: '#2C2416', fontWeight: '600', fontSize: '13px' }}>{r.name}</div>
-                <div style={{ color: '#6B5C3E', fontSize: '11px' }}>{r.city}</div>
-              </div>
-              <span style={{ marginRight: 'auto', background: 'rgba(39,174,96,0.1)', color: '#27ae60', fontSize: '10px', padding: '2px 7px', borderRadius: '100px' }}>✓ מאומת</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
   )
 }
 
@@ -214,7 +158,7 @@ export default function ProductPageClient({ product }) {
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+body: JSON.stringify({
           ...form,
           note: fullNote,
           items: [{
@@ -287,7 +231,6 @@ export default function ProductPageClient({ product }) {
   return (
     <div style={{ padding: '40px 0' }}>
 
-      {/* ===== STICKY CTA — מובייל בלבד ===== */}
       {inStock && showStickyBar && (
         <div className="sticky-cta-bar">
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -595,7 +538,7 @@ export default function ProductPageClient({ product }) {
               <span style={{ fontSize: '14px', color: '#6B5C3E' }}>4.9 מתוך 5 (47 ביקורות)</span>
             </div>
           </div>
-          <ProductReviewsCarousel />
+          <ReviewsCarousel darkBg={false} />
         </div>
 
       </div>
