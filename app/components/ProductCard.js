@@ -22,12 +22,25 @@ export default function ProductCard({ product, index }) {
   const inStock = product.in_stock !== false
   const wished = isInWishlist(index)
 
+  // תגית חכמה — נמכר ביותר אם index < 5, חדש אם index >= 5 && index < 10
+  const smartBadge = index < 5 ? { label: '🏆 נמכר ביותר', bg: '#8B6914' }
+    : index < 10 ? { label: '✨ חדש', bg: '#2980b9' }
+    : null
+
   function handleAdd(e) {
     e.preventDefault()
     e.stopPropagation()
     addItem(product, quantity, {}, null, null)
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
+
+    // שמירה ב-localStorage להיסטוריית צפייה
+    try {
+      const viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]')
+      const filtered = viewed.filter(p => p.index !== index)
+      filtered.unshift({ index, name: product.name, image: product.image, price: product.price })
+      localStorage.setItem('recentlyViewed', JSON.stringify(filtered.slice(0, 10)))
+    } catch {}
   }
 
   function handleQty(e, delta) {
@@ -43,26 +56,42 @@ export default function ProductCard({ product, index }) {
   }
 
   return (
-    <a href={'/products/' + index} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+    <a href={'/products/' + index}
+      style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+      onClick={() => {
+        try {
+          const viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]')
+          const filtered = viewed.filter(p => p.index !== index)
+          filtered.unshift({ index, name: product.name, image: product.image, price: product.price })
+          localStorage.setItem('recentlyViewed', JSON.stringify(filtered.slice(0, 10)))
+        } catch {}
+      }}>
       <div
         style={{ background: '#fff', border: '1px solid #EDE6D9', transition: 'all 0.25s', overflow: 'hidden', position: 'relative' }}
         onMouseEnter={e => { e.currentTarget.style.borderColor = '#C9A84C'; e.currentTarget.style.transform = 'translateY(-2px)' }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = '#EDE6D9'; e.currentTarget.style.transform = 'translateY(0)' }}>
 
+        {/* תגית חכמה */}
+        {smartBadge && (
+          <div style={{ position: 'absolute', top: '12px', right: '12px', background: smartBadge.bg, color: '#fff', padding: '4px 10px', fontSize: '11px', fontWeight: '700', zIndex: 1, borderRadius: '3px' }}>
+            {smartBadge.label}
+          </div>
+        )}
+
         {hasDiscount && inStock && (
-          <div style={{ position: 'absolute', top: '12px', left: '12px', background: '#e74c3c', color: '#fff', padding: '4px 10px', fontSize: '12px', fontWeight: '700', zIndex: 1 }}>
+          <div style={{ position: 'absolute', top: smartBadge ? '40px' : '12px', right: '12px', background: '#e74c3c', color: '#fff', padding: '4px 10px', fontSize: '11px', fontWeight: '700', zIndex: 1, borderRadius: '3px' }}>
             מבצע!
           </div>
         )}
 
         <button onClick={handleWishlist}
-          style={{ position: 'absolute', top: '12px', left: hasDiscount && inStock ? '60px' : '12px', background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2, fontSize: '16px', boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }}>
+          style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2, fontSize: '16px', boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }}>
           {wished ? '❤️' : '🤍'}
         </button>
 
         <div style={{ aspectRatio: '3/4', overflow: 'hidden', background: '#EDE6D9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {image
-            ? <img src={image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ? <img src={image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
             : <span style={{ fontSize: '48px' }}>📖</span>}
         </div>
 
