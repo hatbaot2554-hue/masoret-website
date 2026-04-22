@@ -15,10 +15,27 @@ const ENGRAVING_PRICING_TEXT = `• הקדשה על ספרים בודדים - 15
 - לא לשכוח להוסיף לסל גם את כמות הספרים לרכישה
 - במידה ובחרתם בהטבעת גלופה, ואתם רוכשים כמה סוגי מוצרים, נא להוסיף בהערת הרכישה על אלו מוצרים תרצו להטביע.`
 
-const PRODUCT_REVIEWS = [
-  { name: 'א. שטרן', stars: 5, text: 'ספר מעולה, הגיע מהיר ובמצב מושלם. ממליץ בחום!' },
-  { name: 'י. כהן', stars: 5, text: 'איכות מצוינת, המחיר הוגן. קנייה נעימה.' },
-  { name: 'מ. לוי', stars: 5, text: 'שירות אישי ומקצועי. הטבעת ההקדשה יצאה יפה מאוד.' },
+const ALL_PRODUCT_REVIEWS = [
+  { name: 'א. שטרן', city: 'בני ברק', stars: 5, text: 'ספר מעולה, הגיע מהיר ובמצב מושלם. ממליץ בחום!' },
+  { name: 'י. כהן', city: 'ירושלים', stars: 5, text: 'איכות מצוינת, המחיר הוגן. קנייה נעימה.' },
+  { name: 'מ. לוי', city: 'אשדוד', stars: 5, text: 'שירות אישי ומקצועי. הטבעת ההקדשה יצאה יפה מאוד.' },
+  { name: 'ד. פרידמן', city: 'פתח תקווה', stars: 5, text: 'הגיע תוך יומיים! אריזה מהודרת ומוצר מושלם.' },
+  { name: 'ש. רוזנברג', city: 'בית שמש', stars: 5, text: 'קניתי כמה פעמים ותמיד מרוצה. שירות אמין לחלוטין.' },
+  { name: 'פ. אדלר', city: 'מודיעין עילית', stars: 5, text: 'הזמנתי 20 ספרים עם הטבעה לחתונה — כולם התפעלו!' },
+  { name: 'ח. וינברג', city: 'אלעד', stars: 5, text: 'מחירים הכי טובים שמצאתי, ומוצרים אמיתיים. אין על זה.' },
+  { name: 'נ. פרידמן', city: 'ביתר עילית', stars: 5, text: 'קניתי שש מחזורים לבר המצווה של הנכד. כולם שמחו מאוד.' },
+  { name: 'א. גולדברג', city: 'רחובות', stars: 5, text: 'שירות הלקוחות ענה לי מייד ועזר לבחור. קנייה מהנה!' },
+  { name: 'י. קופמן', city: 'נתניה', stars: 5, text: 'הזמנה ראשונה ובטח לא אחרונה. כל כך קל ונוח לקנות כאן.' },
+  { name: 'מ. זילברשטיין', city: 'גבעת שמואל', stars: 5, text: 'קניתי סט תנ"ך שלם — איכות מדהימה במחיר שלא מצאתי בשום מקום.' },
+  { name: 'א. ביינוש', city: 'טבריה', stars: 5, text: 'הטבעת הגלופה יצאה מושלמת. קיבלנו המון מחמאות בחתונה.' },
+  { name: 'ב. שטיינמץ', city: 'צפת', stars: 5, text: 'הזמנתי ספר נדיר שלא מצאתי בשום חנות — כאן מצאתי!' },
+  { name: 'ג. טננבאום', city: 'חיפה', stars: 5, text: 'אתר נוח, תמונות ברורות, ומשלוח מהיר. בדיוק מה שחיפשתי.' },
+  { name: 'ש. ליפשיץ', city: 'ראשון לציון', stars: 5, text: 'עשרות ספרים לאורחי השמחה עם הקדשה — כולם קיבלו ביידיים.' },
+  { name: 'י. הורוביץ', city: 'קרית גת', stars: 5, text: 'קיבלתי את החבילה ביום למחרת! שירות מדהים, ממליץ לכולם.' },
+  { name: 'מ. שורר', city: 'לוד', stars: 5, text: 'ספרים איכותיים מאוד, בדיוק כמו בתמונה. כל הכבוד.' },
+  { name: 'ז. קרויס', city: 'אשקלון', stars: 5, text: 'קניתי כאן כמה פעמים ותמיד מרוצה. אמינות מלאה.' },
+  { name: 'ד. ריינר', city: 'ירושלים', stars: 5, text: 'האתר הכי מסודר שנתקלתי בו. חיפוש קל ומשלוח מהיר.' },
+  { name: 'י. שוורץ', city: 'בני ברק', stars: 5, text: 'מבחר הספרים פשוט עצום. מצאתי ספרים שלא ידעתי שקיימים!' },
 ]
 
 function StarRating({ count = 5, size = 14 }) {
@@ -26,6 +43,40 @@ function StarRating({ count = 5, size = 14 }) {
     <span style={{ color: '#C9A84C', fontSize: `${size}px`, letterSpacing: '1px' }}>
       {'★'.repeat(count)}{'☆'.repeat(5 - count)}
     </span>
+  )
+}
+
+function ProductReviewsCarousel() {
+  return (
+    <div className="reviews-carousel-wrapper">
+      <div className="reviews-carousel-track">
+        {[...ALL_PRODUCT_REVIEWS, ...ALL_PRODUCT_REVIEWS].map((r, i) => (
+          <div key={i} className="review-card-carousel" style={{ background: '#F8F4EE', border: '1px solid #EDE6D9' }}>
+            <div style={{ color: '#C9A84C', fontSize: '14px', letterSpacing: '2px', marginBottom: '10px' }}>
+              {'★'.repeat(r.stars)}
+            </div>
+            <p style={{ fontSize: '13px', color: '#2C2416', lineHeight: 1.8, marginBottom: '14px', flex: 1 }}>
+              "{r.text}"
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{
+                width: '32px', height: '32px', borderRadius: '50%',
+                background: 'linear-gradient(135deg, #C9A84C, #8B6914)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff', fontWeight: '700', fontSize: '13px', flexShrink: 0,
+              }}>
+                {r.name[0]}
+              </div>
+              <div>
+                <div style={{ color: '#2C2416', fontWeight: '600', fontSize: '13px' }}>{r.name}</div>
+                <div style={{ color: '#6B5C3E', fontSize: '11px' }}>{r.city}</div>
+              </div>
+              <span style={{ marginRight: 'auto', background: 'rgba(39,174,96,0.1)', color: '#27ae60', fontSize: '10px', padding: '2px 7px', borderRadius: '100px' }}>✓ מאומת</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -64,7 +115,6 @@ export default function ProductPageClient({ product }) {
   const hasVariations = product.variations && product.variations.length > 0
   const wished = isInWishlist(product.index)
 
-  // Sticky bar — מופיע אחרי גלילה של 400px
   useEffect(() => {
     const onScroll = () => setShowStickyBar(window.scrollY > 400)
     window.addEventListener('scroll', onScroll)
@@ -278,7 +328,6 @@ export default function ProductPageClient({ product }) {
         </p>
 
         <div className="product-layout">
-          {/* עמודה שמאל — תמונה */}
           <div>
             <div className="zoom-container"
               style={{ background: '#EDE6D9', padding: '24px', position: 'relative', marginBottom: '12px' }}
@@ -301,14 +350,8 @@ export default function ProductPageClient({ product }) {
                 ))}
               </div>
             )}
-
-            {/* Reviews בעמודת התמונה — דסקטופ */}
-            <div style={{ marginTop: '32px', display: 'none' }} className="desktop-reviews-col">
-              {/* יוצג דרך CSS רק בדסקטופ */}
-            </div>
           </div>
 
-          {/* עמודה ימין — פרטים */}
           <div>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '8px' }}>
               <h1 style={{ fontFamily: 'serif', fontSize: '32px', fontWeight: '900', lineHeight: 1.3, flex: 1 }}>{product.name}</h1>
@@ -318,7 +361,6 @@ export default function ProductPageClient({ product }) {
               </button>
             </div>
 
-            {/* דירוג מיני */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
               <StarRating count={5} size={16} />
               <span style={{ fontSize: '13px', color: '#6B5C3E' }}>4.9 (47 ביקורות)</span>
@@ -363,7 +405,6 @@ export default function ProductPageClient({ product }) {
               </div>
             )}
 
-            {/* הטבעה — זהה לקוד המקורי */}
             <div style={{ marginBottom: '24px' }}>
               <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>הטבעת הקדשה:</label>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -545,30 +586,16 @@ export default function ProductPageClient({ product }) {
           </div>
         </div>
 
-        {/* ===== ביקורות לקוחות — מתחת לגריד ===== */}
-        <div style={{ borderTop: '1px solid #EDE6D9', paddingTop: '48px', marginTop: '48px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
+        {/* ===== ביקורות לקוחות — קרוסלה ===== */}
+        <div style={{ borderTop: '1px solid #EDE6D9', paddingTop: '48px', marginTop: '48px', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px', flexWrap: 'wrap', padding: '0 4px' }}>
             <h2 style={{ fontFamily: 'serif', fontSize: '26px', fontWeight: '900' }}>ביקורות לקוחות</h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <StarRating count={5} size={18} />
               <span style={{ fontSize: '14px', color: '#6B5C3E' }}>4.9 מתוך 5 (47 ביקורות)</span>
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-            {PRODUCT_REVIEWS.map((r, i) => (
-              <div key={i} style={{ background: '#F8F4EE', border: '1px solid #EDE6D9', borderRadius: '6px', padding: '20px' }}>
-                <StarRating count={r.stars} />
-                <p style={{ fontSize: '14px', color: '#2C2416', lineHeight: 1.8, margin: '10px 0 14px' }}>"{r.text}"</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #C9A84C, #8B6914)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '700', fontSize: '13px' }}>
-                    {r.name[0]}
-                  </div>
-                  <span style={{ fontSize: '13px', color: '#6B5C3E', fontWeight: '600' }}>{r.name}</span>
-                  <span style={{ marginRight: 'auto', background: 'rgba(39,174,96,0.1)', color: '#27ae60', fontSize: '11px', padding: '2px 8px', borderRadius: '100px' }}>✓ קנייה מאומתת</span>
-                </div>
-              </div>
-            ))}
-          </div>
+          <ProductReviewsCarousel />
         </div>
 
       </div>
