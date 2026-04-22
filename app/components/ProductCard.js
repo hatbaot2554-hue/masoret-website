@@ -43,31 +43,23 @@ export default function ProductCard({ product, index }) {
   }
 
   return (
-    <a href={'/products/' + index} style={{ textDecoration: 'none', color: 'inherit', display: 'block', opacity: inStock ? 1 : 0.7 }}>
+    <a href={'/products/' + index} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
       <div
         style={{ background: '#fff', border: '1px solid #EDE6D9', transition: 'all 0.25s', overflow: 'hidden', position: 'relative' }}
         onMouseEnter={e => { e.currentTarget.style.borderColor = '#C9A84C'; e.currentTarget.style.transform = 'translateY(-2px)' }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = '#EDE6D9'; e.currentTarget.style.transform = 'translateY(0)' }}>
 
-        {/* תגיות */}
-        {!inStock && (
-          <div style={{ position: 'absolute', top: '12px', right: '12px', background: '#c0392b', color: '#fff', padding: '4px 10px', fontSize: '12px', fontWeight: '700', zIndex: 1 }}>
-            חסר במלאי
-          </div>
-        )}
         {hasDiscount && inStock && (
           <div style={{ position: 'absolute', top: '12px', left: '12px', background: '#e74c3c', color: '#fff', padding: '4px 10px', fontSize: '12px', fontWeight: '700', zIndex: 1 }}>
             מבצע!
           </div>
         )}
 
-        {/* כפתור לב */}
         <button onClick={handleWishlist}
           style={{ position: 'absolute', top: '12px', left: hasDiscount && inStock ? '60px' : '12px', background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2, fontSize: '16px', boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }}>
           {wished ? '❤️' : '🤍'}
         </button>
 
-        {/* תמונה */}
         <div style={{ aspectRatio: '3/4', overflow: 'hidden', background: '#EDE6D9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {image
             ? <img src={image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -90,14 +82,10 @@ export default function ProductCard({ product, index }) {
             <div onClick={e => e.preventDefault()}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
                 <button onClick={e => handleQty(e, -1)}
-                  style={{ width: '28px', height: '28px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  −
-                </button>
+                  style={{ width: '28px', height: '28px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
                 <span style={{ fontWeight: '700', minWidth: '28px', textAlign: 'center', fontSize: '15px' }}>{quantity}</span>
                 <button onClick={e => handleQty(e, 1)}
-                  style={{ width: '28px', height: '28px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  +
-                </button>
+                  style={{ width: '28px', height: '28px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
               </div>
               <div style={{ display: 'flex', gap: '6px' }}>
                 <button onClick={handleAdd}
@@ -111,9 +99,10 @@ export default function ProductCard({ product, index }) {
               </div>
             </div>
           ) : (
-            <div style={{ background: '#999', color: '#fff', padding: '10px', textAlign: 'center', fontSize: '13px', fontWeight: '500' }}>
-              חסר במלאי
-            </div>
+            <a href={'/products/' + index} onClick={e => e.stopPropagation()}
+              style={{ display: 'block', background: '#1A2332', color: '#C9A84C', padding: '10px', textAlign: 'center', fontSize: '13px', fontWeight: '600', textDecoration: 'none' }}>
+              לפרטים ←
+            </a>
           )}
         </div>
       </div>
