@@ -30,6 +30,8 @@ export default function ProductPageClient({ product }) {
   const [orderId, setOrderId] = useState(null)
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', address: '', city: '', note: '' })
   const [showQuickBuy, setShowQuickBuy] = useState(false)
+  const [waitlistEmail, setWaitlistEmail] = useState('')
+  const [waitlistStatus, setWaitlistStatus] = useState(null)
 
   const [engravingType, setEngravingType] = useState('none')
   const [letterColor, setLetterColor] = useState('לשיקול דעתו של המטביע')
@@ -170,6 +172,23 @@ export default function ProductPageClient({ product }) {
     }
   }
 
+  async function handleWaitlist(e) {
+    e.preventDefault()
+    if (!waitlistEmail.trim()) return
+    setWaitlistStatus('loading')
+    try {
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: waitlistEmail, productIndex: product.index, productName: product.name })
+      })
+      if (!res.ok) throw new Error()
+      setWaitlistStatus('success')
+    } catch {
+      setWaitlistStatus('error')
+    }
+  }
+
   function handleChange(e) { setForm({ ...form, [e.target.name]: e.target.value }) }
 
   const inputStyle = { width: '100%', padding: '11px 14px', border: '1px solid #EDE6D9', background: '#fff', fontSize: '15px', fontFamily: 'Heebo, sans-serif', color: '#2C2416', outline: 'none' }
@@ -239,7 +258,6 @@ export default function ProductPageClient({ product }) {
           </div>
 
           <div>
-            {/* שם + כפתור לב */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
               <h1 style={{ fontFamily: 'serif', fontSize: '32px', fontWeight: '900', lineHeight: 1.3, flex: 1 }}>{product.name}</h1>
               <button onClick={() => toggleItem({ ...product })}
@@ -374,8 +392,25 @@ export default function ProductPageClient({ product }) {
                 </button>
               </div>
             ) : (
-              <div style={{ background: '#fff0f0', border: '1px solid #fcc', padding: '16px', textAlign: 'center', color: '#c0392b', fontSize: '15px', marginBottom: '24px' }}>
-                המוצר כרגע חסר במלאי
+              <div style={{ background: '#fff0f0', border: '1px solid #fcc', padding: '20px', marginBottom: '24px' }}>
+                <p style={{ color: '#c0392b', fontSize: '15px', marginBottom: '16px', fontWeight: '600' }}>המוצר כרגע חסר במלאי</p>
+                {waitlistStatus === 'success' ? (
+                  <p style={{ color: '#27ae60', fontSize: '14px' }}>✅ נרשמת! נודיע לך כשהמוצר יחזור.</p>
+                ) : (
+                  <form onSubmit={handleWaitlist}>
+                    <p style={{ fontSize: '14px', color: '#6B5C3E', marginBottom: '10px' }}>השאר מייל ונודיע לך כשיחזור למלאי:</p>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input type="email" value={waitlistEmail} onChange={e => setWaitlistEmail(e.target.value)}
+                        required placeholder="your@email.com"
+                        style={{ flex: 1, padding: '10px 14px', border: '1px solid #EDE6D9', fontSize: '14px', fontFamily: 'Heebo, sans-serif', outline: 'none' }} />
+                      <button type="submit" disabled={waitlistStatus === 'loading'}
+                        style={{ background: '#1A2332', color: '#C9A84C', border: 'none', padding: '10px 16px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+                        {waitlistStatus === 'loading' ? '...' : 'הודע לי'}
+                      </button>
+                    </div>
+                    {waitlistStatus === 'error' && <p style={{ color: '#e74c3c', fontSize: '13px', marginTop: '8px' }}>שגיאה, נסה שוב</p>}
+                  </form>
+                )}
               </div>
             )}
 
