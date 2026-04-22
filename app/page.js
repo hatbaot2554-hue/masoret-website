@@ -14,62 +14,7 @@ async function getProducts() {
   }
 }
 
-export const ALL_REVIEWS = [
-  { name: 'משה כהן', city: 'בני ברק', text: 'שירות מעולה, הספרים הגיעו מהר ובמצב מושלם. ממליץ בחום!', stars: 5 },
-  { name: 'יעקב לוי', city: 'ירושלים', text: 'מבחר עצום ומחירים הוגנים. הטבעת ההקדשה יצאה יפה מאוד.', stars: 5 },
-  { name: 'אברהם ברקוביץ', city: 'אשדוד', text: 'קניתי סט שלם לבר מצווה של הבן. שירות אישי ומקצועי ברמה גבוהה.', stars: 5 },
-  { name: 'דוד שפירא', city: 'פתח תקווה', text: 'הזמנתי גלופה על 50 ספרים — התוצאה פשוט מדהימה. תודה רבה!', stars: 5 },
-  { name: 'שמואל רוזנברג', city: 'בית שמש', text: 'קיבלתי את הספרים תוך יומיים. אריזה מהודרת ושירות ממש אישי.', stars: 5 },
-  { name: 'פנחס אדלר', city: 'מודיעין עילית', text: 'הזמנתי 20 ספרים עם הטבעה לחתונה — כולם התפעלו. תודה ענקית!', stars: 5 },
-  { name: 'חיים וינברג', city: 'אלעד', text: 'מחירים הכי טובים שמצאתי, ומוצרים אמיתיים. אין על זה.', stars: 5 },
-  { name: 'נחום פרידמן', city: 'ביתר עילית', text: 'קניתי שש מחזורים לבר המצווה של הנכד. כולם היו מרוצים מאוד.', stars: 5 },
-  { name: 'אליהו גולדברג', city: 'רחובות', text: 'שירות הלקוחות ענה לי מייד ועזר לבחור. קנייה מהנה!', stars: 5 },
-  { name: 'ישראל קופמן', city: 'נתניה', text: 'הזמנה ראשונה ובטח לא אחרונה. כל כך קל ונוח לקנות כאן.', stars: 5 },
-  { name: 'מרדכי זילברשטיין', city: 'גבעת שמואל', text: 'קניתי סט תנ"ך שלם — איכות מדהימה במחיר שלא מצאתי בשום מקום אחר.', stars: 5 },
-  { name: 'אהרן ביינוש', city: 'טבריה', text: 'הטבעת הגלופה יצאה מושלמת. קיבלנו המון מחמאות בחתונה.', stars: 5 },
-  { name: 'ברוך שטיינמץ', city: 'צפת', text: 'הזמנתי ספר נדיר שלא מצאתי בשום חנות — כאן מצאתי!', stars: 5 },
-  { name: 'גרשון טננבאום', city: 'חיפה', text: 'אתר נוח, תמונות ברורות, ומשלוח מהיר. בדיוק מה שחיפשתי.', stars: 5 },
-  { name: 'שלמה ליפשיץ', city: 'פתח תקווה', text: 'עשרות ספרים לאורחי השמחה עם הקדשה — כולם קיבלו ביידיים.', stars: 5 },
-  { name: 'יצחק הורוביץ', city: 'קרית גת', text: 'קיבלתי את החבילה ביום למחרת! שירות מדהים, ממליץ לכולם.', stars: 5 },
-  { name: 'מנחם שורר', city: 'לוד', text: 'ספרים איכותיים מאוד, בדיוק כמו בתמונה. כל הכבוד.', stars: 5 },
-  { name: 'זאב קרויס', city: 'אשקלון', text: 'קניתי כאן כמה פעמים ותמיד מרוצה. אמינות מלאה.', stars: 5 },
-  { name: 'דב ריינר', city: 'ירושלים', text: 'האתר הכי מסודר שנתקלתי בו. חיפוש קל ומשלוח מהיר.', stars: 5 },
-  { name: 'יוסף שוורץ', city: 'בני ברק', text: 'מבחר הספרים פשוט עצום. מצאתי ספרים שלא ידעתי שקיימים!', stars: 5 },
-]
-
-function ReviewsCarousel() {
-  return (
-    <div className="reviews-carousel-wrapper">
-      <div className="reviews-carousel-track">
-        {[...ALL_REVIEWS, ...ALL_REVIEWS].map((r, i) => (
-          <div key={i} className="review-card-carousel">
-            <div style={{ color: '#C9A84C', fontSize: '14px', letterSpacing: '2px', marginBottom: '10px' }}>
-              {'★'.repeat(r.stars)}
-            </div>
-            <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px', lineHeight: 1.8, marginBottom: '14px', flex: 1 }}>
-              "{r.text}"
-            </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{
-                width: '32px', height: '32px', borderRadius: '50%',
-                background: 'linear-gradient(135deg, #C9A84C, #8B6914)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#fff', fontWeight: '700', fontSize: '13px', flexShrink: 0,
-              }}>
-                {r.name[0]}
-              </div>
-              <div>
-                <div style={{ color: '#fff', fontWeight: '600', fontSize: '13px' }}>{r.name}</div>
-                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>{r.city}</div>
-              </div>
-              <span style={{ marginRight: 'auto', background: 'rgba(201,168,76,0.15)', color: '#C9A84C', fontSize: '10px', padding: '2px 7px', borderRadius: '100px' }}>✓ מאומת</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
+import ReviewsCarousel from './components/ReviewsCarousel'
 
 export default async function HomePage() {
   const products = await getProducts()
@@ -230,7 +175,7 @@ export default async function HomePage() {
             </div>
           </div>
         </div>
-        <ReviewsCarousel />
+        <ReviewsCarousel darkBg={true} />
       </section>
 
       {/* ===== CTA תחתון ===== */}
