@@ -186,7 +186,9 @@ h1, h2, h3, h4 {
   .container {
     padding: 0 16px;
   }
-}/* ===== STICKY CTA BAR — מובייל בלבד ===== */
+}
+
+/* ===== STICKY CTA BAR — מובייל בלבד ===== */
 .sticky-cta-bar {
   display: none;
 }
@@ -224,7 +226,9 @@ h1, h2, h3, h4 {
     grid-template-columns: 1fr !important;
   }
 }
+
 /* ===== REVIEWS CAROUSEL ===== */
+/* האנימציה נעה מימין לשמאל (RTL) — translateX חיובי = גלילה לכיוון הקריאה */
 .reviews-carousel-wrapper {
   overflow: hidden;
   width: 100%;
@@ -234,8 +238,10 @@ h1, h2, h3, h4 {
 .reviews-carousel-track {
   display: flex;
   gap: 20px;
-  animation: carousel-scroll 60s linear infinite;
+  animation: carousel-scroll 80s linear infinite;
   width: max-content;
+  /* מתחיל מהמקום שהוא -50% של הסרט (החצי השני = עותק) */
+  transform: translateX(-50%);
 }
 
 .reviews-carousel-wrapper:hover .reviews-carousel-track {
@@ -243,8 +249,8 @@ h1, h2, h3, h4 {
 }
 
 @keyframes carousel-scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0%   { transform: translateX(-50%); }
+  100% { transform: translateX(0%); }
 }
 
 .review-card-carousel {
