@@ -51,21 +51,21 @@ export default function ReviewsCarousel({ darkBg = true }) {
 
   return (
     <div style={{ overflow: 'hidden', width: '100%' }}>
-      <style>{`
-        @keyframes carousel-rtl {
-          0%   { transform: translateX(-50%); }
-          100% { transform: translateX(0%); }
-        }
-        .carousel-track-inner {
-          display: flex;
-          gap: 20px;
-          width: max-content;
-          animation: carousel-rtl 120s linear infinite;
-        }
-        .carousel-track-inner:hover {
-          animation-play-state: paused;
-        }
-      `}</style>
+     <style>{`
+  @keyframes carousel-rtl {
+    0%   { transform: translateX(0%); }
+    100% { transform: translateX(50%); }
+  }
+  .carousel-track-inner {
+    display: flex;
+    gap: 20px;
+    width: max-content;
+    animation: carousel-rtl 120s linear infinite;
+  }
+  .carousel-track-inner:hover {
+    animation-play-state: paused;
+  }
+`}</style>
       <div className="carousel-track-inner">
         {doubled.map((r, i) => (
           <div key={i} style={{
