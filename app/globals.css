@@ -186,4 +186,41 @@ h1, h2, h3, h4 {
   .container {
     padding: 0 16px;
   }
+}/* ===== STICKY CTA BAR — מובייל בלבד ===== */
+.sticky-cta-bar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sticky-cta-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    z-index: 9999;
+    background: #fff;
+    border-top: 2px solid #C9A84C;
+    padding: 12px 16px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
+  }
+}
+
+/* ===== Hero responsive ===== */
+@media (max-width: 900px) {
+  .hero-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .hero-stats {
+    display: none !important;
+  }
+}
+
+/* ===== Cart responsive ===== */
+@media (max-width: 768px) {
+  .cart-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
