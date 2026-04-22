@@ -8,12 +8,19 @@ function formatPrice(price) {
   return Math.ceil(p)
 }
 
+const UPSELL_ITEMS = [
+  { name: 'סידור תפילה כיס', price: 29, emoji: '📖', desc: 'מתאים לנסיעות ויומיום' },
+  { name: 'הגדה של פסח מהודרת', price: 49, emoji: '📜', desc: 'עם פירוש מורחב' },
+  { name: 'תהילים כיס עם כריכה קשה', price: 39, emoji: '✡️', desc: 'כריכת עור מלאכותי' },
+]
+
 export default function CartPage() {
   const { items, removeItem, updateQty, clearCart, totalPrice } = useCart()
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', address: '', city: '', note: '' })
   const [status, setStatus] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
   const [orderId, setOrderId] = useState(null)
+  const [dismissedUpsell, setDismissedUpsell] = useState(false)
 
   function handleChange(e) { setForm({ ...form, [e.target.name]: e.target.value }) }
 
@@ -68,9 +75,7 @@ export default function CartPage() {
           <div style={{ fontSize: '13px', color: '#6B5C3E', marginBottom: '4px' }}>מספר הזמנה:</div>
           <div style={{ fontSize: '28px', fontWeight: '700', color: '#8B6914', fontFamily: 'serif' }}>#{orderId}</div>
         </div>
-        <a href="/products" style={{ background: '#8B6914', color: '#fff', padding: '14px 32px', textDecoration: 'none', fontSize: '15px', fontFamily: 'serif' }}>
-          המשך לקנות
-        </a>
+        <a href="/products" style={{ background: '#8B6914', color: '#fff', padding: '14px 32px', textDecoration: 'none', fontSize: '15px', fontFamily: 'serif' }}>המשך לקנות</a>
       </div>
     )
   }
@@ -81,9 +86,7 @@ export default function CartPage() {
         <div style={{ fontSize: '64px', marginBottom: '16px' }}>🛒</div>
         <h2 style={{ fontFamily: 'serif', fontSize: '28px', marginBottom: '12px' }}>העגלה ריקה</h2>
         <p style={{ color: '#6B5C3E', marginBottom: '24px' }}>לא הוספת עדיין מוצרים לעגלה</p>
-        <a href="/products" style={{ background: '#8B6914', color: '#fff', padding: '14px 32px', textDecoration: 'none', fontSize: '15px', fontFamily: 'serif' }}>
-          לחנות
-        </a>
+        <a href="/products" style={{ background: '#8B6914', color: '#fff', padding: '14px 32px', textDecoration: 'none', fontSize: '15px', fontFamily: 'serif' }}>לחנות</a>
       </div>
     )
   }
@@ -92,6 +95,41 @@ export default function CartPage() {
     <div style={{ padding: '48px 0' }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
         <h1 style={{ fontFamily: 'serif', fontSize: '36px', fontWeight: '900', marginBottom: '32px' }}>עגלת קניות</h1>
+
+        {/* ===== UPSELL ===== */}
+        {!dismissedUpsell && (
+          <div style={{ background: 'linear-gradient(135deg, #FFF8E8, #FFF3D0)', border: '1px solid #E8C97A', borderRadius: '8px', padding: '20px 24px', marginBottom: '28px', position: 'relative' }}>
+            <button onClick={() => setDismissedUpsell(true)}
+              style={{ position: 'absolute', top: '12px', left: '16px', background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#999', lineHeight: 1 }}>✕</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <span style={{ fontSize: '18px' }}>🔥</span>
+              <span style={{ fontWeight: '700', color: '#8B6914', fontSize: '15px' }}>לקוחות שקנו גם:</span>
+              <span style={{ background: '#e74c3c', color: '#fff', fontSize: '11px', padding: '2px 8px', borderRadius: '100px', fontWeight: '700' }}>10% הנחה עם ההזמנה</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+              {UPSELL_ITEMS.map((item, i) => {
+                const discounted = Math.round(item.price * 0.9)
+                return (
+                  <div key={i} style={{ background: '#fff', border: '1px solid #EDE6D9', borderRadius: '6px', padding: '14px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontSize: '28px' }}>{item.emoji}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: '600', fontSize: '13px', color: '#2C2416', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
+                      <div style={{ fontSize: '12px', color: '#6B5C3E' }}>{item.desc}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                        <span style={{ fontSize: '13px', color: '#999', textDecoration: 'line-through' }}>₪{item.price}</span>
+                        <span style={{ fontSize: '15px', color: '#8B6914', fontWeight: '700' }}>₪{discounted}</span>
+                      </div>
+                    </div>
+                    <a href="/products" style={{ background: '#C9A84C', color: '#1A2332', border: 'none', padding: '8px 12px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', textDecoration: 'none', whiteSpace: 'nowrap', borderRadius: '4px' }}>
+                      הוסף +
+                    </a>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '40px', alignItems: 'start' }}>
 
           <div>
@@ -114,9 +152,7 @@ export default function CartPage() {
                     </div>
                   )}
                   {item.engravingExtra > 0 && (
-                    <div style={{ fontSize: '12px', color: '#8B6914', marginTop: '2px' }}>
-                      תוספת הטבעה: ₪{item.engravingExtra}
-                    </div>
+                    <div style={{ fontSize: '12px', color: '#8B6914', marginTop: '2px' }}>תוספת הטבעה: ₪{item.engravingExtra}</div>
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
                     <button type="button" onClick={() => updateQty(item.key, item.quantity - 1)} style={{ width: '28px', height: '28px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer' }}>-</button>
