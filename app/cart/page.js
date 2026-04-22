@@ -33,7 +33,6 @@ export default function CartPage() {
       const utmSource = typeof window !== 'undefined'
         ? (new URLSearchParams(window.location.search).get('utm_source') || document.referrer || 'direct')
         : 'direct'
-
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -130,7 +129,7 @@ export default function CartPage() {
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '40px', alignItems: 'start' }}>
+        <div className="cart-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '40px', alignItems: 'start' }}>
 
           <div>
             {items.map(item => (
