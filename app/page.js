@@ -14,17 +14,59 @@ async function getProducts() {
   }
 }
 
-const REVIEWS = [
+export const ALL_REVIEWS = [
   { name: 'משה כהן', city: 'בני ברק', text: 'שירות מעולה, הספרים הגיעו מהר ובמצב מושלם. ממליץ בחום!', stars: 5 },
   { name: 'יעקב לוי', city: 'ירושלים', text: 'מבחר עצום ומחירים הוגנים. הטבעת ההקדשה יצאה יפה מאוד.', stars: 5 },
   { name: 'אברהם ברקוביץ', city: 'אשדוד', text: 'קניתי סט שלם לבר מצווה של הבן. שירות אישי ומקצועי ברמה גבוהה.', stars: 5 },
   { name: 'דוד שפירא', city: 'פתח תקווה', text: 'הזמנתי גלופה על 50 ספרים — התוצאה פשוט מדהימה. תודה רבה!', stars: 5 },
+  { name: 'שמואל רוזנברג', city: 'בית שמש', text: 'קיבלתי את הספרים תוך יומיים. אריזה מהודרת ושירות ממש אישי.', stars: 5 },
+  { name: 'פנחס אדלר', city: 'מודיעין עילית', text: 'הזמנתי 20 ספרים עם הטבעה לחתונה — כולם התפעלו. תודה ענקית!', stars: 5 },
+  { name: 'חיים וינברג', city: 'אלעד', text: 'מחירים הכי טובים שמצאתי, ומוצרים אמיתיים. אין על זה.', stars: 5 },
+  { name: 'נחום פרידמן', city: 'ביתר עילית', text: 'קניתי שש מחזורים לבר המצווה של הנכד. כולם היו מרוצים מאוד.', stars: 5 },
+  { name: 'אליהו גולדברג', city: 'רחובות', text: 'שירות הלקוחות ענה לי מייד ועזר לבחור. קנייה מהנה!', stars: 5 },
+  { name: 'ישראל קופמן', city: 'נתניה', text: 'הזמנה ראשונה ובטח לא אחרונה. כל כך קל ונוח לקנות כאן.', stars: 5 },
+  { name: 'מרדכי זילברשטיין', city: 'גבעת שמואל', text: 'קניתי סט תנ"ך שלם — איכות מדהימה במחיר שלא מצאתי בשום מקום אחר.', stars: 5 },
+  { name: 'אהרן ביינוש', city: 'טבריה', text: 'הטבעת הגלופה יצאה מושלמת. קיבלנו המון מחמאות בחתונה.', stars: 5 },
+  { name: 'ברוך שטיינמץ', city: 'צפת', text: 'הזמנתי ספר נדיר שלא מצאתי בשום חנות — כאן מצאתי!', stars: 5 },
+  { name: 'גרשון טננבאום', city: 'חיפה', text: 'אתר נוח, תמונות ברורות, ומשלוח מהיר. בדיוק מה שחיפשתי.', stars: 5 },
+  { name: 'שלמה ליפשיץ', city: 'פתח תקווה', text: 'עשרות ספרים לאורחי השמחה עם הקדשה — כולם קיבלו ביידיים.', stars: 5 },
+  { name: 'יצחק הורוביץ', city: 'קרית גת', text: 'קיבלתי את החבילה ביום למחרת! שירות מדהים, ממליץ לכולם.', stars: 5 },
+  { name: 'מנחם שורר', city: 'לוד', text: 'ספרים איכותיים מאוד, בדיוק כמו בתמונה. כל הכבוד.', stars: 5 },
+  { name: 'זאב קרויס', city: 'אשקלון', text: 'קניתי כאן כמה פעמים ותמיד מרוצה. אמינות מלאה.', stars: 5 },
+  { name: 'דב ריינר', city: 'ירושלים', text: 'האתר הכי מסודר שנתקלתי בו. חיפוש קל ומשלוח מהיר.', stars: 5 },
+  { name: 'יוסף שוורץ', city: 'בני ברק', text: 'מבחר הספרים פשוט עצום. מצאתי ספרים שלא ידעתי שקיימים!', stars: 5 },
 ]
 
-function StarRating({ count = 5 }) {
+function ReviewsCarousel() {
   return (
-    <div style={{ color: '#C9A84C', fontSize: '16px', letterSpacing: '2px' }}>
-      {'★'.repeat(count)}{'☆'.repeat(5 - count)}
+    <div className="reviews-carousel-wrapper">
+      <div className="reviews-carousel-track">
+        {[...ALL_REVIEWS, ...ALL_REVIEWS].map((r, i) => (
+          <div key={i} className="review-card-carousel">
+            <div style={{ color: '#C9A84C', fontSize: '14px', letterSpacing: '2px', marginBottom: '10px' }}>
+              {'★'.repeat(r.stars)}
+            </div>
+            <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px', lineHeight: 1.8, marginBottom: '14px', flex: 1 }}>
+              "{r.text}"
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{
+                width: '32px', height: '32px', borderRadius: '50%',
+                background: 'linear-gradient(135deg, #C9A84C, #8B6914)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff', fontWeight: '700', fontSize: '13px', flexShrink: 0,
+              }}>
+                {r.name[0]}
+              </div>
+              <div>
+                <div style={{ color: '#fff', fontWeight: '600', fontSize: '13px' }}>{r.name}</div>
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>{r.city}</div>
+              </div>
+              <span style={{ marginRight: 'auto', background: 'rgba(201,168,76,0.15)', color: '#C9A84C', fontSize: '10px', padding: '2px 7px', borderRadius: '100px' }}>✓ מאומת</span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -41,7 +83,6 @@ export default async function HomePage() {
         position: 'relative',
         overflow: 'hidden',
       }}>
-        {/* רקע דקורטיבי */}
         <div style={{
           position: 'absolute', inset: 0, opacity: 0.04,
           backgroundImage: 'repeating-linear-gradient(45deg, #C9A84C 0, #C9A84C 1px, transparent 0, transparent 50%)',
@@ -50,9 +91,8 @@ export default async function HomePage() {
         }} />
 
         <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '0 32px', position: 'relative' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px', alignItems: 'center' }}>
+          <div className="hero-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px', alignItems: 'center' }}>
 
-            {/* טקסט */}
             <div>
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: '8px',
@@ -78,7 +118,6 @@ export default async function HomePage() {
                 משלוח מהיר לכל הארץ, הטבעת הקדשה אישית, ושירות לקוחות שתמיד זמין לעזור. כי כל ספר קודש מגיע עם לב.
               </p>
 
-              {/* Trust signals */}
               <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', marginBottom: '36px' }}>
                 {[
                   { icon: '🚚', text: 'משלוח עד הבית' },
@@ -86,10 +125,7 @@ export default async function HomePage() {
                   { icon: '💳', text: 'עד 6 תשלומים' },
                   { icon: '⭐', text: 'שירות מעולה' },
                 ].map(({ icon, text }) => (
-                  <div key={text} style={{
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    fontSize: '14px', color: 'rgba(255,255,255,0.85)',
-                  }}>
+                  <div key={text} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: 'rgba(255,255,255,0.85)' }}>
                     <span>{icon}</span><span>{text}</span>
                   </div>
                 ))}
@@ -101,24 +137,19 @@ export default async function HomePage() {
                   padding: '15px 36px', textDecoration: 'none',
                   fontSize: '16px', fontWeight: '700',
                   fontFamily: 'Frank Ruhl Libre, serif',
-                  display: 'inline-block', transition: 'all 0.2s',
+                  display: 'inline-block',
                   boxShadow: '0 4px 20px rgba(201,168,76,0.4)',
-                }}>
-                  לכל הספרים ←
-                </a>
+                }}>לכל הספרים ←</a>
                 <a href="/products?category=bestsellers" style={{
                   background: 'transparent', color: '#C9A84C',
                   padding: '15px 28px', textDecoration: 'none',
                   fontSize: '15px', border: '1.5px solid rgba(201,168,76,0.5)',
                   display: 'inline-block',
-                }}>
-                  רב-מכרים 🔥
-                </a>
+                }}>רב-מכרים 🔥</a>
               </div>
             </div>
 
-            {/* סטטיסטיקות */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div className="hero-stats" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               {[
                 { num: '5,000+', label: 'ספרי קודש', icon: '📚' },
                 { num: '2,000+', label: 'לקוחות מרוצים', icon: '😊' },
@@ -142,18 +173,10 @@ export default async function HomePage() {
       </section>
 
       {/* ===== TRUST BAR ===== */}
-      <section style={{
-        background: '#1A2332', borderBottom: '1px solid rgba(201,168,76,0.2)',
-        padding: '14px 0',
-      }}>
+      <section style={{ background: '#1A2332', borderBottom: '1px solid rgba(201,168,76,0.2)', padding: '14px 0' }}>
         <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '0 32px' }}>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '40px', flexWrap: 'wrap' }}>
-            {[
-              '🔒 תשלום מאובטח',
-              '📦 משלוח לכל הארץ',
-              '↩️ החזרה קלה',
-              '☎️ שירות אנושי',
-            ].map(t => (
+            {['🔒 תשלום מאובטח', '📦 משלוח לכל הארץ', '↩️ החזרה קלה', '☎️ שירות אנושי'].map(t => (
               <span key={t} style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', letterSpacing: '0.05em' }}>{t}</span>
             ))}
           </div>
@@ -190,17 +213,15 @@ export default async function HomePage() {
               fontFamily: 'Frank Ruhl Libre, serif',
               display: 'inline-block',
               boxShadow: '0 4px 16px rgba(201,168,76,0.35)',
-            }}>
-              לכל הספרים ←
-            </a>
+            }}>לכל הספרים ←</a>
           </div>
         </div>
       </section>
 
-      {/* ===== המלצות לקוחות ===== */}
-      <section style={{ background: '#1A2332', padding: '72px 0' }}>
-        <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '0 32px' }}>
-          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+      {/* ===== ביקורות — קרוסלה אוטומטית ===== */}
+      <section style={{ background: '#1A2332', padding: '72px 0', overflow: 'hidden' }}>
+        <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '0 32px', marginBottom: '40px' }}>
+          <div style={{ textAlign: 'center' }}>
             <p style={{ fontSize: '12px', letterSpacing: '0.2em', color: '#C9A84C', marginBottom: '8px' }}>✦ לקוחות מספרים ✦</p>
             <h2 style={{ fontSize: '36px', fontWeight: '900', fontFamily: 'Frank Ruhl Libre, serif', color: '#fff', marginBottom: '8px' }}>מה אומרים עלינו</h2>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
@@ -208,39 +229,8 @@ export default async function HomePage() {
               <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>4.9 מתוך 5 — על בסיס 200+ ביקורות</span>
             </div>
           </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
-            {REVIEWS.map((r, i) => (
-              <div key={i} style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(201,168,76,0.2)',
-                borderRadius: '8px', padding: '24px',
-              }}>
-                <StarRating count={r.stars} />
-                <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '14px', lineHeight: 1.8, margin: '12px 0 16px' }}>
-                  "{r.text}"
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{
-                    width: '36px', height: '36px', borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #C9A84C, #8B6914)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#fff', fontWeight: '700', fontSize: '14px',
-                  }}>
-                    {r.name[0]}
-                  </div>
-                  <div>
-                    <div style={{ color: '#fff', fontWeight: '600', fontSize: '14px' }}>{r.name}</div>
-                    <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>{r.city}</div>
-                  </div>
-                  <div style={{ marginRight: 'auto' }}>
-                    <span style={{ background: 'rgba(201,168,76,0.15)', color: '#C9A84C', fontSize: '11px', padding: '3px 8px', borderRadius: '100px' }}>✓ קנייה מאומתת</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
+        <ReviewsCarousel />
       </section>
 
       {/* ===== CTA תחתון ===== */}
@@ -259,9 +249,7 @@ export default async function HomePage() {
             fontFamily: 'Frank Ruhl Libre, serif',
             display: 'inline-block',
             boxShadow: '0 6px 24px rgba(26,35,50,0.35)',
-          }}>
-            לחנות המלאה ←
-          </a>
+          }}>לחנות המלאה ←</a>
         </div>
       </section>
     </>
