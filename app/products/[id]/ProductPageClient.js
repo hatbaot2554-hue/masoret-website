@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useCart } from '../../components/CartContext'
+import { useWishlist } from '../../components/WishlistContext'
 
 function formatPrice(price) {
   const p = parseFloat(price || 0)
@@ -16,6 +17,7 @@ const ENGRAVING_PRICING_TEXT = `• הקדשה על ספרים בודדים - 15
 
 export default function ProductPageClient({ product }) {
   const { addItem } = useCart()
+  const { toggleItem, isInWishlist } = useWishlist()
   const [activeImg, setActiveImg] = useState(product.image || '')
   const [selectedVariation, setSelectedVariation] = useState(null)
   const [selectedAttrs, setSelectedAttrs] = useState({})
@@ -43,6 +45,7 @@ export default function ProductPageClient({ product }) {
   const finalPrice = formatPrice(product.price)
   const regularFinalPrice = formatPrice(product.regular_our_price || product.price)
   const hasVariations = product.variations && product.variations.length > 0
+  const wished = isInWishlist(product.index)
 
   const engravingExtra = (() => {
     if (engravingType === 'single') return engravingQty * 15
@@ -236,7 +239,14 @@ export default function ProductPageClient({ product }) {
           </div>
 
           <div>
-            <h1 style={{ fontFamily: 'serif', fontSize: '32px', fontWeight: '900', marginBottom: '12px', lineHeight: 1.3 }}>{product.name}</h1>
+            {/* שם + כפתור לב */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
+              <h1 style={{ fontFamily: 'serif', fontSize: '32px', fontWeight: '900', lineHeight: 1.3, flex: 1 }}>{product.name}</h1>
+              <button onClick={() => toggleItem({ ...product })}
+                style={{ background: 'none', border: '2px solid #EDE6D9', borderRadius: '50%', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '20px', flexShrink: 0, marginTop: '4px' }}>
+                {wished ? '❤️' : '🤍'}
+              </button>
+            </div>
 
             {product.description && <p style={{ fontSize: '15px', color: '#2C2416', lineHeight: 1.8, marginBottom: '20px' }}>{product.description}</p>}
 
@@ -256,14 +266,12 @@ export default function ProductPageClient({ product }) {
               </div>
             ))}
 
-            {/* מחיר */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
               {activeRegularPrice > activePrice && <span style={{ fontSize: '1.3rem', color: '#999', textDecoration: 'line-through' }}>₪{activeRegularPrice}</span>}
               <span style={{ fontFamily: 'serif', fontSize: '2.2rem', color: '#8B6914', fontWeight: '700' }}>₪{activePrice}</span>
               {activeRegularPrice > activePrice && <span style={{ background: '#e74c3c', color: '#fff', padding: '3px 10px', borderRadius: '4px', fontSize: '13px', fontWeight: '700' }}>מבצע!</span>}
             </div>
 
-            {/* ✅ כמות — אחרי מחיר, לפני הטבעה */}
             {inStock && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px', background: '#F8F4EE', padding: '12px 16px', borderRadius: '4px' }}>
                 <label style={{ fontSize: '14px', color: '#6B5C3E', fontWeight: '600' }}>כמות:</label>
@@ -274,13 +282,10 @@ export default function ProductPageClient({ product }) {
                   <button type="button" onClick={() => setQuantity(quantity + 1)}
                     style={{ width: '36px', height: '36px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                 </div>
-                <div style={{ fontSize: '16px', color: '#8B6914', fontWeight: '700' }}>
-                  סה"כ: ₪{totalPrice}
-                </div>
+                <div style={{ fontSize: '16px', color: '#8B6914', fontWeight: '700' }}>סה"כ: ₪{totalPrice}</div>
               </div>
             )}
 
-            {/* הטבעה */}
             <div style={{ marginBottom: '24px' }}>
               <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>הטבעת הקדשה:</label>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -357,7 +362,6 @@ export default function ProductPageClient({ product }) {
               {engravingError && <div style={{ color: '#e74c3c', fontSize: '14px', marginTop: '8px', fontWeight: '600' }}>⚠️ {engravingError}</div>}
             </div>
 
-            {/* כפתורי פעולה */}
             {inStock ? (
               <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
                 <button onClick={handleAddToCart}
