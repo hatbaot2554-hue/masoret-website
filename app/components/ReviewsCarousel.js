@@ -39,45 +39,45 @@ const ALL_REVIEWS = [
 ]
 
 export default function ReviewsCarousel({ darkBg = true }) {
-  const cardStyle = {
-    background: darkBg ? 'rgba(255,255,255,0.06)' : '#F8F4EE',
-    border: darkBg ? '1px solid rgba(201,168,76,0.2)' : '1px solid #EDE6D9',
-    borderRadius: '8px',
-    padding: '20px',
-    width: '280px',
-    flexShrink: 0,
-    display: 'flex',
-    flexDirection: 'column',
-  }
-
+  const cardBg = darkBg ? 'rgba(255,255,255,0.06)' : '#F8F4EE'
+  const cardBorder = darkBg ? '1px solid rgba(201,168,76,0.2)' : '1px solid #EDE6D9'
+  const textColor = darkBg ? 'rgba(255,255,255,0.85)' : '#2C2416'
   const nameColor = darkBg ? '#fff' : '#2C2416'
   const cityColor = darkBg ? 'rgba(255,255,255,0.5)' : '#6B5C3E'
-  const textColor = darkBg ? 'rgba(255,255,255,0.85)' : '#2C2416'
   const badgeBg = darkBg ? 'rgba(201,168,76,0.15)' : 'rgba(39,174,96,0.1)'
   const badgeColor = darkBg ? '#C9A84C' : '#27ae60'
-  const badgeText = darkBg ? '✓ מאומת' : '✓ קנייה מאומתת'
 
   const doubled = [...ALL_REVIEWS, ...ALL_REVIEWS]
 
   return (
-    <div style={{ overflow: 'hidden', width: '100%' }}
-      onMouseEnter={e => e.currentTarget.querySelector('.carousel-track').style.animationPlayState = 'paused'}
-      onMouseLeave={e => e.currentTarget.querySelector('.carousel-track').style.animationPlayState = 'running'}>
+    <div style={{ overflow: 'hidden', width: '100%' }}>
       <style>{`
         @keyframes carousel-rtl {
           0%   { transform: translateX(-50%); }
           100% { transform: translateX(0%); }
         }
-        .carousel-track {
+        .carousel-track-inner {
           display: flex;
           gap: 20px;
           width: max-content;
           animation: carousel-rtl 120s linear infinite;
         }
+        .carousel-track-inner:hover {
+          animation-play-state: paused;
+        }
       `}</style>
-      <div className="carousel-track">
+      <div className="carousel-track-inner">
         {doubled.map((r, i) => (
-          <div key={i} style={cardStyle}>
+          <div key={i} style={{
+            background: cardBg,
+            border: cardBorder,
+            borderRadius: '8px',
+            padding: '20px',
+            width: '280px',
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+          }}>
             <div style={{ color: '#C9A84C', fontSize: '14px', letterSpacing: '2px', marginBottom: '10px' }}>
               {'★'.repeat(r.stars)}
             </div>
@@ -98,7 +98,7 @@ export default function ReviewsCarousel({ darkBg = true }) {
                 <div style={{ color: cityColor, fontSize: '11px' }}>{r.city}</div>
               </div>
               <span style={{ marginRight: 'auto', background: badgeBg, color: badgeColor, fontSize: '10px', padding: '2px 7px', borderRadius: '100px' }}>
-                {badgeText}
+                ✓ מאומת
               </span>
             </div>
           </div>
