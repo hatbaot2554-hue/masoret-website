@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useCart } from '../components/CartContext'
 
 function formatPrice(price) {
@@ -14,12 +14,6 @@ const UPSELL_ITEMS = [
   { name: 'תהילים כיס עם כריכה קשה', price: 39, emoji: '✡️', desc: 'כריכת עור מלאכותי' },
 ]
 
-const SHIPPING_OPTIONS = [
-  { id: 'home', label: 'משלוח עד הבית', price: 36, icon: '🏠' },
-  { id: 'pickup', label: 'איסוף מנקודת מסירה', price: 22, icon: '📦' },
-  { id: 'self', label: 'איסוף מהחנות (ללא תשלום)', price: 0, icon: '🏪', note: 'מנחם בגין 52, בני ברק' },
-]
-
 export default function CartPage() {
   const { items, removeItem, updateQty, clearCart, totalPrice } = useCart()
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', address: '', city: '', note: '' })
@@ -31,10 +25,42 @@ export default function CartPage() {
   const [orderId, setOrderId] = useState(null)
   const [dismissedUpsell, setDismissedUpsell] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+  const [shippingPrices, setShippingPrices] = useState({ home: 38, pickup: 23 })
+  const [shippingLoading, setShippingLoading] = useState(false)
+
+  const SHIPPING_OPTIONS = [
+    { id: 'home', label: 'משלוח עד הבית', price: shippingPrices.home, icon: '🏠' },
+    { id: 'pickup', label: 'איסוף מנקודת מסירה', price: shippingPrices.pickup, icon: '📦' },
+    { id: 'self', label: 'איסוף מהחנות (ללא תשלום)', price: 0, icon: '🏪', note: 'מנחם בגין 52, בני ברק' },
+  ]
 
   const selectedShipping = SHIPPING_OPTIONS.find(s => s.id === shipping)
   const shippingPrice = selectedShipping?.price || 0
   const grandTotal = Math.ceil(totalPrice) + shippingPrice
+
+  useEffect(() => {
+    if (!items.length) return
+    setShippingLoading(true)
+    fetch('/api/shipping-quote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: items.map(i => ({
+          productId: i.product_id || String(i.index),
+          quantity: i.quantity,
+        })),
+        city: form.city || 'תל אביב',
+      }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.home_delivery) {
+          setShippingPrices({ home: data.home_delivery, pickup: data.pickup_point || data.home_delivery })
+        }
+      })
+      .catch(() => {})
+      .finally(() => setShippingLoading(false))
+  }, [items.length])
 
   function handleChange(e) { setForm({ ...form, [e.target.name]: e.target.value }) }
   function handleAltChange(e) { setAltForm({ ...altForm, [e.target.name]: e.target.value }) }
@@ -52,9 +78,7 @@ export default function CartPage() {
       const utmSource = typeof window !== 'undefined'
         ? (new URLSearchParams(window.location.search).get('utm_source') || document.referrer || 'direct')
         : 'direct'
-
       const shippingNote = `משלוח: ${selectedShipping?.label} (₪${shippingPrice})${showAltAddress ? ` | כתובת משלוח: ${altForm.firstName} ${altForm.lastName}, ${altForm.address}, ${altForm.city}, ${altForm.phone}` : ''}`
-
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -121,7 +145,6 @@ export default function CartPage() {
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
         <h1 style={{ fontFamily: 'serif', fontSize: '36px', fontWeight: '900', marginBottom: '32px' }}>עגלת קניות</h1>
 
-        {/* UPSELL */}
         {!dismissedUpsell && (
           <div style={{ background: 'linear-gradient(135deg, #FFF8E8, #FFF3D0)', border: '1px solid #E8C97A', borderRadius: '8px', padding: '20px 24px', marginBottom: '28px', position: 'relative' }}>
             <button onClick={() => setDismissedUpsell(true)}
@@ -157,7 +180,6 @@ export default function CartPage() {
 
         <div className="cart-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '40px', alignItems: 'start' }}>
 
-          {/* פריטים */}
           <div>
             {items.map(item => (
               <div key={item.key} style={{ display: 'grid', gridTemplateColumns: '80px 1fr auto', gap: '16px', padding: '20px 0', borderBottom: '1px solid #EDE6D9', alignItems: 'center' }}>
@@ -199,12 +221,10 @@ export default function CartPage() {
             </div>
           </div>
 
-          {/* טופס הזמנה */}
           <div style={{ background: '#F8F4EE', border: '1px solid #EDE6D9', padding: '24px', position: 'sticky', top: '24px', borderRadius: '4px' }}>
             <h3 style={{ fontFamily: 'serif', fontSize: '20px', marginBottom: '20px' }}>פרטי הזמנה</h3>
             <form onSubmit={handleSubmit}>
 
-              {/* פרטים אישיים */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
                 <div>
                   <label style={{ fontSize: '12px', color: '#6B5C3E', display: 'block', marginBottom: '4px' }}>שם פרטי *</label>
@@ -234,7 +254,6 @@ export default function CartPage() {
                 </div>
               </div>
 
-              {/* כתובת אחרת */}
               <div style={{ marginBottom: '14px' }}>
                 <button type="button" onClick={() => setShowAltAddress(!showAltAddress)}
                   style={{ background: 'none', border: 'none', color: '#8B6914', cursor: 'pointer', fontSize: '13px', fontWeight: '600', padding: '0', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -271,16 +290,17 @@ export default function CartPage() {
                 )}
               </div>
 
-              {/* אפשרויות משלוח */}
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ fontSize: '12px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>אפשרות משלוח</label>
+                <label style={{ fontSize: '12px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                  אפשרות משלוח
+                  {shippingLoading && <span style={{ fontSize: '11px', color: '#C9A84C', marginRight: '8px' }}>⏳ מחשב מחיר...</span>}
+                </label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {SHIPPING_OPTIONS.map(opt => (
                     <label key={opt.id} style={{
                       display: 'flex', alignItems: 'center', gap: '10px',
-                      background: shipping === opt.id ? '#fff' : '#fff',
                       border: `1.5px solid ${shipping === opt.id ? '#8B6914' : '#EDE6D9'}`,
-                      borderRadius: '4px', padding: '10px 12px', cursor: 'pointer',
+                      borderRadius: '4px', padding: '10px 12px', cursor: 'pointer', background: '#fff',
                     }}>
                       <input type="radio" name="shipping" value={opt.id} checked={shipping === opt.id}
                         onChange={() => setShipping(opt.id)} style={{ accentColor: '#8B6914' }} />
@@ -290,7 +310,7 @@ export default function CartPage() {
                         {opt.note && <div style={{ fontSize: '11px', color: '#6B5C3E' }}>{opt.note}</div>}
                       </div>
                       <div style={{ fontSize: '14px', fontWeight: '700', color: opt.price === 0 ? '#27ae60' : '#8B6914' }}>
-                        {opt.price === 0 ? 'חינם' : `₪${opt.price}`}
+                        {opt.price === 0 ? 'חינם' : shippingLoading ? '...' : `₪${opt.price}`}
                       </div>
                     </label>
                   ))}
@@ -298,13 +318,11 @@ export default function CartPage() {
                 <p style={{ fontSize: '11px', color: '#999', marginTop: '6px' }}>* משלוח חריג עשוי להיות כרוך בתוספת תשלום</p>
               </div>
 
-              {/* הערות */}
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ fontSize: '12px', color: '#6B5C3E', display: 'block', marginBottom: '4px' }}>הערות להזמנה</label>
                 <textarea name="note" value={form.note} onChange={handleChange} rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
               </div>
 
-              {/* סיכום מחירים */}
               <div style={{ borderTop: '1px solid #EDE6D9', paddingTop: '16px', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#6B5C3E', marginBottom: '6px' }}>
                   <span>סכום מוצרים:</span>
@@ -322,7 +340,6 @@ export default function CartPage() {
                 </div>
               </div>
 
-              {/* אישור תקנון */}
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '16px', cursor: 'pointer', fontSize: '12px', color: '#6B5C3E' }}>
                 <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)}
                   style={{ marginTop: '2px', accentColor: '#8B6914', flexShrink: 0 }} />
@@ -333,7 +350,6 @@ export default function CartPage() {
                 </span>
               </label>
 
-              {/* אמצעי אמון */}
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
                 {['🔒 תשלום מאובטח', '📦 משלוח מהיר', '↩️ החזרה קלה'].map(t => (
                   <span key={t} style={{ fontSize: '11px', color: '#6B5C3E' }}>{t}</span>
