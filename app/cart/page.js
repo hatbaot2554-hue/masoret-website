@@ -88,16 +88,17 @@ export default function CartPage() {
           shippingMethod: shipping,
           shippingPrice,
           altAddress: showAltAddress ? altForm : null,
-          items: items.map(i => ({
-            sourceProductId: i.product_id || i.key,
-            name: i.name,
-            sku: i.sku || '',
-            selectedAttributes: i.selectedAttrs,
-            price: formatPrice(i.price) + (i.engravingExtra || 0),
-            cost: parseFloat(i.original_price || 0),
-            quantity: i.quantity,
-            engraving: i.engravingData || null,
-          })),
+        items: items.map(i => ({
+  sourceProductId: i.product_id || i.key,
+  sourceProductIndex: i.index,
+  name: i.name,
+  sku: i.sku || '',
+  selectedAttributes: i.selectedAttrs,
+  price: formatPrice(i.price) + (i.engravingExtra || 0),
+  cost: parseFloat(i.original_price || 0),
+  quantity: i.quantity,
+  engraving: i.engravingData || null,
+})),
           utm_source: utmSource
         }),
       })
