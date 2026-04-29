@@ -1,9 +1,6 @@
-// app/api/track/route.js
-// מחזיר סטטוס הזמנה לפי מספר הזמנה + מייל
-
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
+
+const DASHBOARD_URL = 'https://masoret-dashboard.vercel.app'
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
@@ -15,26 +12,21 @@ export async function GET(request) {
   }
 
   try {
-    // קריאת קובץ ההזמנות (מתעדכן אוטומטית על ידי track_orders.py)
-    const ordersPath = path.join(process.cwd(), 'orders.json')
+    const response = await fetch(
+      `${DASHBOARD_URL}/api/orders?order=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(email)}`,
+      { cache: 'no-store' }
+    )
 
-    if (!fs.existsSync(ordersPath)) {
-      return NextResponse.json({ error: 'הזמנה לא נמצאה' }, { status: 404 })
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}))
+      return NextResponse.json(
+        { error: errData.error || 'הזמנה לא נמצאה' },
+        { status: response.status }
+      )
     }
 
-    const orders = JSON.parse(fs.readFileSync(ordersPath, 'utf-8'))
-    const order = orders[orderNumber]
-
-    if (!order) {
-      return NextResponse.json({ error: 'הזמנה לא נמצאה' }, { status: 404 })
-    }
-
-    // אימות מייל
-    if (order.email?.toLowerCase() !== email) {
-      return NextResponse.json({ error: 'פרטים לא תואמים' }, { status: 403 })
-    }
-
-    return NextResponse.json({ order })
+    const data = await response.json()
+    return NextResponse.json(data)
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }

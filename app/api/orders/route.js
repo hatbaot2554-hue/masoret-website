@@ -71,31 +71,28 @@ export async function POST(request) {
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const orderNumber = searchParams.get('order');
+    const orderNumber = searchParams.get('order')?.trim();
     const email = searchParams.get('email')?.toLowerCase();
 
     if (!orderNumber || !email) {
       return NextResponse.json({ error: 'חסרים פרטים' }, { status: 400 });
     }
 
-    const response = await fetch(`${DASHBOARD_URL}/api/orders`);
+    const response = await fetch(
+      `${DASHBOARD_URL}/api/orders?order=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(email)}`,
+      { cache: 'no-store' }
+    );
 
     if (!response.ok) {
-      throw new Error('שגיאה בטעינת הזמנות')
+      const errData = await response.json().catch(() => ({}))
+      return NextResponse.json(
+        { error: errData.error || 'הזמנה לא נמצאה' },
+        { status: response.status }
+      )
     }
 
-    const orders = await response.json();
-
-    const order = orders.find(o => {
-      const numeric = String(o.id || '').replace(/\D/g, '').slice(-5).padStart(5, '0')
-      return o.customer_email === email && (numeric === orderNumber)
-    });
-
-    if (!order) {
-      return NextResponse.json({ error: 'הזמנה לא נמצאה' }, { status: 404 });
-    }
-
-    return NextResponse.json({ order });
+    const data = await response.json();
+    return NextResponse.json(data);
 
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
