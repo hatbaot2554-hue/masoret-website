@@ -7,6 +7,18 @@ function formatPrice(price) {
   return Math.ceil(p)
 }
 
+function fileToAttachment(file) {
+  if (!file) return Promise.resolve(null)
+  const meta = { name: file.name, type: file.type, size: file.size }
+  if (file.size > 2 * 1024 * 1024) return Promise.resolve(meta)
+  return new Promise(resolve => {
+    const reader = new FileReader()
+    reader.onload = () => resolve({ ...meta, dataUrl: reader.result })
+    reader.onerror = () => resolve(meta)
+    reader.readAsDataURL(file)
+  })
+}
+
 const ENGRAVING_PRICING_TEXT = `מחירון:
 - הקדשה על ספרים בודדים - 15 ש"ח לספר
 - גלופה עד 100 ספרים - 170 ש"ח לכל הכמות. תישלח אליכם סקיצה לאישור.
@@ -142,6 +154,7 @@ export default function OrderForm({
 
       const engravingNote = buildEngravingNote()
       const fullNote = [form.note, engravingNote].filter(Boolean).join(' | ')
+      const sketchAttachment = await fileToAttachment(sketchFile)
 
       const res = await fetch('/api/orders', {
         method: 'POST',
@@ -151,8 +164,10 @@ export default function OrderForm({
           note: fullNote,
           items: [{
             sourceProductId: product.product_id || product.sourceProductId || product.url,
+            sourceProductIndex: product.index,
             variationId: selectedVariation?.variation_id || null,
             name: product.name || '',
+            image: product.image || '',
             sku: selectedVariation?.sku || product.sku || '',
             selectedAttributes: selectedAttrs,
             price: activePrice + engravingExtra,
@@ -168,6 +183,7 @@ export default function OrderForm({
               extraQty,
               extraCost: engravingExtra,
             } : null,
+            sketchFile: sketchAttachment,
           }],
           utm_source: utmSource
         }),

@@ -11,6 +11,18 @@ function formatPrice(price) {
   return Math.ceil(p)
 }
 
+function fileToAttachment(file) {
+  if (!file) return Promise.resolve(null)
+  const meta = { name: file.name, type: file.type, size: file.size }
+  if (file.size > 2 * 1024 * 1024) return Promise.resolve(meta)
+  return new Promise(resolve => {
+    const reader = new FileReader()
+    reader.onload = () => resolve({ ...meta, dataUrl: reader.result })
+    reader.onerror = () => resolve(meta)
+    reader.readAsDataURL(file)
+  })
+}
+
 const ENGRAVING_PRICING_TEXT = `• הקדשה על ספרים בודדים - 15 ש"ח לספר
 - גלופה עד 100 ספרים - 170 ש"ח לכל הכמות. תישלח אליכם סקיצה לאישור.
 - מעל 100 ספרים - כל ספר נוסף 1 ש"ח
@@ -166,12 +178,14 @@ export default function ProductPageClient({ product }) {
     return true
   }
 
-  function handleAddToCart() {
+  async function handleAddToCart() {
     if (!validateEngraving()) return
     const engravingNote = buildEngravingNote()
+    const sketchAttachment = await fileToAttachment(sketchFile)
     const engravingData = engravingType !== 'none' ? {
       type: engravingType, letterColor, text: engravingText, qty: engravingQty,
       bulkType, sketchText, extraQty, extraCost: engravingExtra, note: engravingNote,
+      sketchFile: sketchAttachment,
     } : null
     const attrsWithEngraving = {
       ...selectedAttrs,
@@ -193,6 +207,7 @@ export default function ProductPageClient({ product }) {
     try {
       const engravingNote = buildEngravingNote()
       const fullNote = [form.note, engravingNote].filter(Boolean).join(' | ')
+      const sketchAttachment = await fileToAttachment(sketchFile)
       const utmSource = typeof window !== 'undefined'
         ? (new URLSearchParams(window.location.search).get('utm_source') || document.referrer || 'direct')
         : 'direct'
@@ -207,6 +222,7 @@ export default function ProductPageClient({ product }) {
             sourceProductIndex: product.index,
             variationId: selectedVariation?.variation_id || null,
             name: product.name || '',
+            image: product.image || '',
             sku: selectedVariation?.sku || product.sku || '',
             selectedAttributes: selectedAttrs,
             price: activePrice + engravingExtra,
@@ -216,6 +232,7 @@ export default function ProductPageClient({ product }) {
               type: engravingType, letterColor, text: engravingText,
               qty: engravingQty, bulkType, sketchText, extraQty, extraCost: engravingExtra,
             } : null,
+            sketchFile: sketchAttachment,
           }],
           utm_source: utmSource
         }),
