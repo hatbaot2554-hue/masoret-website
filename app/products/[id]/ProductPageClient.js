@@ -204,6 +204,7 @@ export default function ProductPageClient({ product }) {
           note: fullNote,
           items: [{
             sourceProductId: product.product_id || product.url,
+            sourceProductIndex: product.index,
             variationId: selectedVariation?.variation_id || null,
             name: product.name || '',
             sku: selectedVariation?.sku || product.sku || '',

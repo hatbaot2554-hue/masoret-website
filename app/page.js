@@ -1,6 +1,8 @@
 import ProductCard from './components/ProductCard'
 import ReviewsCarousel from './components/ReviewsCarousel'
 
+export const dynamic = 'force-dynamic'
+
 async function getProducts() {
   try {
     const res = await fetch(
