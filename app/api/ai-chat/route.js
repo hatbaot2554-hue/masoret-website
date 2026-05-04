@@ -18,8 +18,8 @@ const ADVISOR_PROFILES = [
   {
     keys: ['אמא', 'אימי', 'אמא שלי', 'אמא שלי', 'אישה', 'נשים', 'אמא יקרה', 'לאמא'],
     label: 'מתנה לאמא',
-    terms: ['תהילים', 'סידור', 'תפילה', 'שבת', 'אמונה', 'מוסר', 'חיזוק', 'נשים', 'בית', 'פרשה', 'מתנה'],
-    avoid: ['שליח ציבור', 'חזן', 'גמרא', 'ישיבה', 'תפילין', 'נער', 'בר מצווה'],
+    terms: ['תהילים', 'סידור', 'תפילה', 'שבת', 'אמונה', 'מוסר', 'חיזוק', 'נשים', 'בת ישראל', 'בית', 'פרשה', 'מתנה'],
+    avoid: ['שליח ציבור', 'חזן', 'בית כנסת', 'גמרא', 'ישיבה', 'תפילין', 'נער', 'בר מצווה'],
     reason: 'מתאים כמתנה מכובדת ושימושית לאמא: תפילה, תהילים, חיזוק, שבת או ספר יפה לבית.',
   },
   {
@@ -101,6 +101,12 @@ function scoreProduct(product, query) {
   }
   if (profile?.terms.some((term) => String(product.name || '').includes(term))) score += 6
   if (profile?.terms.some((term) => String(product.category || '').includes(term) || String(product.parent_category || '').includes(term))) score += 4
+  if (profile?.label === 'מתנה לאמא') {
+    if (text.includes('בת ישראל') || text.includes('נשים')) score += 26
+    if (String(product.name || '').includes('תהילים')) score += 9
+    if (String(product.name || '').includes('סידור') && !text.includes('בית כנסת')) score += 7
+  }
+  if (q.includes('סידור') && String(product.name || '').trim().startsWith('סידור')) score += 8
   if (profile?.avoid?.some((term) => text.includes(term))) score -= 30
   if (!query.includes('שליח ציבור') && !query.includes('חזן') && text.includes('שליח ציבור')) score -= 40
   if (product.in_stock !== false) score += 1
@@ -164,7 +170,7 @@ function fallbackReply(mode, query, products, order) {
     const profile = advisorProfile(query)
     if (products.length) {
       const list = products.slice(0, 4).map((p, index) =>
-        `${index + 1}. ${p.name} - ₪${p.price}\n   למה מתאים: ${profile?.reason || 'מתאים לפי החיפוש והקטגוריה שלו באתר.'}\n   קישור: ${p.url}`
+        `${index + 1}. ${p.name} - ₪${p.price}\n   למי מתאים: ${suitabilityReason(p, query, profile)}\n   קישור: ${p.url}`
       ).join('\n')
       return `אלו הבחירות שהייתי מציע עכשיו:\n${list}\n\nהבחירה הבטוחה ביותר בעיניי: ${products[0].name}.`
     }
@@ -183,6 +189,46 @@ function fallbackReply(mode, query, products, order) {
   }
 
   return 'בשמחה, אני כאן לעזור. אם זו שאלה על הזמנה קיימת, כתוב מספר הזמנה ומייל כדי שאוכל לבדוק. אם זו שאלה על מוצר, כתוב לי את שם הספר או מה אתה מחפש.'
+}
+
+function suitabilityReason(product, query, profile) {
+  const name = String(product.name || '')
+  const text = [
+    product.name,
+    product.description,
+    product.category,
+    product.stock_text,
+  ].join(' ')
+
+  if (profile?.label === 'מתנה לאמא') {
+    if (text.includes('בת ישראל') || text.includes('נשים')) {
+      return 'מתאים במיוחד לאמא או לאישה, כי זה מוצר שמכוון לשימוש אישי של נשים ולא לסדר תפילה ציבורי.'
+    }
+    if (name.includes('תהילים')) {
+      return 'מתאים כמתנה אישית ומכובדת לאמא, במיוחד למי שמתחברת לתפילה, בקשות וחיזוק יומי.'
+    }
+    if (name.includes('סידור')) {
+      return 'מתאים לאמא אם רוצים מתנה שימושית לתפילה יומיומית, ועדיף לבחור נוסח וגודל לפי ההרגל שלה.'
+    }
+    if (text.includes('שבת') || text.includes('בית')) {
+      return 'מתאים לבית ולשולחן שבת, ולכן זו מתנה שימושית יותר ממשהו שמיועד ללימוד ישיבתי.'
+    }
+  }
+
+  if (profile?.label === 'מתנה לבר מצווה') {
+    return 'מתאים לנער שמתחיל לבנות ספרייה אישית, עם מוצר שימושי ללימוד או לתפילה.'
+  }
+  if (profile?.label === 'ספר לילדים') {
+    return 'מתאים לילדים או למתחילים בגלל אופי קל ונגיש יותר.'
+  }
+  if (profile?.label === 'ספר הלכה לבית') {
+    return 'מתאים למי שרוצה ספר שימושי לבירור הלכה בבית ולא רק ללימוד עיוני.'
+  }
+  if (profile?.label === 'חסידות ומחשבה') {
+    return 'מתאים למי שמחפש חיזוק, אמונה או לימוד פנימי יותר.'
+  }
+
+  return profile?.reason || 'מתאים לפי שם המוצר, הקטגוריה וההתאמה לחיפוש באתר.'
 }
 
 async function callGemini({ mode, messages, products, order, query }) {
