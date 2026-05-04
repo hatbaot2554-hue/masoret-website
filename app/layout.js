@@ -3,6 +3,7 @@ import { CartProvider } from './components/CartContext'
 import { WishlistProvider } from './components/WishlistContext'
 import Header from './components/Header'
 import AccessibilityWidget from './components/AccessibilityWidget'
+import AIChatWidget from './components/AIChatWidget'
 
 export const metadata = {
   title: 'המרכז למסורת יהודית — ספרי קודש ויהדות',
@@ -64,6 +65,7 @@ export default function RootLayout({ children }) {
                 </div>
               </div>
             </footer>
+            <AIChatWidget />
             <AccessibilityWidget />
           </WishlistProvider>
         </CartProvider>
