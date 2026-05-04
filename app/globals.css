@@ -393,6 +393,17 @@ h1, h2, h3, h4 {
   margin-bottom: 0;
 }
 
+.ai-message a {
+  color: var(--gold-dark);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  text-decoration: underline;
+}
+
+.ai-message.user a {
+  color: var(--gold-light);
+}
+
 .ai-message.user {
   align-self: flex-start;
   background: var(--navy);

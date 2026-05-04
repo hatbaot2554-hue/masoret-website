@@ -25,6 +25,26 @@ function typingDelay(text) {
   return Math.min(1500, Math.max(450, String(text || '').length * 10))
 }
 
+function renderMessageLine(line) {
+  const parts = String(line).split(/(https?:\/\/[^\s]+)/g)
+
+  return parts.map((part, index) => {
+    if (!/^https?:\/\//.test(part)) return part
+
+    const cleanUrl = part.replace(/[.,;:!?)]$/, '')
+    const suffix = part.slice(cleanUrl.length)
+
+    return (
+      <span key={`${cleanUrl}-${index}`}>
+        <a href={cleanUrl} target="_blank" rel="noopener noreferrer">
+          {cleanUrl}
+        </a>
+        {suffix}
+      </span>
+    )
+  })
+}
+
 export default function AIChatWidget() {
   const [openMode, setOpenMode] = useState(null)
   const [messages, setMessages] = useState({
@@ -140,7 +160,7 @@ export default function AIChatWidget() {
             {activeMessages.map((message, index) => (
               <div key={`${message.role}-${index}`} className={`ai-message ${message.role}`}>
                 {message.text.split('\n').map((line, lineIndex) => (
-                  <p key={lineIndex}>{line}</p>
+                  <p key={lineIndex}>{renderMessageLine(line)}</p>
                 ))}
               </div>
             ))}
