@@ -6,26 +6,27 @@ const MODES = {
   service: {
     title: 'שירות לקוחות',
     subtitle: 'עזרה בהזמנות, מוצרים, משלוחים והחזרות',
-    greeting: 'שלום, בשמחה אעזור. אפשר לשאול על מוצר, משלוח, החזרה או הזמנה קיימת.',
+    greeting: 'שלום, בשמחה אעזור. אפשר לכתוב לי על הזמנה קיימת, מוצר באתר, משלוח, ביטול או החזרה.',
     placeholder: 'כתוב הודעה לשירות הלקוחות...',
-    button: 'שירות',
+    launcher: 'שיחה',
+    launcherClass: 'service',
   },
   advisor: {
-    title: 'יועץ קניות AI',
+    title: 'AI יועץ קניות',
     subtitle: 'המלצות ספרים ומתנות לפי צורך',
-    greeting: 'שלום, אני יועץ הקניות AI של מסורת. למי הספר מיועד ומה הסגנון שאתה מחפש?',
+    greeting: 'שלום, אני AI יועץ הקניות של מסורת. כתוב מה מחפשים, ואחזיר כמה אפשרויות מתאימות עם הסבר קצר.',
     placeholder: 'לדוגמה: מתנה לבר מצווה / ספר הלכה לבית...',
-    button: 'יועץ AI',
+    launcher: 'AI יועץ קניות',
+    launcherClass: 'advisor',
   },
 }
 
 function typingDelay(text) {
-  return Math.min(1600, Math.max(550, String(text || '').length * 12))
+  return Math.min(1500, Math.max(450, String(text || '').length * 10))
 }
 
 export default function AIChatWidget() {
-  const [open, setOpen] = useState(false)
-  const [mode, setMode] = useState('service')
+  const [openMode, setOpenMode] = useState(null)
   const [messages, setMessages] = useState({
     service: [{ role: 'assistant', text: MODES.service.greeting }],
     advisor: [{ role: 'assistant', text: MODES.advisor.greeting }],
@@ -37,12 +38,13 @@ export default function AIChatWidget() {
   const [typing, setTyping] = useState(false)
   const listRef = useRef(null)
 
+  const mode = openMode || 'service'
   const active = MODES[mode]
   const activeMessages = messages[mode]
 
   const quickPrompts = useMemo(() => mode === 'service'
-    ? ['מה מצב ההזמנה שלי?', 'איך מבטלים הזמנה?', 'יש בעיה במוצר שקיבלתי', 'אפשר לשנות כתובת משלוח?']
-    : ['מתנה לבר מצווה', 'ספר הלכה לבית', 'ספרי חסידות מומלצים', 'ספר לילד מתחיל'],
+    ? ['מה מצב ההזמנה שלי?', 'אפשר לשנות כתובת משלוח?', 'איך מבטלים הזמנה?', 'קיבלתי מוצר פגום']
+    : ['מתנה לבר מצווה', 'ספר הלכה לבית', 'ספרי חסידות מומלצים', 'מתנה למארח שבת'],
   [mode])
 
   function scrollDown() {
@@ -51,9 +53,15 @@ export default function AIChatWidget() {
     }, 30)
   }
 
+  function openChat(nextMode) {
+    setOpenMode((current) => (current === nextMode ? null : nextMode))
+    setInput('')
+    scrollDown()
+  }
+
   async function sendMessage(text = input) {
     const clean = text.trim()
-    if (!clean || loading) return
+    if (!clean || loading || !openMode) return
 
     const nextMessages = [...activeMessages, { role: 'user', text: clean }]
     setMessages((prev) => ({ ...prev, [mode]: nextMessages }))
@@ -74,13 +82,13 @@ export default function AIChatWidget() {
         }),
       })
       const data = await res.json()
-      const reply = data.reply || 'אני מצטער, הייתה תקלה רגעית. אפשר לנסות שוב?'
+      const reply = data.reply || 'הייתה תקלה רגעית. אפשר לנסות שוב?'
       await new Promise((resolve) => setTimeout(resolve, typingDelay(reply)))
       setMessages((prev) => ({ ...prev, [mode]: [...nextMessages, { role: 'assistant', text: reply }] }))
     } catch {
       setMessages((prev) => ({
         ...prev,
-        [mode]: [...nextMessages, { role: 'assistant', text: 'אני מצטער, יש כרגע תקלה בחיבור. נסה שוב בעוד רגע.' }],
+        [mode]: [...nextMessages, { role: 'assistant', text: 'יש כרגע תקלה בחיבור. נסה שוב בעוד רגע.' }],
       }))
     } finally {
       setLoading(false)
@@ -89,40 +97,37 @@ export default function AIChatWidget() {
     }
   }
 
-  function switchMode(nextMode) {
-    setMode(nextMode)
-    setInput('')
-    scrollDown()
-  }
-
   return (
     <>
-      <button
-        type="button"
-        className="ai-chat-launcher"
-        onClick={() => setOpen((value) => !value)}
-        aria-label="פתיחת צ׳אט שירות וייעוץ"
-      >
-        <span>שיחה</span>
-      </button>
+      <div className="ai-chat-launchers">
+        <button
+          type="button"
+          className={`ai-chat-launcher ${MODES.service.launcherClass}`}
+          onClick={() => openChat('service')}
+          aria-label="פתיחת שיחת שירות לקוחות"
+        >
+          <span className="chat-bubble-icon" aria-hidden="true" />
+          <span>{MODES.service.launcher}</span>
+        </button>
+        <button
+          type="button"
+          className={`ai-chat-launcher ${MODES.advisor.launcherClass}`}
+          onClick={() => openChat('advisor')}
+          aria-label="פתיחת AI יועץ קניות"
+        >
+          <span>{MODES.advisor.launcher}</span>
+        </button>
+      </div>
 
-      {open && (
-        <section className="ai-chat-panel" dir="rtl">
+      {openMode && (
+        <section className={`ai-chat-panel ${mode}`} dir="rtl">
           <header className="ai-chat-head">
             <div>
               <strong>{active.title}</strong>
               <span>{active.subtitle}</span>
             </div>
-            <button type="button" onClick={() => setOpen(false)} aria-label="סגירת צ׳אט">×</button>
+            <button type="button" onClick={() => setOpenMode(null)} aria-label="סגירת צ׳אט">×</button>
           </header>
-
-          <div className="ai-chat-tabs">
-            {Object.entries(MODES).map(([key, item]) => (
-              <button key={key} type="button" className={mode === key ? 'active' : ''} onClick={() => switchMode(key)}>
-                {item.button}
-              </button>
-            ))}
-          </div>
 
           {mode === 'service' && (
             <div className="ai-chat-order">
