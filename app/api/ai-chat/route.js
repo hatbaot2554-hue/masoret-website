@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server'
 const PRODUCTS_URL = 'https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/main/products.json'
 const DASHBOARD_URL = 'https://masoret-dashboard.vercel.app'
 const SITE_URL = 'https://masoret-website.vercel.app'
+const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses'
+const DEFAULT_ADVISOR_MODEL = 'gpt-5.1'
+const DEFAULT_SERVICE_MODEL = 'gpt-5-mini'
 
 const POLICY_TEXT = `
 המרכז למסורת יהודית מוכר ספרי קודש, יהדות, הלכה, חסידות ומחשבה.
@@ -231,9 +234,50 @@ function suitabilityReason(product, query, profile) {
   return profile?.reason || 'מתאים לפי שם המוצר, הקטגוריה וההתאמה לחיפוש באתר.'
 }
 
+function openAiModelForMode(mode) {
+  if (mode === 'advisor') return process.env.OPENAI_ADVISOR_MODEL || process.env.OPENAI_MODEL || DEFAULT_ADVISOR_MODEL
+  return process.env.OPENAI_SERVICE_MODEL || process.env.OPENAI_MODEL || DEFAULT_SERVICE_MODEL
+}
+
+async function callOpenAIModel({ mode, systemText, historyText, query }) {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) return null
+
+  const model = openAiModelForMode(mode)
+  const res = await fetch(OPENAI_RESPONSES_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      instructions: systemText,
+      input: `היסטוריית השיחה:\n${historyText}\n\nהודעה אחרונה: ${query}`,
+      reasoning: {
+        effort: 'low',
+      },
+      text: {
+        verbosity: mode === 'advisor' ? 'medium' : 'low',
+      },
+      max_output_tokens: mode === 'advisor' ? 900 : 650,
+    }),
+  })
+
+  if (!res.ok) return null
+  const data = await res.json()
+  const directText = data.output_text
+  const nestedText = data.output
+    ?.flatMap((item) => item.content || [])
+    ?.map((part) => part.text || '')
+    ?.join('')
+    ?.trim()
+
+  return String(directText || nestedText || '').trim()
+}
+
 async function callGemini({ mode, messages, products, order, query }) {
   const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) return fallbackReply(mode, query, products, order)
 
   const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
   const role = mode === 'advisor' ? 'AI יועץ קניות' : 'שירות לקוחות של המרכז למסורת יהודית'
@@ -294,6 +338,11 @@ ${order ? JSON.stringify(order, null, 2) : 'אין הזמנה מאומתת'}
       maxOutputTokens: 750,
     },
   }
+
+  const openAiReply = await callOpenAIModel({ mode, systemText, historyText, query })
+  if (openAiReply) return openAiReply
+
+  if (!apiKey) return fallbackReply(mode, query, products, order)
 
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
