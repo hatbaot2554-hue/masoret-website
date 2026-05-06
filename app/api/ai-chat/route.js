@@ -7,6 +7,14 @@ const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses'
 const DEFAULT_ADVISOR_MODEL = 'gpt-5.1'
 const DEFAULT_SERVICE_MODEL = 'gpt-5-mini'
 
+const GEMINI_FALLBACK_MODELS = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash']
+
+function geminiModelCandidates() {
+  return [process.env.GEMINI_MODEL, ...GEMINI_FALLBACK_MODELS]
+    .map((model) => String(model || '').trim())
+    .filter((model, index, models) => model && models.indexOf(model) === index)
+}
+
 const POLICY_TEXT = `
 המרכז למסורת יהודית מוכר ספרי קודש, יהדות, הלכה, חסידות ומחשבה.
 משלוחים: בדרך כלל עד 8 ימי עסקים, בהתאם לזמינות ולשיטת המשלוח.
@@ -276,10 +284,46 @@ async function callOpenAIModel({ mode, systemText, historyText, query }) {
   return String(directText || nestedText || '').trim()
 }
 
+
+function isSensitiveServiceAction(query) {
+  const q = cleanText(query).toLowerCase()
+  return [
+    'לבטל הזמנה',
+    'ביטול הזמנה',
+    'תבטל',
+    'שנה כתובת',
+    'לשנות כתובת',
+    'להחליף כתובת',
+    'להוסיף מוצר',
+    'להוריד מוצר',
+    'להחליף מוצר',
+    'תחייב',
+    'תשלום',
+    'החזר כספי',
+    'זיכוי',
+    'תשלח מחדש',
+    'שלח מחדש',
+    'תיצור הזמנה',
+    'תזמין לי',
+  ].some((term) => q.includes(term))
+}
+
+function safeServiceActionReply(query, order) {
+  const orderLine = order
+    ? `מצאתי את ההזמנה #${order.number}. הסטטוס כרגע: ${order.status || 'בטיפול'}.`
+    : 'כדי להכין בקשת טיפול להזמנה קיימת צריך מספר הזמנה ומייל של ההזמנה.'
+
+  return `${orderLine}
+
+מטעמי בטיחות אני לא מבצע שינוי בפועל מתוך הצ'אט בלבד. אני יכול להכין בקשת טיפול מסודרת לצוות/ללוח הבקרה, ורק אחרי אישור במערכת הפעולה תבוצע.
+
+כתוב לי בדיוק מה תרצה לשנות, ואם מדובר בהזמנה קיימת צרף מספר הזמנה ומייל.`
+}
+
 async function callGemini({ mode, messages, products, order, query }) {
   const apiKey = process.env.GEMINI_API_KEY
 
-  const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
+  const model = geminiModelCandidates()[0]
   const role = mode === 'advisor' ? 'AI יועץ קניות' : 'שירות לקוחות של המרכז למסורת יהודית'
   const disclosureRule = mode === 'advisor'
     ? 'אתה מוצג בגלוי כ-AI יועץ קניות.'
@@ -344,19 +388,27 @@ ${order ? JSON.stringify(order, null, 2) : 'אין הזמנה מאומתת'}
 
   if (!apiKey) return fallbackReply(mode, query, products, order)
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    }
-  )
+  for (const candidateModel of geminiModelCandidates()) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${candidateModel}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        }
+      )
 
-  if (!res.ok) return fallbackReply(mode, query, products, order)
-  const data = await res.json()
-  return data?.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('').trim() ||
-    fallbackReply(mode, query, products, order)
+      if (!res.ok) continue
+      const data = await res.json()
+      const reply = data?.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('').trim()
+      if (reply) return reply
+    } catch {
+      // Try the next supported Gemini model before falling back to deterministic text.
+    }
+  }
+
+  return fallbackReply(mode, query, products, order)
 }
 
 export async function POST(request) {
@@ -367,12 +419,25 @@ export async function POST(request) {
     const query = lastUserText(messages)
     const products = await getRelevantProducts(query)
     const order = mode === 'service' ? await getVerifiedOrder(body.orderNumber, body.email) : null
+
+    if (mode === 'service' && isSensitiveServiceAction(query)) {
+      return NextResponse.json({
+        reply: safeServiceActionReply(query, order),
+        products,
+        orderFound: Boolean(order),
+        safeMode: true,
+        actionExecuted: false,
+      })
+    }
+
     const reply = await callGemini({ mode, messages, products, order, query })
 
     return NextResponse.json({
       reply,
       products,
       orderFound: Boolean(order),
+      safeMode: true,
+      actionExecuted: false,
     })
   } catch (err) {
     return NextResponse.json({ error: err.message || 'שגיאה בצ׳אט' }, { status: 500 })
