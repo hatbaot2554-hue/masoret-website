@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from pathlib import Path
 
+# Re-run trigger: workflow is now present on main.
 route = Path('app/api/ai-chat/route.js')
 text = route.read_text(encoding='utf-8')
 
