@@ -430,7 +430,10 @@ export async function POST(request) {
       })
     }
 
-    const reply = await callGemini({ mode, messages, products, order, query })
+    const modelReply = await callGemini({ mode, messages, products, order, query })
+    const reply = mode === 'advisor' && products.length > 0 && cleanText(modelReply).length < 180
+      ? fallbackReply(mode, query, products, order)
+      : modelReply
 
     return NextResponse.json({
       reply,
