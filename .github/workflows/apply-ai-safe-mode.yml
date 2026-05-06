@@ -1,0 +1,32 @@
+name: Apply AI Safe Mode
+
+on:
+  push:
+    paths:
+      - scripts/patch_ai_safe_mode.py
+      - .github/workflows/apply-ai-safe-mode.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-ai-safe-mode:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Patch AI chat route
+        run: python scripts/patch_ai_safe_mode.py
+      - name: Commit AI chat update
+        run: |
+          if git diff --quiet; then
+            echo "No AI chat changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add app/api/ai-chat/route.js
+          git commit -m "Add safe mode and Gemini model fallback"
+          git push
