@@ -38,7 +38,7 @@ const ADVISOR_PROFILES = [
     label: 'מתנה לבר מצווה',
     terms: ['תפילין', 'סידור', 'תהילים', 'הלכה', 'משנה', 'גמרא', 'סט', 'אוצר', 'מתנה', 'עוז והדר'],
     avoid: ['נשים', 'אמא', 'ילדים קטנים'],
-    reason: 'מתאים לנער שמתחיל לבנות ספרייה אישית וללימוד י������������מי.',
+    reason: 'מתאים לנער שמתחיל לבנות ספרייה אישית וללימוד י��������������מי.',
   },
   {
     keys: ['חתונה', 'זוג', 'בית חדש', 'מארח', 'שבת', 'מתנה לבית'],
@@ -374,10 +374,12 @@ async function createSafeAiOrder({ messages }) {
     handled: true,
     created: true,
     orderId,
-    reply: `פתחתי עבורך הזמנה זמנית מספר #${orderId}.
-
-ההזמנה נרשמה על ${firstName}${lastName ? ` ${lastName}` : ''} עבור ${quantity} × ${item.name}.
-היא עדיין לא נשלחה לאתר המקורי ולא בוצע חיוב. אחרי בדיקה תקבל קישור לתשלום או עדכון המשך.`,
+    reply: [
+      `\u05e4\u05ea\u05d7\u05ea\u05d9 \u05e2\u05d1\u05d5\u05e8\u05da \u05d4\u05d6\u05de\u05e0\u05d4 \u05d6\u05de\u05e0\u05d9\u05ea \u05de\u05e1\u05e4\u05e8 #${orderId}.`,
+      '',
+      `\u05d4\u05d4\u05d6\u05de\u05e0\u05d4 \u05e0\u05e8\u05e9\u05de\u05d4 \u05e2\u05dc ${firstName}${lastName ? ` ${lastName}` : ''} \u05e2\u05d1\u05d5\u05e8 ${quantity} × ${item.name}.`,
+      '\u05d4\u05d9\u05d0 \u05e2\u05d3\u05d9\u05d9\u05df \u05dc\u05d0 \u05e0\u05e9\u05dc\u05d7\u05d4 \u05dc\u05d0\u05ea\u05e8 \u05d4\u05de\u05e7\u05d5\u05e8\u05d9 \u05d5\u05dc\u05d0 \u05d1\u05d5\u05e6\u05e2 \u05d7\u05d9\u05d5\u05d1. \u05d0\u05d7\u05e8\u05d9 \u05d1\u05d3\u05d9\u05e7\u05d4 \u05ea\u05e7\u05d1\u05dc \u05e7\u05d9\u05e9\u05d5\u05e8 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd \u05d0\u05d5 \u05e2\u05d3\u05db\u05d5\u05df \u05d4\u05de\u05e9\u05da.',
+    ].join('\n'),
   }
 }
 
@@ -402,7 +404,7 @@ function fallbackReply(mode, query, products, order) {
     const list = products.slice(0, 4).map((p) =>
       `• ${p.name} - ${p.in_stock ? 'במלאי' : (p.stock_text || 'לא במלאי')} - ₪${p.price}\n  ${p.url}`
     ).join('\n')
-    return `בדקתי לפי ��ה שכתבת. אלו המוצרים שמצאתי:\n${list}\n\nאם התכוונת לדגם מסוים, כתוב לי מילה מהשם או מק"ט ואבדוק יותר מדויק.`
+    return `בדקתי לפי ��ה שכתבת. אלו המוצ��ים שמצאתי:\n${list}\n\nאם התכוונת לדגם מסוים, כתוב לי מילה מהשם או מק"ט ואבדוק יותר מדויק.`
   }
 
   return 'בשמחה, אני כאן לעזור. אם זו שאלה על הזמנה קיימת, כתוב מספר הזמנה ומייל כדי שאוכל לבדוק. אם זו שאלה על מוצר, כתוב לי את שם הספר או מה אתה מחפש.'
@@ -505,7 +507,7 @@ function isSensitiveServiceAction(query) {
     'להחליף מוצר',
     'תחייב',
     'תשל��ם',
-    'החזר כספי',
+    'החזר כס��י',
     'זיכוי',
     'תשלח מחדש',
     'שלח מחדש',
