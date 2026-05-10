@@ -38,7 +38,7 @@ const ADVISOR_PROFILES = [
     label: 'מתנה לבר מצווה',
     terms: ['תפילין', 'סידור', 'תהילים', 'הלכה', 'משנה', 'גמרא', 'סט', 'אוצר', 'מתנה', 'עוז והדר'],
     avoid: ['נשים', 'אמא', 'ילדים קטנים'],
-    reason: 'מתאים לנער שמתחיל לבנות ספרייה אישית וללימוד יומי.',
+    reason: 'מתאים לנער שמתחיל לבנות ספרייה אישית וללימוד י��מי.',
   },
   {
     keys: ['חתונה', 'זוג', 'בית חדש', 'מארח', 'שבת', 'מתנה לבית'],
@@ -176,6 +176,213 @@ async function getVerifiedOrder(orderNumber, email) {
   }
 }
 
+function generateOrderId(dbId) {
+  if (dbId) {
+    const numeric = String(dbId).replace(/\D/g, '')
+    return numeric.slice(-5).padStart(5, '0')
+  }
+  return String(Date.now()).slice(-5)
+}
+
+function conversationText(messages) {
+  return (messages || []).map((message) => cleanText(message.text || '')).join('\n')
+}
+
+function isOrderIntent(text) {
+  return /(?:להזמין|הזמנה|רוצה לקנות|לקנות|רכישה|תזמין|תזמינו|order|buy)/i.test(text)
+}
+
+function labeledValue(text, labels) {
+  const escaped = labels.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, '\\
+function fallbackReply')).join('|')
+  const match = String(text || '').match(new RegExp(`(?:^|[\\n|])\\s*(?:${escaped})\\s*[:=\\-]\\s*([^\\n|]+)`, 'i'))
+  return cleanText(match?.[1] || '')
+}
+
+function extractEmail(text) {
+  return labeledValue(text, ['מייל', 'אימייל', 'email']) ||
+    cleanText(String(text || '').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || '')
+}
+
+function extractPhone(text) {
+  return labeledValue(text, ['טלפון', 'נייד', 'phone']) ||
+    cleanText(String(text || '').match(/(?:\+?972|0)(?:[\s-]?\d){8,9}/)?.[0] || '')
+}
+
+function extractQuantity(text) {
+  const value = labeledValue(text, ['כמות', 'quantity', 'qty']) ||
+    cleanText(String(text || '').match(/(?:כמות|x)\s*[:=]?\s*(\d{1,2})/i)?.[1] || '')
+  const quantity = Number(value || 1)
+  return Number.isFinite(quantity) && quantity > 0 ? Math.min(quantity, 20) : 1
+}
+
+function extractSku(text) {
+  return labeledValue(text, ['מקט', 'מק"ט', 'sku']) ||
+    cleanText(String(text || '').match(/(?:מק"?ט|מקט|sku)\s*[:#=\-]?\s*([A-Za-z0-9-]+)/i)?.[1] || '')
+}
+
+async function getProductsCatalog() {
+  try {
+    const res = await fetch(PRODUCTS_URL, { next: { revalidate: 1800 } })
+    if (!res.ok) return []
+    const products = await res.json()
+    return Array.isArray(products) ? products : []
+  } catch {
+    return []
+  }
+}
+
+async function findSafeOrderProduct(text) {
+  const catalog = await getProductsCatalog()
+  if (!catalog.length) return null
+
+  const sku = extractSku(text)
+  const productName = labeledValue(text, ['מוצר', 'שם מוצר', 'ספר', 'product'])
+  const query = cleanText(productName || text).toLowerCase()
+
+  const exact = catalog.find((product) => {
+    const productSku = String(product.sku || product.product_id || product.id || '').toLowerCase()
+    const productId = String(product.product_id || product.id || '').toLowerCase()
+    return sku && (productSku === sku.toLowerCase() || productId === sku.toLowerCase())
+  })
+  if (exact) return { product: exact, index: catalog.indexOf(exact) }
+
+  if (!productName) return null
+
+  const named = catalog.find((product) => {
+    const name = String(product.name || '').toLowerCase()
+    return name && (name.includes(query) || query.includes(name))
+  })
+  return named ? { product: named, index: catalog.indexOf(named) } : null
+}
+
+function productToOrderItem(product, index, quantity) {
+  const price = Number(product.price || product.our_price || product.regular_our_price || product.regular_price || 0)
+  const cost = Number(product.cost || product.cost_price || product.purchase_price || 0)
+
+  return {
+    sku: product.sku || product.product_id || product.id || '',
+    cost,
+    name: product.name || '',
+    image: product.image || product.images?.[0]?.src || '',
+    price,
+    quantity,
+    engraving: null,
+    sketchFile: null,
+    sourceProductId: String(product.product_id || product.id || ''),
+    selectedAttributes: {},
+    sourceProductIndex: index,
+  }
+}
+
+function missingSafeOrderFields(fields) {
+  const missing = []
+  if (!fields.productFound) missing.push('מק"ט או שם מוצר מדויק')
+  if (!fields.name) missing.push('שם מלא')
+  if (!fields.phone) missing.push('טלפון')
+  if (!fields.email) missing.push('מייל')
+  if (!fields.address) missing.push('כתובת')
+  if (!fields.city) missing.push('עיר')
+  return missing
+}
+
+function safeOrderFormatReply(missing) {
+  return `בשמחה. כדי לפתוח הזמנה דרך הצ'אט בצורה בטוחה, כתוב לי את הפרטים בפורמט הזה:
+
+מקט: 
+שם:
+טלפון:
+מייל:
+כתובת:
+עיר:
+כמות:
+
+חסר כרגע: ${missing.join(', ')}.
+אני אפתח הזמנה זמנית בלבד, בלי חיוב ובלי שליחה לאתר המקורי.`
+}
+
+async function createSafeAiOrder({ messages }) {
+  const text = conversationText(messages)
+  if (!isOrderIntent(text)) return null
+
+  const found = await findSafeOrderProduct(text)
+  const name = labeledValue(text, ['שם', 'שם מלא', 'לקוח', 'customer'])
+  const phone = extractPhone(text)
+  const email = extractEmail(text)
+  const address = labeledValue(text, ['כתובת', 'address'])
+  const city = labeledValue(text, ['עיר', 'city'])
+  const quantity = extractQuantity(text)
+  const note = labeledValue(text, ['הערות', 'הערה', 'note'])
+
+  const fields = {
+    productFound: Boolean(found?.product),
+    name,
+    phone,
+    email,
+    address,
+    city,
+  }
+  const missing = missingSafeOrderFields(fields)
+  if (missing.length) {
+    return {
+      handled: true,
+      created: false,
+      reply: safeOrderFormatReply(missing),
+    }
+  }
+
+  const [firstName, ...lastNameParts] = name.split(/\s+/)
+  const item = productToOrderItem(found.product, found.index, quantity)
+  const customerPrice = Number(item.price || 0) * quantity
+  const costPrice = Number(item.cost || 0) * quantity
+
+  const response = await fetch(`${DASHBOARD_URL}/api/orders`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      customer_name: name,
+      customer_phone: phone,
+      customer_email: email.toLowerCase(),
+      customer_address: `${address}, ${city}`,
+      items: [item],
+      total_price: customerPrice,
+      cost_price: costPrice,
+      profit: customerPrice - costPrice,
+      payment_method: 'pending',
+      notes: [
+        'AI_CHAT_SAFE_ORDER',
+        'נוצר דרך הצ׳אט כטיוטת הזמנה בטוחה. לא נשלח לאתר המקורי ולא חויב תשלום.',
+        note ? `הערת לקוח: ${note}` : '',
+      ].filter(Boolean).join(' | '),
+      source: 'ai_chat_safe',
+      utm_source: SITE_URL,
+    }),
+  })
+
+  if (!response.ok) {
+    return {
+      handled: true,
+      created: false,
+      reply: 'ניסיתי לפתוח הזמנה זמנית, אבל הייתה תקלה בשמירה. אפשר לנסות שוב בעוד רגע.',
+    }
+  }
+
+  const saved = await response.json()
+  const orderId = generateOrderId(saved?.id)
+  const lastName = lastNameParts.join(' ')
+
+  return {
+    handled: true,
+    created: true,
+    orderId,
+    reply: `פתחתי עבורך הזמנה זמנית מספר #${orderId}.
+
+ההזמנה נרשמה על ${firstName}${lastName ? ` ${lastName}` : ''} עבור ${quantity} × ${item.name}.
+היא עדיין לא נשלחה לאתר המקורי ולא בוצע חיוב. אחרי בדיקה תקבל קישור לתשלום או עדכון המשך.`,
+  }
+}
+
+
 function fallbackReply(mode, query, products, order) {
   if (mode === 'advisor') {
     const profile = advisorProfile(query)
@@ -219,7 +426,7 @@ function suitabilityReason(product, query, profile) {
       return 'מתאים כמתנה אישית ומכובדת לאמא, במיוחד למי שמתחברת לתפילה, בקשות וחיזוק יומי.'
     }
     if (name.includes('סידור')) {
-      return 'מתאים לאמא אם רוצים מתנה שימושית לתפילה יומיומית, ועדיף לבחור נוסח וגודל לפי ההרגל שלה.'
+      return 'מתאים לאמא אם רוצים מתנה ש��מושית לתפילה יומיומית, ועדיף לבחור נוסח וגודל לפי ההרגל שלה.'
     }
     if (text.includes('שבת') || text.includes('בית')) {
       return 'מתאים לבית ולשולחן שבת, ולכן זו מתנה שימושית יותר ממשהו שמיועד ללימוד ישיבתי.'
