@@ -38,7 +38,7 @@ const ADVISOR_PROFILES = [
     label: 'מתנה לבר מצווה',
     terms: ['תפילין', 'סידור', 'תהילים', 'הלכה', 'משנה', 'גמרא', 'סט', 'אוצר', 'מתנה', 'עוז והדר'],
     avoid: ['נשים', 'אמא', 'ילדים קטנים'],
-    reason: 'מתאים לנער שמתחיל לבנות ספרייה אישית וללימוד י��������מי.',
+    reason: 'מתאים לנער שמתחיל לבנות ספרייה אישית וללימוד י����������מי.',
   },
   {
     keys: ['חתונה', 'זוג', 'בית חדש', 'מארח', 'שבת', 'מתנה לבית'],
@@ -193,7 +193,7 @@ function isOrderIntent(text) {
 }
 
 function labeledValue(text, labels) {
-  const escaped = labels.map((label) => label.replace(/[.*+?^${}()|[\]\]/g, '\$&')).join('|')
+  const escaped = labels.join('|')
   const match = String(text || '').match(new RegExp(`(?:^|[\\n|])\\s*(?:${escaped})\\s*[:=\\-]\\s*([^\\n|]+)`, 'i'))
   return cleanText(match?.[1] || '')
 }
@@ -422,7 +422,7 @@ function suitabilityReason(product, query, profile) {
       return 'מתאים במיוחד לאמא או לאישה, כי זה מוצר שמכוון לשימוש אישי של נשים ולא לסדר תפילה ציבורי.'
     }
     if (name.includes('תהילים')) {
-      return 'מתאים כמתנה אישית ומכובדת לאמא, במיוחד למי שמתחברת לתפילה, בקשות וחיזוק יומי.'
+      return 'מתאים כמתנה ��ישית ומכובדת לאמא, במיוחד למי שמתחברת לתפילה, בקשות וחיזוק יומי.'
     }
     if (name.includes('סידור')) {
       return 'מתאים לאמא אם רוצים מתנה ש��מושית לתפילה יומיומית, ועדיף לבחור נוסח וגודל ��פי ה��רגל שלה.'
@@ -445,7 +445,7 @@ function suitabilityReason(product, query, profile) {
     return 'מתאים למי שמחפש חיזוק, אמונה או לימוד פנימי יותר.'
   }
 
-  return profile?.reason || 'מתאים לפי שם המוצר, הקטגוריה וההתאמה לחיפוש באתר.'
+  return profile?.reason || 'מתאים לפי שם המוצר, הקטגוריה ��ההתאמה לחיפוש באתר.'
 }
 
 function openAiModelForMode(mode) {
