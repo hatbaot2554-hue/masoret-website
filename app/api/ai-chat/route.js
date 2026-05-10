@@ -185,7 +185,7 @@ function generateOrderId(dbId) {
 }
 
 function conversationText(messages) {
-  return (messages || []).map((message) => cleanText(message.text || '')).join('\n')
+  return (messages || []).map((message) => String(message.text || '').trim()).join('\n')
 }
 
 function isOrderIntent(text) {
@@ -193,7 +193,7 @@ function isOrderIntent(text) {
 }
 
 function labeledValue(text, labels) {
-  const escaped = labels.join('|')
+  const escaped = labels.map((label) => label.replace(/[.*+?^${}()|[\]\]/g, '\$&')).join('|')
   const match = String(text || '').match(new RegExp(`(?:^|[\\n|])\\s*(?:${escaped})\\s*[:=\\-]\\s*([^\\n|]+)`, 'i'))
   return cleanText(match?.[1] || '')
 }
@@ -402,7 +402,7 @@ function fallbackReply(mode, query, products, order) {
     const list = products.slice(0, 4).map((p) =>
       `• ${p.name} - ${p.in_stock ? 'במלאי' : (p.stock_text || 'לא במלאי')} - ₪${p.price}\n  ${p.url}`
     ).join('\n')
-    return `בד��תי לפי ��ה שכתבת. אלו המוצרים שמצאתי:\n${list}\n\nאם התכוונת לדגם מסוים, כתוב לי מילה מהשם או מק"ט ואבדוק יותר מדויק.`
+    return `בדקתי לפי ��ה שכתבת. אלו המוצרים שמצאתי:\n${list}\n\nאם התכוונת לדגם מסוים, כתוב לי מילה מהשם או מק"ט ואבדוק יותר מדויק.`
   }
 
   return 'בשמחה, אני כאן לעזור. אם זו שאלה על הזמנה קיימת, כתוב מספר הזמנה ומייל כדי שאוכל לבדוק. אם זו שאלה על מוצר, כתוב לי את שם הספר או מה אתה מחפש.'
@@ -425,7 +425,7 @@ function suitabilityReason(product, query, profile) {
       return 'מתאים כמתנה אישית ומכובדת לאמא, במיוחד למי שמתחברת לתפילה, בקשות וחיזוק יומי.'
     }
     if (name.includes('סידור')) {
-      return 'מתאים לאמא אם רוצים מתנה ש��מושית לתפילה יומיומית, ועדיף לבחור נוסח וגו��ל ��פי ה��רגל שלה.'
+      return 'מתאים לאמא אם רוצים מתנה ש��מושית לתפילה יומיומית, ועדיף לבחור נוסח וגודל ��פי ה��רגל שלה.'
     }
     if (text.includes('שבת') || text.includes('בית')) {
       return 'מתאים לבית ולשולחן שבת, ולכן זו מתנה שימושית יותר ממשהו שמיועד ללימוד ישיבתי.'
@@ -533,7 +533,7 @@ async function callGemini({ mode, messages, products, order, query }) {
   const role = mode === 'advisor' ? 'AI יועץ קניות' : 'שירות לקוחות של המרכז למסורת יהודית'
   const disclosureRule = mode === 'advisor'
     ? 'אתה מוצג בגלוי כ-AI יועץ קניות.'
-    : 'אתה שירות לקוחות דיגיטלי של ה��תר. הסגנון טבעי, חם ולא רובוטי, אבל אם שואלים ישירות האם אתה מערכת אוטומטית, אל תשקר.'
+    : 'אתה שירות לקוחות דיג��טלי של ה��תר. הסגנון טבעי, חם ולא רובוטי, אבל אם שואלים ישירות האם אתה מערכת אוטומטית, אל תשקר.'
 
   const advisorRules = mode === 'advisor'
     ? `
