@@ -193,7 +193,7 @@ function isOrderIntent(text) {
 }
 
 function labeledValue(text, labels) {
-  const escaped = labels.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
+  const escaped = labels.map((label) => label.replace(/[.*+?^${}()|[\]\]/g, '\$&')).join('|')
   const match = String(text || '').match(new RegExp(`(?:^|[\\n|])\\s*(?:${escaped})\\s*[:=\\-]\\s*([^\\n|]+)`, 'i'))
   return cleanText(match?.[1] || '')
 }
@@ -377,7 +377,7 @@ async function createSafeAiOrder({ messages }) {
     reply: `פתחתי ע��ורך הזמנה זמנית מספר #${orderId}.
 
 ההזמנה נרשמה על ${firstName}${lastName ? ` ${lastName}` : ''} עבור ${quantity} × ${item.name}.
-היא עדיין לא נשלחה לאתר המקורי ולא בוצע חיוב. אחרי בדיקה תקבל קיש��ר לתשלום או עדכון המשך.`,
+היא עדיין לא נשלחה לאתר המקורי ולא בוצע חיוב. אחרי בדיקה תקבל קיש��ר לתשל��ם או עדכון המשך.`,
   }
 }
 
@@ -402,7 +402,7 @@ function fallbackReply(mode, query, products, order) {
     const list = products.slice(0, 4).map((p) =>
       `• ${p.name} - ${p.in_stock ? 'במלאי' : (p.stock_text || 'לא במלאי')} - ₪${p.price}\n  ${p.url}`
     ).join('\n')
-    return `בדקתי לפי מה שכתבת. אלו המוצרים שמצאתי:\n${list}\n\nאם התכוונת לדגם מסוים, כתוב לי מילה מהשם או מק"ט ואבדוק יותר מדויק.`
+    return `בדקתי לפי ��ה שכתבת. אלו המוצרים שמצאתי:\n${list}\n\nאם התכוונת לדגם מסוים, כתוב לי מילה מהשם או מק"ט ואבדוק יותר מדויק.`
   }
 
   return 'בשמחה, אני כאן לעזור. אם זו שאלה על הזמנה קיימת, כתוב מספר הזמנה ומייל כדי שאוכל לבדוק. אם זו שאלה על מוצר, כתוב לי את שם הספר או מה אתה מחפש.'
@@ -422,10 +422,10 @@ function suitabilityReason(product, query, profile) {
       return 'מתאים במיוחד לאמא או לאישה, כי זה מוצר שמכוון לשימוש אישי של נשים ולא לסדר תפילה ציבורי.'
     }
     if (name.includes('תהילים')) {
-      return 'מתאים כמתנה אישית ומכובדת ל��מא, במיוחד למי שמתחברת לתפילה, בקשות וחיזוק יומי.'
+      return 'מתאים כמתנה אישית ומכובדת לאמא, במיוחד למי שמתחברת לתפילה, בקשות וחיזוק יומי.'
     }
     if (name.includes('סידור')) {
-      return 'מתאים לאמא אם רוצים מתנה ש��מושית לתפילה יומיומית, ועדיף לבחור נוסח וגודל ��פי ההרגל שלה.'
+      return 'מתאים לאמא אם רוצים מתנה ש��מושית לתפילה יומיומית, ועדיף לבחור נוסח וגודל ��פי ה��רגל שלה.'
     }
     if (text.includes('שבת') || text.includes('בית')) {
       return 'מתאים לבית ולשולחן שבת, ולכן זו מתנה שימושית יותר ממשהו שמיועד ללימוד ישיבתי.'
@@ -445,7 +445,7 @@ function suitabilityReason(product, query, profile) {
     return 'מתאים למי שמחפש חיזוק, אמונה או לימוד פנימי יותר.'
   }
 
-  return profile?.reason || 'מתאים לפי שם המוצר, הקטגוריה וההתאמה לחיפוש בא��ר.'
+  return profile?.reason || 'מתאים לפי שם המוצר, הקטגוריה וההתאמה לחיפוש באתר.'
 }
 
 function openAiModelForMode(mode) {
@@ -552,12 +552,12 @@ async function callGemini({ mode, messages, products, order, query }) {
 אתה ${role}. ענה בעברית בלבד, בנימוס, בקצרה יחסית, בטון אישי וחם.
 ${disclosureRule}
 ${advisorRules}
-אסור להמ��יא סטטוס הזמנה, מחיר, מלאי או פעולה שבוצעה.
+אסור להמ���יא סטטוס הזמנה, מחיר, מלאי או פעולה שבוצעה.
 אם אתה שירות לקוחות והשאלה היא על מוצר, מלאי, מחיר, משלוח, החזרה או מדיניות: ענה ישירות לפי המוצרים והמדיניות. אל תבקש מספר הזמנה אלא אם השאלה באמת דורשת בדיקת הזמנה קיימת או שינוי הזמנה קיימת.
 אם יש כמה מוצרים דומים לשאלה, הצג כמה אפשרויות עם קישור ישיר לכל מוצר, מחיר ומצב מלאי.
 אם מבקשים שינוי הזמנה, ביטול, הוספה או הורדת מוצר: בקש אימות מספר הזמנה ומייל אם חסר, הסבר שתכין בקשת טיפול, ואל תגיד שהשינוי בוצע בפועל.
 אם יש הזמנה מאומתת בהקשר, אפשר להתייחס לסטטוס שלה בלי לחשוף מידע מעבר למה שנדרש.
-אם יש מוצרים רלוונטיים, המלץ עם שם, מחיר וקישור ישיר מלא למ��צר.
+אם יש מוצרים רלוונטיים, המלץ עם שם, מחיר וקישור ישיר מלא למוצר.
 מדיניות האתר:
 ${POLICY_TEXT}
 פרופיל התאמה שזוהה:
@@ -625,6 +625,20 @@ export async function POST(request) {
     const query = lastUserText(messages)
     const products = await getRelevantProducts(query)
     const order = mode === 'service' ? await getVerifiedOrder(body.orderNumber, body.email) : null
+    const safeOrder = await createSafeAiOrder({ messages })
+
+    if (safeOrder?.handled) {
+      return NextResponse.json({
+        reply: safeOrder.reply,
+        products,
+        orderFound: Boolean(order),
+        safeMode: true,
+        actionExecuted: false,
+        draftOrderCreated: Boolean(safeOrder.created),
+        draftOrderId: safeOrder.orderId || null,
+      })
+    }
+
 
     if (mode === 'service' && isSensitiveServiceAction(query)) {
       return NextResponse.json({
