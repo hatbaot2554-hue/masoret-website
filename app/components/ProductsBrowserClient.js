@@ -95,11 +95,12 @@ export default function ProductsBrowserClient({
   sort,
 }) {
   const [liveSearch, setLiveSearch] = useState('')
+  const initialProducts = pageProducts && pageProducts.length ? pageProducts : products
   const liveProducts = useMemo(
     () => products.filter((product) => matchesProduct(product, liveSearch)),
     [products, liveSearch]
   )
-  const activeProducts = liveSearch.trim() ? liveProducts : pageProducts
+  const activeProducts = liveSearch.trim() ? liveProducts : initialProducts
   const showingLive = liveSearch.trim().length > 0
 
   return (
