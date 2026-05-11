@@ -407,6 +407,26 @@ function safeOrderQuestion(missing) {
 }
 
 function isProductConfirmationAccepted(messages) {
+  let plainAskedAt = -1
+  for (let index = 0; index < messages.length; index += 1) {
+    const text = cleanText(messages[index]?.text || '')
+    if (messages[index]?.role === 'assistant' && (
+      text.includes('\u05d6\u05d4 \u05d4\u05de\u05d5\u05e6\u05e8') ||
+      text.includes('\u05de\u05e6\u05d0\u05ea\u05d9 \u05d0\u05ea \u05d4\u05de\u05d5\u05e6\u05e8')
+    )) {
+      plainAskedAt = index
+    }
+  }
+  if (plainAskedAt >= 0) {
+    const replies = messages.slice(plainAskedAt + 1).filter((message) => message.role === 'user')
+    if (replies.some((message) => {
+      const text = cleanText(message.text || '').toLowerCase()
+      return ['\u05db\u05df', '\u05e0\u05db\u05d5\u05df', '\u05d6\u05d4 \u05d6\u05d4', '\u05d6\u05d4 \u05d4\u05de\u05d5\u05e6\u05e8', '\u05de\u05d0\u05e9\u05e8', '\u05de\u05d0\u05e9\u05e8\u05ea', '\u05d0\u05d9\u05e9\u05d5\u05e8'].includes(text) ||
+        (text.includes('\u05db\u05df') && (text.includes('\u05d6\u05d4') || text.includes('\u05d4\u05de\u05d5\u05e6\u05e8') || text.includes('\u05e0\u05db\u05d5\u05df')))
+    })) {
+      return true
+    }
+  }
   let askedAt = -1
   for (let index = 0; index < messages.length; index += 1) {
     if (messages[index]?.role === 'assistant' && /זה המוצר/.test(cleanText(messages[index]?.text || ''))) {
@@ -430,6 +450,11 @@ function inferSequentialOrderFields(messages) {
     if (messages[index]?.role !== 'assistant' || nextMessage?.role !== 'user') continue
     const answer = cleanText(nextMessage.text || '')
     if (!answer) continue
+    if (assistantText.includes('\u05e2\u05dc \u05d0\u05d9\u05d6\u05d4 \u05e9\u05dd') || assistantText.includes('\u05e9\u05dd \u05dc\u05e8\u05e9\u05d5\u05dd')) fields.name = answer
+    if (assistantText.includes('\u05de\u05e1\u05e4\u05e8 \u05d4\u05d8\u05dc\u05e4\u05d5\u05df') || assistantText.includes('\u05d8\u05dc\u05e4\u05d5\u05df \u05dc\u05e2\u05d3\u05db\u05d5\u05e0\u05d9\u05dd')) fields.phone = answer
+    if (assistantText.includes('\u05db\u05ea\u05d5\u05d1\u05ea \u05d4\u05de\u05d9\u05d9\u05dc') || assistantText.includes('\u05de\u05d9\u05d9\u05dc \u05dc\u05e9\u05dc\u05d9\u05d7\u05ea')) fields.email = answer
+    if (assistantText.includes('\u05dc\u05d0\u05d9\u05d6\u05d5 \u05db\u05ea\u05d5\u05d1\u05ea') || assistantText.includes('\u05db\u05ea\u05d5\u05d1\u05ea \u05dc\u05e9\u05dc\u05d5\u05d7')) fields.address = answer
+    if (assistantText.includes('\u05d1\u05d0\u05d9\u05d6\u05d5 \u05e2\u05d9\u05e8') || assistantText.includes('\u05e2\u05d9\u05e8 \u05e0\u05de\u05e6\u05d0\u05ea')) fields.city = answer
 
     if (/על איזה שם|שם לרשום/.test(assistantText)) fields.name = answer
     if (/מספר הטלפון|טלפון לעדכונים/.test(assistantText)) fields.phone = answer
@@ -468,7 +493,11 @@ async function createSafeAiOrder({ messages, force = false }) {
   if (!force && !isOrderIntent(text)) return null
 
   const latestText = lastUserText(messages)
-  const found = await findSafeOrderProduct(latestText) || await findSafeOrderProduct(text)
+  const productConfirmed = isProductConfirmationAccepted(messages)
+  const continuingOrder = isSafeOrderConversation(messages)
+  const found = continuingOrder || productConfirmed
+    ? await findSafeOrderProduct(text)
+    : await findSafeOrderProduct(latestText) || await findSafeOrderProduct(text)
   const name = labeledValue(text, ['שם', 'שם מלא', 'לקוח', 'customer'])
   const sequentialFields = inferSequentialOrderFields(messages)
   const phone = extractPhone(text) || sequentialFields.phone || ''
@@ -491,7 +520,7 @@ async function createSafeAiOrder({ messages, force = false }) {
     city: orderCity,
   }
   const missing = missingSafeOrderFields(fields)
-  if (found?.product && !isProductConfirmationAccepted(messages)) {
+  if (found?.product && !productConfirmed) {
     return {
       handled: true,
       created: false,
