@@ -213,6 +213,27 @@ function extractSku(text) {
     cleanText(String(text || '').match(/(?:מק"?ט|מקט|sku)\s*[:#=\-]?\s*([A-Za-z0-9-]+)/i)?.[1] || '')
 }
 
+function isOrderableCatalogProduct(product) {
+  const name = cleanText(product.name || '').toLowerCase()
+  if (!name) return false
+  if (['משלוח', 'shipping', 'delivery'].includes(name)) return false
+  if (name.includes('משלוח') && Number(product.price || 0) <= 80) return false
+  return true
+}
+
+function meaningfulProductWords(text) {
+  const stopWords = new Set([
+    'אני', 'רוצה', 'להזמין', 'הזמנה', 'לקנות', 'רכישה', 'תזמין', 'תזמינו',
+    'את', 'של', 'לי', 'עם', 'מוצר', 'ספר', 'אחד', 'אחת', 'בבקשה',
+    'order', 'buy', 'product',
+  ])
+  return cleanText(text)
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word) => word.replace(/[^\p{L}\p{N}"׳״-]/gu, ''))
+    .filter((word) => word.length >= 3 && !stopWords.has(word))
+}
+
 async function getProductsCatalog() {
   try {
     const res = await fetch(PRODUCTS_URL, { next: { revalidate: 1800 } })
@@ -245,9 +266,20 @@ async function findSafeOrderProduct(text) {
   })
   if (named) return { product: named, index: catalog.indexOf(named) }
 
+  const importantWords = meaningfulProductWords(productName || text)
   const scored = catalog
-    .map((product, index) => ({ product, index, score: scoreProduct(product, productName || text) }))
-    .filter((entry) => entry.score > 0)
+    .filter(isOrderableCatalogProduct)
+    .map((product, index) => {
+      const name = String(product.name || '').toLowerCase()
+      const wordHits = importantWords.filter((word) => name.includes(word)).length
+      const allImportantWordsInName = importantWords.length > 0 && wordHits === importantWords.length
+      return {
+        product,
+        index,
+        score: scoreProduct(product, productName || text) + (wordHits * 18) + (allImportantWordsInName ? 60 : 0),
+      }
+    })
+    .filter((entry) => entry.score > 0 && (importantWords.length === 0 || importantWords.some((word) => String(entry.product.name || '').toLowerCase().includes(word))))
     .sort((a, b) => b.score - a.score)
 
   return scored[0] ? { product: scored[0].product, index: scored[0].index } : null
