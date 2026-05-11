@@ -797,6 +797,7 @@ async function callGemini({ mode, messages, products, order, query }) {
 אתה ${role}. ענה בעברית בלבד, בנימוס, בקצרה יחסית, בטון אישי וחם.
 ${disclosureRule}
 ${advisorRules}
+כלל חשוב לשירות לקוחות: אל תזכיר ללקוח "אתר מקורי", "נשלח לאתר המקורי", "שליחה בתהליך", "מאושר לשליחה", "טיוטת AI", "אוטומציה פנימית" או שמות של מערכות פנימיות. דבר רק בשפה חיצונית רגילה של חנות: ההזמנה בתהליך, ההזמנה בעיבוד, ההזמנה נרשמה, או תקבל עדכון המשך.
 אסור להמציא סטטוס הזמנה, מחיר, מלאי או פעולה שבוצעה.
 אם אתה שירות לקוחות והשאלה היא על מוצר, מלאי, מחיר, משלוח, החזרה או מדיניות: ענה ישירות לפי המוצרים והמדיניות. אל תבקש מספר הזמנה אלא אם השאלה באמת דורשת בדיקת הזמנה קיימת או שינוי הזמנה קיימת.
 אם יש כמה מוצרים דומים לשאלה, הצג כמה אפשרויות עם קישור ישיר לכל מוצר, מחיר ומצב מלאי.
@@ -885,7 +886,7 @@ export async function POST(request) {
         draftOrderCreated: Boolean(safeOrder.created),
         draftOrderId: safeOrder.orderId || null,
         needsProductConfirmation: Boolean(safeOrder.needsProductConfirmation),
-        debugVersion: 'safe-order-v7',
+        debugVersion: 'safe-order-v8',
       })
     }
 
@@ -899,7 +900,7 @@ export async function POST(request) {
         draftOrderCreated: false,
         draftOrderId: null,
         needsProductConfirmation: true,
-        debugVersion: 'safe-order-v7-fallback-confirmation',
+        debugVersion: 'safe-order-v8-fallback-confirmation',
       })
     }
 
@@ -911,7 +912,7 @@ export async function POST(request) {
       orderFound: Boolean(order),
       safeMode: true,
       actionExecuted: false,
-      debugVersion: 'safe-order-v7',
+      debugVersion: 'safe-order-v8',
     })
   } catch (err) {
     return NextResponse.json({ error: err.message || 'שגיאה בצ׳אט' }, { status: 500 })
