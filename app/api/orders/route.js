@@ -71,8 +71,18 @@ export async function POST(request) {
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
+    const account = searchParams.get('account')?.trim();
     const orderNumber = searchParams.get('order')?.trim();
     const email = searchParams.get('email')?.toLowerCase();
+
+    if (account) {
+      const response = await fetch(
+        `${DASHBOARD_URL}/api/orders?account=${encodeURIComponent(account)}`,
+        { cache: 'no-store' }
+      );
+      const data = await response.json().catch(() => ({}));
+      return NextResponse.json(data, { status: response.status });
+    }
 
     if (!orderNumber || !email) {
       return NextResponse.json({ error: 'חסרים פרטים' }, { status: 400 });
