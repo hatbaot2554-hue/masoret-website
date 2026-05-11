@@ -1,5 +1,5 @@
-import ProductCard from './components/ProductCard'
 import ReviewsCarousel from './components/ReviewsCarousel'
+import RotatingProductShowcase from './components/RotatingProductShowcase'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +13,7 @@ async function getProducts() {
     const all = await res.json()
     const withIndex = all.map((p, i) => ({ ...p, index: i }))
     // מסנן חסרי מלאי + לוקח 10 ראשונים
-    return withIndex.filter(p => p.in_stock !== false).slice(0, 10)
+    return withIndex.filter(p => p.in_stock !== false).slice(0, 24)
   } catch {
     return []
   }
@@ -141,11 +141,7 @@ export default async function HomePage() {
           </div>
 
           {products.length > 0 ? (
-            <div className="products-grid">
-              {products.map((product) => (
-                <ProductCard key={product.index} product={product} index={product.index} />
-              ))}
-            </div>
+            <RotatingProductShowcase products={products} />
           ) : (
             <div style={{ textAlign: 'center', padding: '48px', background: '#F8F4EE', color: '#6B5C3E' }}>
               <p style={{ fontSize: '18px', marginBottom: '12px' }}>המוצרים בדרך אליך...</p>
