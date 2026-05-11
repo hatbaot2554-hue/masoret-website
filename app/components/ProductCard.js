@@ -67,7 +67,8 @@ export default function ProductCard({ product, index }) {
         } catch {}
       }}>
       <div
-        style={{ background: '#fff', border: '1px solid #EDE6D9', transition: 'all 0.25s', overflow: 'hidden', position: 'relative' }}
+        className="product-card"
+        style={{ transition: 'all 0.25s', overflow: 'hidden', position: 'relative' }}
         onMouseEnter={e => { e.currentTarget.style.borderColor = '#C9A84C'; e.currentTarget.style.transform = 'translateY(-2px)' }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = '#EDE6D9'; e.currentTarget.style.transform = 'translateY(0)' }}>
 
@@ -89,7 +90,7 @@ export default function ProductCard({ product, index }) {
           {wished ? '❤️' : '🤍'}
         </button>
 
-        <div style={{ aspectRatio: '3/4', overflow: 'hidden', background: '#EDE6D9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ aspectRatio: '3/4', overflow: 'hidden', background: 'var(--parchment)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {image
             ? <img src={image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
             : <span style={{ fontSize: '48px' }}>📖</span>}
