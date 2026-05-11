@@ -182,6 +182,10 @@ function conversationText(messages) {
 }
 
 function isOrderIntent(text) {
+  const normalized = cleanText(text).toLowerCase()
+  if (['להזמין', 'הזמנה', 'רוצה לקנות', 'לקנות', 'רכישה', 'תזמין', 'תזמינו'].some((term) => normalized.includes(term))) {
+    return true
+  }
   return /(?:להזמין|הזמנה|רוצה לקנות|לקנות|רכישה|תזמין|תזמינו|order|buy)/i.test(text)
 }
 
@@ -371,6 +375,8 @@ function isProductConfirmationAccepted(messages) {
   const userReplies = messages.slice(Math.max(askedAt + 1, 0)).filter((message) => message.role === 'user')
   return userReplies.some((message) => {
     const text = cleanText(message.text || '').toLowerCase()
+    if (['כן', 'נכון', 'זה זה', 'זה המוצר', 'מאשר', 'מאשרת', 'אישור'].includes(text)) return true
+    if (text.includes('כן') && (text.includes('זה') || text.includes('המוצר') || text.includes('נכון'))) return true
     return /^(כן|נכון|זה זה|זה המוצר|מאשר|מאשרת|אישור|כן זה)$/i.test(text) || /כן.*(זה|המוצר|נכון)/i.test(text)
   })
 }
