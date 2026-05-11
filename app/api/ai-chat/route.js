@@ -554,8 +554,14 @@ async function createSafeAiOrder({ messages, force = false }) {
 
   const latestText = lastUserText(messages)
   const continuingOrder = isSafeOrderConversation(messages)
+  const productPromptAlreadyShown = continuingOrder && text.includes(`${SITE_URL}/products/`)
+  const latestRejectsProduct = latestText.includes('\u05dc\u05d0') ||
+    latestText.includes('\u05d0\u05d7\u05e8') ||
+    latestText.includes('\u05ea\u05e7\u05df') ||
+    latestText.includes('\u05d8\u05e2\u05d5\u05ea')
   const productConfirmed = isProductConfirmationAccepted(messages) ||
-    (continuingOrder && (messages || []).some((message) => message.role === 'user' && isPlainPositiveConfirmation(message.text)))
+    (continuingOrder && (messages || []).some((message) => message.role === 'user' && isPlainPositiveConfirmation(message.text))) ||
+    (productPromptAlreadyShown && !latestRejectsProduct)
   const found = continuingOrder || productConfirmed
     ? await findSafeOrderProduct(text)
     : await findSafeOrderProduct(latestText) || await findSafeOrderProduct(text)
@@ -875,7 +881,7 @@ export async function POST(request) {
         draftOrderCreated: Boolean(safeOrder.created),
         draftOrderId: safeOrder.orderId || null,
         needsProductConfirmation: Boolean(safeOrder.needsProductConfirmation),
-        debugVersion: 'safe-order-v4',
+        debugVersion: 'safe-order-v5',
       })
     }
 
@@ -889,7 +895,7 @@ export async function POST(request) {
         draftOrderCreated: false,
         draftOrderId: null,
         needsProductConfirmation: true,
-        debugVersion: 'safe-order-v4-fallback-confirmation',
+        debugVersion: 'safe-order-v5-fallback-confirmation',
       })
     }
 
@@ -901,7 +907,7 @@ export async function POST(request) {
       orderFound: Boolean(order),
       safeMode: true,
       actionExecuted: false,
-      debugVersion: 'safe-order-v4',
+      debugVersion: 'safe-order-v5',
     })
   } catch (err) {
     return NextResponse.json({ error: err.message || 'שגיאה בצ׳אט' }, { status: 500 })
