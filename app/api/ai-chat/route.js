@@ -737,9 +737,10 @@ export async function POST(request) {
     const query = lastUserText(messages)
     const products = await getRelevantProducts(query)
     const order = mode === 'service' ? await getVerifiedOrder(body.orderNumber, body.email) : null
+    const explicitOrderIntent = mode === 'service' && isExplicitOrderRequest(query)
     const safeOrder = await createSafeAiOrder({
       messages,
-      force: mode === 'service' && (isExplicitOrderRequest(query) || isExplicitOrderRequest(conversationText(messages))),
+      force: mode === 'service' && (explicitOrderIntent || isExplicitOrderRequest(conversationText(messages))),
     })
 
     if (safeOrder?.handled) {
@@ -752,6 +753,21 @@ export async function POST(request) {
         draftOrderCreated: Boolean(safeOrder.created),
         draftOrderId: safeOrder.orderId || null,
         needsProductConfirmation: Boolean(safeOrder.needsProductConfirmation),
+        debugVersion: 'safe-order-v3',
+      })
+    }
+
+    if (explicitOrderIntent && products[0]) {
+      return NextResponse.json({
+        reply: safeOrderProductConfirmation(products[0], products[0].index),
+        products: [products[0]],
+        orderFound: Boolean(order),
+        safeMode: true,
+        actionExecuted: false,
+        draftOrderCreated: false,
+        draftOrderId: null,
+        needsProductConfirmation: true,
+        debugVersion: 'safe-order-v3-fallback-confirmation',
       })
     }
 
@@ -763,6 +779,7 @@ export async function POST(request) {
       orderFound: Boolean(order),
       safeMode: true,
       actionExecuted: false,
+      debugVersion: 'safe-order-v3',
     })
   } catch (err) {
     return NextResponse.json({ error: err.message || 'שגיאה בצ׳אט' }, { status: 500 })
