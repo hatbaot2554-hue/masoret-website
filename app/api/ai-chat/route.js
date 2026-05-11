@@ -205,6 +205,31 @@ function isExplicitOrderRequest(text) {
   return terms.some((term) => normalized.includes(term))
 }
 
+function isProductInfoQuestion(text) {
+  const normalized = cleanText(text).toLowerCase()
+  const terms = [
+    '\u05db\u05de\u05d4',
+    '\u05de\u05d7\u05d9\u05e8',
+    '\u05de\u05dc\u05d0\u05d9',
+    '\u05d9\u05e9 \u05dc\u05db\u05dd',
+    '\u05de\u05e9\u05dc\u05d5\u05d7',
+    '\u05d4\u05d7\u05d6\u05e8\u05d4',
+    '\u05d1\u05d9\u05d8\u05d5\u05dc',
+    '\u05e9\u05d9\u05e0\u05d5\u05d9',
+    '\u05de\u05e6\u05d1',
+  ]
+  return terms.some((term) => normalized.includes(term))
+}
+
+function isSafeOrderConversation(messages) {
+  return (messages || []).some((message) => {
+    if (message?.role !== 'assistant') return false
+    const text = cleanText(message.text || '')
+    return text.includes('\u05d6\u05d4 \u05d4\u05de\u05d5\u05e6\u05e8') ||
+      (text.includes('\u05de\u05e7') && text.includes('\u05e7\u05d9\u05e9\u05d5\u05e8') && text.includes('\u05de\u05d7\u05d9\u05e8'))
+  })
+}
+
 function labeledValue(text, labels) {
   const escaped = labels.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
   const match = String(text || '').match(new RegExp(`(?:^|[\\n|])\\s*(?:${escaped})\\s*[:=\\-]\\s*([^\\n|]+)`, 'i'))
@@ -738,9 +763,16 @@ export async function POST(request) {
     const products = await getRelevantProducts(query)
     const order = mode === 'service' ? await getVerifiedOrder(body.orderNumber, body.email) : null
     const explicitOrderIntent = mode === 'service' && isExplicitOrderRequest(query)
+    const productOrderCandidate = mode === 'service' && products.length > 0 && query && !isProductInfoQuestion(query)
+    const continuingSafeOrder = mode === 'service' && isSafeOrderConversation(messages)
     const safeOrder = await createSafeAiOrder({
       messages,
-      force: mode === 'service' && (explicitOrderIntent || isExplicitOrderRequest(conversationText(messages))),
+      force: mode === 'service' && (
+        explicitOrderIntent ||
+        productOrderCandidate ||
+        continuingSafeOrder ||
+        isExplicitOrderRequest(conversationText(messages))
+      ),
     })
 
     if (safeOrder?.handled) {
@@ -757,7 +789,7 @@ export async function POST(request) {
       })
     }
 
-    if (explicitOrderIntent && products[0]) {
+    if ((explicitOrderIntent || productOrderCandidate) && products[0]) {
       return NextResponse.json({
         reply: safeOrderProductConfirmation(products[0], products[0].index),
         products: [products[0]],
