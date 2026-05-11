@@ -351,12 +351,12 @@ function productToOrderItem(product, index, quantity) {
 
 function missingSafeOrderFields(fields) {
   const missing = []
-  if (!fields.productFound) missing.push('מק"ט או שם מוצר מדויק')
-  if (!fields.name) missing.push('שם מלא')
-  if (!fields.phone) missing.push('טלפון')
-  if (!fields.email) missing.push('מייל')
-  if (!fields.address) missing.push('כתובת')
-  if (!fields.city) missing.push('עיר')
+  if (!fields.productFound) missing.push('product')
+  if (!fields.name) missing.push('name')
+  if (!fields.phone) missing.push('phone')
+  if (!fields.email) missing.push('email')
+  if (!fields.address) missing.push('address')
+  if (!fields.city) missing.push('city')
   return missing
 }
 
@@ -377,22 +377,22 @@ function safeOrderFormatReply(missing) {
 
 function safeOrderQuestion(missing) {
   const next = missing[0]
-  if (next.includes('מק') || next.includes('מוצר')) {
+  if (next === 'product' || next.includes('מק') || next.includes('מוצר')) {
     return 'בשמחה. איזה מוצר תרצה להזמין? אפשר לכתוב שם מוצר רגיל, ואני אציג לך את המוצר שמצאתי לאישור.'
   }
-  if (next.includes('שם')) {
+  if (next === 'name' || next.includes('שם')) {
     return 'מעולה. על איזה שם לרשום את ההזמנה?'
   }
-  if (next.includes('טלפון')) {
+  if (next === 'phone' || next.includes('טלפון')) {
     return 'מה מספר הטלפון לעדכונים על ההזמנה?'
   }
-  if (next.includes('מייל')) {
+  if (next === 'email' || next.includes('מייל')) {
     return 'מה כתובת המייל לשליחת עדכונים וקישור תשלום?'
   }
-  if (next.includes('כתובת')) {
+  if (next === 'address' || next.includes('כתובת')) {
     return 'לאיזו כתובת לשלוח את ההזמנה?'
   }
-  if (next.includes('עיר')) {
+  if (next === 'city' || next.includes('עיר')) {
     return 'באיזו עיר נמצאת הכתובת?'
   }
   const questions = {
@@ -407,6 +407,45 @@ function safeOrderQuestion(missing) {
 }
 
 function isProductConfirmationAccepted(messages) {
+  const positiveReplies = [
+    '\u05db\u05df',
+    '\u05e0\u05db\u05d5\u05df',
+    '\u05d6\u05d4 \u05d6\u05d4',
+    '\u05d6\u05d4 \u05d4\u05de\u05d5\u05e6\u05e8',
+    '\u05de\u05d0\u05e9\u05e8',
+    '\u05de\u05d0\u05e9\u05e8\u05ea',
+    '\u05d0\u05d9\u05e9\u05d5\u05e8',
+    'yes',
+    'ok',
+  ]
+  const isPositiveReply = (value) => {
+    const text = cleanText(value || '').toLowerCase()
+    return positiveReplies.includes(text) ||
+      (text.includes('\u05db\u05df') && (
+        text.includes('\u05d6\u05d4') ||
+        text.includes('\u05d4\u05de\u05d5\u05e6\u05e8') ||
+        text.includes('\u05e0\u05db\u05d5\u05df') ||
+        text.length <= 12
+      ))
+  }
+
+  let productPromptAt = -1
+  for (let index = 0; index < messages.length; index += 1) {
+    const text = cleanText(messages[index]?.text || '')
+    if (messages[index]?.role === 'assistant' && (
+      text.includes(`${SITE_URL}/products/`) ||
+      text.includes('\u05de\u05e6\u05d0\u05ea\u05d9 \u05d0\u05ea \u05d4\u05de\u05d5\u05e6\u05e8') ||
+      text.includes('\u05d6\u05d4 \u05d4\u05de\u05d5\u05e6\u05e8') ||
+      (text.includes('\u05e7\u05d9\u05e9\u05d5\u05e8') && text.includes('\u05ea\u05de\u05d5\u05e0\u05d4'))
+    )) {
+      productPromptAt = index
+    }
+  }
+  if (productPromptAt >= 0) {
+    const replies = messages.slice(productPromptAt + 1).filter((message) => message.role === 'user')
+    if (replies.some((message) => isPositiveReply(message.text))) return true
+  }
+
   let plainAskedAt = -1
   for (let index = 0; index < messages.length; index += 1) {
     const text = cleanText(messages[index]?.text || '')
@@ -436,6 +475,7 @@ function isProductConfirmationAccepted(messages) {
   const userReplies = messages.slice(Math.max(askedAt + 1, 0)).filter((message) => message.role === 'user')
   return userReplies.some((message) => {
     const text = cleanText(message.text || '').toLowerCase()
+    if (isPositiveReply(text)) return true
     if (['כן', 'נכון', 'זה זה', 'זה המוצר', 'מאשר', 'מאשרת', 'אישור'].includes(text)) return true
     if (text.includes('כן') && (text.includes('זה') || text.includes('המוצר') || text.includes('נכון'))) return true
     return /^(כן|נכון|זה זה|זה המוצר|מאשר|מאשרת|אישור|כן זה)$/i.test(text) || /כן.*(זה|המוצר|נכון)/i.test(text)
