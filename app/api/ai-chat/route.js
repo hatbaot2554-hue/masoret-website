@@ -550,6 +550,10 @@ function safeOrderSuccessReply(orderId, firstName, lastName, quantity, itemName)
 
 async function createSafeAiOrder({ messages, force = false }) {
   const text = conversationText(messages)
+  const userText = (messages || [])
+    .filter((message) => message.role === 'user')
+    .map((message) => cleanText(message.text || ''))
+    .join('\n')
   if (!force && !isOrderIntent(text)) return null
 
   const latestText = lastUserText(messages)
@@ -571,7 +575,7 @@ async function createSafeAiOrder({ messages, force = false }) {
   const email = extractEmail(text) || sequentialFields.email || ''
   const address = labeledValue(text, ['כתובת', 'address'])
   const city = labeledValue(text, ['עיר', 'city'])
-  const quantity = extractQuantity(text)
+  const quantity = extractQuantity(userText)
   const note = labeledValue(text, ['הערות', 'הערה', 'note'])
 
   const orderName = name || sequentialFields.name || ''
@@ -881,7 +885,7 @@ export async function POST(request) {
         draftOrderCreated: Boolean(safeOrder.created),
         draftOrderId: safeOrder.orderId || null,
         needsProductConfirmation: Boolean(safeOrder.needsProductConfirmation),
-        debugVersion: 'safe-order-v5',
+        debugVersion: 'safe-order-v6',
       })
     }
 
@@ -895,7 +899,7 @@ export async function POST(request) {
         draftOrderCreated: false,
         draftOrderId: null,
         needsProductConfirmation: true,
-        debugVersion: 'safe-order-v5-fallback-confirmation',
+        debugVersion: 'safe-order-v6-fallback-confirmation',
       })
     }
 
@@ -907,7 +911,7 @@ export async function POST(request) {
       orderFound: Boolean(order),
       safeMode: true,
       actionExecuted: false,
-      debugVersion: 'safe-order-v5',
+      debugVersion: 'safe-order-v6',
     })
   } catch (err) {
     return NextResponse.json({ error: err.message || 'שגיאה בצ׳אט' }, { status: 500 })
