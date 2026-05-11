@@ -264,7 +264,7 @@ function extractPhone(text) {
 
 function extractQuantity(text) {
   const value = labeledValue(text, ['כמות', 'quantity', 'qty']) ||
-    cleanText(String(text || '').match(/(?:כמות|x)\s*[:=]?\s*(\d{1,2})/i)?.[1] || '')
+    cleanText(String(text || '').match(/(?:^|[\s|])(?:כמות|quantity|qty)\s*[:=]?\s*(\d{1,2})(?:\s|$)/i)?.[1] || '')
   const quantity = Number(value || 1)
   return Number.isFinite(quantity) && quantity > 0 ? Math.min(quantity, 20) : 1
 }
@@ -885,7 +885,7 @@ export async function POST(request) {
         draftOrderCreated: Boolean(safeOrder.created),
         draftOrderId: safeOrder.orderId || null,
         needsProductConfirmation: Boolean(safeOrder.needsProductConfirmation),
-        debugVersion: 'safe-order-v6',
+        debugVersion: 'safe-order-v7',
       })
     }
 
@@ -899,7 +899,7 @@ export async function POST(request) {
         draftOrderCreated: false,
         draftOrderId: null,
         needsProductConfirmation: true,
-        debugVersion: 'safe-order-v6-fallback-confirmation',
+        debugVersion: 'safe-order-v7-fallback-confirmation',
       })
     }
 
@@ -911,7 +911,7 @@ export async function POST(request) {
       orderFound: Boolean(order),
       safeMode: true,
       actionExecuted: false,
-      debugVersion: 'safe-order-v6',
+      debugVersion: 'safe-order-v7',
     })
   } catch (err) {
     return NextResponse.json({ error: err.message || 'שגיאה בצ׳אט' }, { status: 500 })
