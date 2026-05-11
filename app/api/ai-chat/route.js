@@ -230,6 +230,22 @@ function isSafeOrderConversation(messages) {
   })
 }
 
+function isPlainPositiveConfirmation(text) {
+  const normalized = cleanText(text || '').toLowerCase()
+  return [
+    '\u05db\u05df',
+    '\u05e0\u05db\u05d5\u05df',
+    '\u05d6\u05d4 \u05d6\u05d4',
+    '\u05d6\u05d4 \u05d4\u05de\u05d5\u05e6\u05e8',
+    '\u05de\u05d0\u05e9\u05e8',
+    '\u05de\u05d0\u05e9\u05e8\u05ea',
+    '\u05d0\u05d9\u05e9\u05d5\u05e8',
+    'yes',
+    'ok',
+  ].includes(normalized) ||
+    (normalized.includes('\u05db\u05df') && normalized.length <= 18)
+}
+
 function labeledValue(text, labels) {
   const escaped = labels.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
   const match = String(text || '').match(new RegExp(`(?:^|[\\n|])\\s*(?:${escaped})\\s*[:=\\-]\\s*([^\\n|]+)`, 'i'))
@@ -420,7 +436,8 @@ function isProductConfirmationAccepted(messages) {
   ]
   const isPositiveReply = (value) => {
     const text = cleanText(value || '').toLowerCase()
-    return positiveReplies.includes(text) ||
+    return isPlainPositiveConfirmation(text) ||
+      positiveReplies.includes(text) ||
       (text.includes('\u05db\u05df') && (
         text.includes('\u05d6\u05d4') ||
         text.includes('\u05d4\u05de\u05d5\u05e6\u05e8') ||
@@ -444,6 +461,9 @@ function isProductConfirmationAccepted(messages) {
   if (productPromptAt >= 0) {
     const replies = messages.slice(productPromptAt + 1).filter((message) => message.role === 'user')
     if (replies.some((message) => isPositiveReply(message.text))) return true
+  }
+  if (isSafeOrderConversation(messages) && (messages || []).some((message) => message.role === 'user' && isPositiveReply(message.text))) {
+    return true
   }
 
   let plainAskedAt = -1
@@ -533,8 +553,9 @@ async function createSafeAiOrder({ messages, force = false }) {
   if (!force && !isOrderIntent(text)) return null
 
   const latestText = lastUserText(messages)
-  const productConfirmed = isProductConfirmationAccepted(messages)
   const continuingOrder = isSafeOrderConversation(messages)
+  const productConfirmed = isProductConfirmationAccepted(messages) ||
+    (continuingOrder && (messages || []).some((message) => message.role === 'user' && isPlainPositiveConfirmation(message.text)))
   const found = continuingOrder || productConfirmed
     ? await findSafeOrderProduct(text)
     : await findSafeOrderProduct(latestText) || await findSafeOrderProduct(text)
@@ -854,7 +875,7 @@ export async function POST(request) {
         draftOrderCreated: Boolean(safeOrder.created),
         draftOrderId: safeOrder.orderId || null,
         needsProductConfirmation: Boolean(safeOrder.needsProductConfirmation),
-        debugVersion: 'safe-order-v3',
+        debugVersion: 'safe-order-v4',
       })
     }
 
@@ -868,7 +889,7 @@ export async function POST(request) {
         draftOrderCreated: false,
         draftOrderId: null,
         needsProductConfirmation: true,
-        debugVersion: 'safe-order-v3-fallback-confirmation',
+        debugVersion: 'safe-order-v4-fallback-confirmation',
       })
     }
 
@@ -880,7 +901,7 @@ export async function POST(request) {
       orderFound: Boolean(order),
       safeMode: true,
       actionExecuted: false,
-      debugVersion: 'safe-order-v3',
+      debugVersion: 'safe-order-v4',
     })
   } catch (err) {
     return NextResponse.json({ error: err.message || 'שגיאה בצ׳אט' }, { status: 500 })
