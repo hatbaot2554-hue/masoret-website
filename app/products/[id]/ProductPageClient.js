@@ -11,6 +11,56 @@ function formatPrice(price) {
   return Math.ceil(p)
 }
 
+function cleanProductText(value) {
+  return String(value || '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function shortProductSummary(product) {
+  const text = cleanProductText(product.description || product.full_description || '')
+  if (!text) return ''
+  const parts = text
+    .split(/[.!?;]+|\s-\s|\n+/)
+    .map(part => part.trim())
+    .filter(Boolean)
+  const summary = (parts.length ? parts.slice(0, 2).join('. ') : text).trim()
+  return summary.length > 280 ? summary.slice(0, 277).trim() + '...' : summary
+}
+
+function productSpecItems(product) {
+  const text = cleanProductText([product.description, product.full_description].filter(Boolean).join(' '))
+  const details = []
+  const add = (label, value) => {
+    const cleanValue = cleanProductText(value)
+    if (cleanValue && !details.some(item => item.label === label && item.value === cleanValue)) {
+      details.push({ label, value: cleanValue })
+    }
+  }
+
+  add('מק"ט', product.sku)
+  add('קטגוריה', product.category || product.parent_category)
+
+  const authorMatch = text.match(/(?:מאת|מחבר|הרב)\s+([^.,;|]{2,45})/)
+  if (authorMatch) add('מחבר', authorMatch[1])
+
+  const publisherMatch = text.match(/(?:הוצאת|בהוצאת)\s+([^.,;|]{2,35})/)
+  if (publisherMatch) add('הוצאה', publisherMatch[1])
+
+  const sizeMatch = text.match(/(\d{1,2}\s*[x×]\s*\d{1,2}|\d{1,2}\s*ס["״']?מ)/)
+  if (sizeMatch) add('גודל', sizeMatch[0])
+
+  const bindingMatch = text.match(/כריכ(?:ה|ת)\s+([^.,;|]{2,24})/)
+  if (bindingMatch) add('כריכה', bindingMatch[1])
+
+  const pagesMatch = text.match(/(\d{2,4})\s*(?:עמודים|עמ׳|דפים)/)
+  if (pagesMatch) add('עמודים', pagesMatch[1])
+
+  return details.slice(0, 6)
+}
+
 function fileToAttachment(file) {
   if (!file) return Promise.resolve(null)
   const meta = { name: file.name, type: file.type, size: file.size }
@@ -142,6 +192,9 @@ export default function ProductPageClient({ product }) {
   const activePrice = selectedVariation ? formatPrice(selectedVariation.price) : finalPrice
   const activeRegularPrice = selectedVariation ? formatPrice(selectedVariation.regular_our_price || selectedVariation.price) : regularFinalPrice
   const totalPrice = activePrice * quantity + engravingExtra
+  const summaryText = shortProductSummary(product)
+  const specItems = productSpecItems(product)
+  const publisherName = product.publisher || product.brand || product.parent_category || product.category || ''
 
   function handleAttrChange(attrKey, value) {
     const newAttrs = { ...selectedAttrs, [attrKey]: value }
@@ -321,8 +374,8 @@ export default function ProductPageClient({ product }) {
 
         <div className="product-layout">
           <div>
-            <div className="zoom-container"
-              style={{ background: '#EDE6D9', padding: '24px', position: 'relative', marginBottom: '12px' }}
+            <div className="zoom-container product-image-frame"
+              style={{ background: '#F7F0E4', border: '1px solid #DDD5C4', borderRadius: '14px', padding: '36px', position: 'relative', marginBottom: '12px', minHeight: '430px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               onMouseMove={e => {
                 const rect = e.currentTarget.getBoundingClientRect()
                 e.currentTarget.style.setProperty('--zoom-x', ((e.clientX - rect.left) / rect.width * 100) + '%')
@@ -331,7 +384,7 @@ export default function ProductPageClient({ product }) {
               onClick={() => setLightboxOpen(true)}>
               {!inStock && <div style={{ position: 'absolute', top: '16px', right: '16px', background: '#c0392b', color: '#fff', padding: '6px 14px', fontSize: '13px', fontWeight: '700', zIndex: 2 }}>חסר במלאי</div>}
               {activeImg
-                ? <img src={activeImg} alt={product.name} style={{ width: '100%', height: 'auto', display: 'block' }} />
+                ? <img src={activeImg} alt={product.name} style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', display: 'block' }} />
                 : <div style={{ aspectRatio: '3/4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '64px' }}>📖</div>}
             </div>
             {product.images && product.images.length > 1 && (
@@ -345,6 +398,11 @@ export default function ProductPageClient({ product }) {
           </div>
 
           <div>
+            {publisherName && (
+              <div style={{ fontSize: '12px', color: '#C4933F', fontWeight: '700', letterSpacing: '0.08em', marginBottom: '6px' }}>
+                {publisherName}
+              </div>
+            )}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '8px' }}>
               <h1 style={{ fontFamily: 'serif', fontSize: '32px', fontWeight: '900', lineHeight: 1.3, flex: 1 }}>{product.name}</h1>
               <button onClick={() => toggleItem({ ...product })}
@@ -359,7 +417,26 @@ export default function ProductPageClient({ product }) {
               <span style={{ fontSize: '13px', color: '#27ae60', fontWeight: '600' }}>✓ מוצר מאומת</span>
             </div>
 
-            {product.description && <p style={{ fontSize: '15px', color: '#2C2416', lineHeight: 1.8, marginBottom: '20px' }}>{product.description}</p>}
+            {summaryText && (
+              <div className="product-info-card">
+                <div className="product-info-card-title">תיאור הספר</div>
+                <p>{summaryText}</p>
+              </div>
+            )}
+
+            {specItems.length > 0 && (
+              <div className="product-spec-card">
+                <div className="product-info-card-title">פרטי הספר</div>
+                <div className="product-spec-grid">
+                  {specItems.map(item => (
+                    <div key={item.label + item.value}>
+                      <span>{item.label}</span>
+                      <strong>{item.value}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {hasVariations && Object.entries(attributeOptions).map(([attrKey, values]) => (
               <div key={attrKey} style={{ marginBottom: '16px' }}>
@@ -569,7 +646,7 @@ export default function ProductPageClient({ product }) {
               </div>
             )}
 
-            {product.full_description && (
+            {product.full_description && cleanProductText(product.full_description) !== summaryText && (
               <div style={{ borderTop: '1px solid #EDE6D9', paddingTop: '24px', marginTop: '24px' }}>
                 <h3 style={{ fontFamily: 'serif', fontSize: '20px', marginBottom: '12px', color: '#2C2416' }}>אודות הספר</h3>
                 <div style={{ fontSize: '15px', lineHeight: 1.9, color: '#2C2416' }}>{product.full_description}</div>
