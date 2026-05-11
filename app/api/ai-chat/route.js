@@ -239,13 +239,18 @@ async function findSafeOrderProduct(text) {
   })
   if (exact) return { product: exact, index: catalog.indexOf(exact) }
 
-  if (!productName) return null
-
   const named = catalog.find((product) => {
     const name = String(product.name || '').toLowerCase()
     return name && (name.includes(query) || query.includes(name))
   })
-  return named ? { product: named, index: catalog.indexOf(named) } : null
+  if (named) return { product: named, index: catalog.indexOf(named) }
+
+  const scored = catalog
+    .map((product, index) => ({ product, index, score: scoreProduct(product, productName || text) }))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score)
+
+  return scored[0] ? { product: scored[0].product, index: scored[0].index } : null
 }
 
 function productToOrderItem(product, index, quantity) {
@@ -295,6 +300,24 @@ function safeOrderFormatReply(missing) {
 
 function safeOrderQuestion(missing) {
   const next = missing[0]
+  if (next.includes('מק') || next.includes('מוצר')) {
+    return 'בשמחה. איזה מוצר תרצה להזמין? אפשר לכתוב שם מוצר רגיל, ואני אציג לך את המוצר שמצאתי לאישור.'
+  }
+  if (next.includes('שם')) {
+    return 'מעולה. על איזה שם לרשום את ההזמנה?'
+  }
+  if (next.includes('טלפון')) {
+    return 'מה מספר הטלפון לעדכונים על ההזמנה?'
+  }
+  if (next.includes('מייל')) {
+    return 'מה כתובת המייל לשליחת עדכונים וקישור תשלום?'
+  }
+  if (next.includes('כתובת')) {
+    return 'לאיזו כתובת לשלוח את ההזמנה?'
+  }
+  if (next.includes('עיר')) {
+    return 'באיזו עיר נמצאת הכתובת?'
+  }
   const questions = {
     '׳׳§"׳˜ ׳׳• ׳©׳ ׳׳•׳¦׳¨ ׳׳“׳•׳™׳§': 'בשמחה. כדי להתחיל הזמנה דרך הצ׳אט, איזה מוצר תרצה להזמין? אפשר לשלוח שם מוצר או מק״ט.',
     '׳©׳ ׳׳׳': 'מעולה. על איזה שם לרשום את ההזמנה?',
