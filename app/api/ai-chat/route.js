@@ -402,7 +402,8 @@ async function createSafeAiOrder({ messages }) {
   const text = conversationText(messages)
   if (!isOrderIntent(text)) return null
 
-  const found = await findSafeOrderProduct(text)
+  const latestText = lastUserText(messages)
+  const found = await findSafeOrderProduct(latestText) || await findSafeOrderProduct(text)
   const name = labeledValue(text, ['שם', 'שם מלא', 'לקוח', 'customer'])
   const phone = extractPhone(text)
   const email = extractEmail(text)
