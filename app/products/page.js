@@ -1,4 +1,4 @@
-import ProductCard from '../components/ProductCard'
+import ProductsBrowserClient from '../components/ProductsBrowserClient'
 
 async function getAllProducts() {
   try {
@@ -210,15 +210,16 @@ export default async function ProductsPage({ searchParams }) {
           </div>
         </div>
 
-        {products.length > 0 ? (
-          <div>
-            <div className="products-grid">
-              {products.map(product => (
-                <ProductCard key={product.index} product={product} index={product.index} />
-              ))}
-            </div>
-            <Pagination page={page} totalPages={totalPages} category={category} search={search} sort={sort} />
-          </div>
+        {filtered.length > 0 ? (
+          <ProductsBrowserClient
+            products={filtered}
+            pageProducts={products}
+            page={page}
+            totalPages={totalPages}
+            category={category}
+            search={search}
+            sort={sort}
+          />
         ) : (
           <div style={{ textAlign: 'center', padding: '80px', background: '#F8F4EE', color: '#6B5C3E' }}>
             <p style={{ fontSize: '18px', marginBottom: '12px' }}>
