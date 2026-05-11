@@ -189,6 +189,22 @@ function isOrderIntent(text) {
   return /(?:להזמין|הזמנה|רוצה לקנות|לקנות|רכישה|תזמין|תזמינו|order|buy)/i.test(text)
 }
 
+function isExplicitOrderRequest(text) {
+  const normalized = cleanText(text).toLowerCase()
+  const terms = [
+    '\u05dc\u05d4\u05d6\u05de\u05d9\u05df',
+    '\u05d4\u05d6\u05de\u05e0\u05d4',
+    '\u05dc\u05e7\u05e0\u05d5\u05ea',
+    '\u05e8\u05d5\u05e6\u05d4 \u05dc\u05e7\u05e0\u05d5\u05ea',
+    '\u05e8\u05db\u05d9\u05e9\u05d4',
+    '\u05ea\u05d6\u05de\u05d9\u05df',
+    '\u05ea\u05d6\u05de\u05d9\u05e0\u05d5',
+    'order',
+    'buy',
+  ]
+  return terms.some((term) => normalized.includes(term))
+}
+
 function labeledValue(text, labels) {
   const escaped = labels.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
   const match = String(text || '').match(new RegExp(`(?:^|[\\n|])\\s*(?:${escaped})\\s*[:=\\-]\\s*([^\\n|]+)`, 'i'))
@@ -422,9 +438,9 @@ function safeOrderSuccessReply(orderId, firstName, lastName, quantity, itemName)
 אחרי בדיקה תקבל קישור לתשלום או עדכון המשך.`
 }
 
-async function createSafeAiOrder({ messages }) {
+async function createSafeAiOrder({ messages, force = false }) {
   const text = conversationText(messages)
-  if (!isOrderIntent(text)) return null
+  if (!force && !isOrderIntent(text)) return null
 
   const latestText = lastUserText(messages)
   const found = await findSafeOrderProduct(latestText) || await findSafeOrderProduct(text)
@@ -721,7 +737,10 @@ export async function POST(request) {
     const query = lastUserText(messages)
     const products = await getRelevantProducts(query)
     const order = mode === 'service' ? await getVerifiedOrder(body.orderNumber, body.email) : null
-    const safeOrder = await createSafeAiOrder({ messages })
+    const safeOrder = await createSafeAiOrder({
+      messages,
+      force: mode === 'service' && (isExplicitOrderRequest(query) || isExplicitOrderRequest(conversationText(messages))),
+    })
 
     if (safeOrder?.handled) {
       return NextResponse.json({
