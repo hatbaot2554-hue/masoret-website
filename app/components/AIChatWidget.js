@@ -104,7 +104,17 @@ export default function AIChatWidget() {
       const data = await res.json()
       const reply = data.reply || 'הייתה תקלה רגעית. אפשר לנסות שוב?'
       await new Promise((resolve) => setTimeout(resolve, typingDelay(reply)))
-      setMessages((prev) => ({ ...prev, [mode]: [...nextMessages, { role: 'assistant', text: reply }] }))
+      setMessages((prev) => ({
+        ...prev,
+        [mode]: [
+          ...nextMessages,
+          {
+            role: 'assistant',
+            text: reply,
+            products: data.needsProductConfirmation ? (data.products || []).slice(0, 3) : [],
+          },
+        ],
+      }))
     } catch {
       setMessages((prev) => ({
         ...prev,
@@ -162,6 +172,26 @@ export default function AIChatWidget() {
                 {message.text.split('\n').map((line, lineIndex) => (
                   <p key={lineIndex}>{renderMessageLine(line)}</p>
                 ))}
+                {Array.isArray(message.products) && message.products.length > 0 && (
+                  <div style={{ display: 'grid', gap: '10px', marginTop: '10px' }}>
+                    {message.products.map((product) => (
+                      <a
+                        key={product.url || product.index}
+                        href={product.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ display: 'flex', gap: '10px', alignItems: 'center', color: 'inherit', textDecoration: 'none', border: '1px solid #EDE6D9', background: '#fff', padding: '8px' }}
+                      >
+                        {product.image && <img src={product.image} alt={product.name || 'מוצר'} style={{ width: '54px', height: '54px', objectFit: 'cover', flexShrink: 0 }} />}
+                        <span style={{ display: 'grid', gap: '3px' }}>
+                          <strong style={{ fontSize: '13px' }}>{product.name}</strong>
+                          {product.sku && <small style={{ color: '#6B5C3E' }}>מק״ט: {product.sku}</small>}
+                          {product.price && <small style={{ color: '#8B6914', fontWeight: 700 }}>₪{product.price}</small>}
+                        </span>
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
             {typing && (
