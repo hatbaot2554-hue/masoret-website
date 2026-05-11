@@ -7,14 +7,6 @@ const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses'
 const DEFAULT_ADVISOR_MODEL = 'gpt-5.1'
 const DEFAULT_SERVICE_MODEL = 'gpt-5-mini'
 
-const GEMINI_FALLBACK_MODELS = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash']
-
-function geminiModelCandidates() {
-  return [process.env.GEMINI_MODEL, ...GEMINI_FALLBACK_MODELS]
-    .map((model) => String(model || '').trim())
-    .filter((model, index, models) => model && models.indexOf(model) === index)
-}
-
 const POLICY_TEXT = `
 המרכז למסורת יהודית מוכר ספרי קודש, יהדות, הלכה, חסידות ומחשבה.
 משלוחים: בדרך כלל עד 8 ימי עסקים, בהתאם לזמינות ולשיטת המשלוח.
@@ -38,7 +30,7 @@ const ADVISOR_PROFILES = [
     label: 'מתנה לבר מצווה',
     terms: ['תפילין', 'סידור', 'תהילים', 'הלכה', 'משנה', 'גמרא', 'סט', 'אוצר', 'מתנה', 'עוז והדר'],
     avoid: ['נשים', 'אמא', 'ילדים קטנים'],
-    reason: 'מתאים לנער שמתחיל לבנות ספרייה אישית וללימוד י��������������מי.',
+    reason: 'מתאים לנער שמתחיל לבנות ספרייה אישית וללימוד יומי.',
   },
   {
     keys: ['חתונה', 'זוג', 'בית חדש', 'מארח', 'שבת', 'מתנה לבית'],
@@ -145,6 +137,7 @@ async function getRelevantProducts(query) {
       in_stock: product.in_stock !== false,
       stock_text: product.stock_text || '',
       sku: product.sku || product.product_id || '',
+      image: product.image || product.images?.[0]?.src || '',
       url: `${SITE_URL}/products/${product.index}`,
     }))
   } catch {
@@ -185,7 +178,7 @@ function generateOrderId(dbId) {
 }
 
 function conversationText(messages) {
-  return (messages || []).map((message) => String(message.text || '').trim()).join('\n')
+  return (messages || []).map((message) => cleanText(message.text || '')).join('\n')
 }
 
 function isOrderIntent(text) {
@@ -193,7 +186,7 @@ function isOrderIntent(text) {
 }
 
 function labeledValue(text, labels) {
-  const escaped = labels.join('|')
+  const escaped = labels.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
   const match = String(text || '').match(new RegExp(`(?:^|[\\n|])\\s*(?:${escaped})\\s*[:=\\-]\\s*([^\\n|]+)`, 'i'))
   return cleanText(match?.[1] || '')
 }
@@ -297,7 +290,57 @@ function safeOrderFormatReply(missing) {
 כמות:
 
 חסר כרגע: ${missing.join(', ')}.
-אני אפתח הזמנה זמנית בלבד, בלי חיוב ובלי שליחה לאתר המקורי.`
+אני אשאל אותך שאלה אחת בכל פעם ונתקדם בזהירות.`
+}
+
+function safeOrderQuestion(missing) {
+  const next = missing[0]
+  const questions = {
+    '׳׳§"׳˜ ׳׳• ׳©׳ ׳׳•׳¦׳¨ ׳׳“׳•׳™׳§': 'בשמחה. כדי להתחיל הזמנה דרך הצ׳אט, איזה מוצר תרצה להזמין? אפשר לשלוח שם מוצר או מק״ט.',
+    '׳©׳ ׳׳׳': 'מעולה. על איזה שם לרשום את ההזמנה?',
+    '׳˜׳׳₪׳•׳': 'מה מספר הטלפון לעדכונים על ההזמנה?',
+    '׳׳™׳™׳': 'מה כתובת המייל לשליחת עדכונים וקישור תשלום?',
+    '׳›׳×׳•׳‘׳×': 'לאיזו כתובת לשלוח את ההזמנה?',
+    '׳¢׳™׳¨': 'באיזו עיר נמצאת הכתובת?',
+  }
+  return questions[next] || `חסר לי עוד פרט אחד כדי להמשיך: ${next}.`
+}
+
+function isProductConfirmationAccepted(messages) {
+  let askedAt = -1
+  for (let index = 0; index < messages.length; index += 1) {
+    if (messages[index]?.role === 'assistant' && /זה המוצר/.test(cleanText(messages[index]?.text || ''))) {
+      askedAt = index
+    }
+  }
+  const userReplies = messages.slice(Math.max(askedAt + 1, 0)).filter((message) => message.role === 'user')
+  return userReplies.some((message) => {
+    const text = cleanText(message.text || '').toLowerCase()
+    return /^(כן|נכון|זה זה|זה המוצר|מאשר|מאשרת|אישור|כן זה)$/i.test(text) || /כן.*(זה|המוצר|נכון)/i.test(text)
+  })
+}
+
+function safeOrderProductConfirmation(product, index) {
+  const sku = product.sku || product.product_id || product.id || ''
+  const image = product.image || product.images?.[0]?.src || ''
+  const url = `${SITE_URL}/products/${index}`
+  return [
+    'מצאתי את המוצר הזה להזמנה:',
+    `${product.name || 'מוצר באתר'}`,
+    sku ? `מק״ט: ${sku}` : '',
+    product.price ? `מחיר: ₪${product.price}` : '',
+    `קישור: ${url}`,
+    image ? `תמונה: ${image}` : '',
+    '',
+    'זה המוצר שהתכוונת אליו? כתוב כן, או שלח שם/מק״ט אחר ואדייק את זה.'
+  ].filter(Boolean).join('\n')
+}
+
+function safeOrderSuccessReply(orderId, firstName, lastName, quantity, itemName) {
+  return `פתחתי עבורך הזמנה מספר #${orderId}.
+
+ההזמנה נרשמה על ${firstName}${lastName ? ` ${lastName}` : ''} עבור ${quantity} × ${itemName}.
+אחרי בדיקה תקבל קישור לתשלום או עדכון המשך.`
 }
 
 async function createSafeAiOrder({ messages }) {
@@ -322,11 +365,27 @@ async function createSafeAiOrder({ messages }) {
     city,
   }
   const missing = missingSafeOrderFields(fields)
+  if (found?.product && !isProductConfirmationAccepted(messages)) {
+    return {
+      handled: true,
+      created: false,
+      reply: safeOrderProductConfirmation(found.product, found.index),
+      products: [{
+        index: found.index,
+        name: found.product.name,
+        price: found.product.price,
+        sku: found.product.sku || found.product.product_id || found.product.id || '',
+        image: found.product.image || found.product.images?.[0]?.src || '',
+        url: `${SITE_URL}/products/${found.index}`,
+      }],
+      needsProductConfirmation: true,
+    }
+  }
   if (missing.length) {
     return {
       handled: true,
       created: false,
-      reply: safeOrderFormatReply(missing),
+      reply: safeOrderQuestion(missing),
     }
   }
 
@@ -350,7 +409,7 @@ async function createSafeAiOrder({ messages }) {
       payment_method: 'pending',
       notes: [
         'AI_CHAT_SAFE_ORDER',
-        'נוצר דרך הצ׳אט כטיוטת הזמנה בטוחה. לא נשלח לאתר המקורי ולא חויב תשלום.',
+        'נוצר דרך הצ׳אט כהזמנה לבדיקה ואישור. לא חויב תשלום.',
         note ? `הערת לקוח: ${note}` : '',
       ].filter(Boolean).join(' | '),
       source: 'ai_chat_safe',
@@ -374,15 +433,9 @@ async function createSafeAiOrder({ messages }) {
     handled: true,
     created: true,
     orderId,
-    reply: [
-      `\u05e4\u05ea\u05d7\u05ea\u05d9 \u05e2\u05d1\u05d5\u05e8\u05da \u05d4\u05d6\u05de\u05e0\u05d4 \u05d6\u05de\u05e0\u05d9\u05ea \u05de\u05e1\u05e4\u05e8 #${orderId}.`,
-      '',
-      `\u05d4\u05d4\u05d6\u05de\u05e0\u05d4 \u05e0\u05e8\u05e9\u05de\u05d4 \u05e2\u05dc ${firstName}${lastName ? ` ${lastName}` : ''} \u05e2\u05d1\u05d5\u05e8 ${quantity} × ${item.name}.`,
-      '\u05d4\u05d9\u05d0 \u05e2\u05d3\u05d9\u05d9\u05df \u05dc\u05d0 \u05e0\u05e9\u05dc\u05d7\u05d4 \u05dc\u05d0\u05ea\u05e8 \u05d4\u05de\u05e7\u05d5\u05e8\u05d9 \u05d5\u05dc\u05d0 \u05d1\u05d5\u05e6\u05e2 \u05d7\u05d9\u05d5\u05d1. \u05d0\u05d7\u05e8\u05d9 \u05d1\u05d3\u05d9\u05e7\u05d4 \u05ea\u05e7\u05d1\u05dc \u05e7\u05d9\u05e9\u05d5\u05e8 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd \u05d0\u05d5 \u05e2\u05d3\u05db\u05d5\u05df \u05d4\u05de\u05e9\u05da.',
-    ].join('\n'),
+    reply: safeOrderSuccessReply(orderId, firstName, lastName, quantity, item.name),
   }
 }
-
 
 function fallbackReply(mode, query, products, order) {
   if (mode === 'advisor') {
@@ -404,7 +457,7 @@ function fallbackReply(mode, query, products, order) {
     const list = products.slice(0, 4).map((p) =>
       `• ${p.name} - ${p.in_stock ? 'במלאי' : (p.stock_text || 'לא במלאי')} - ₪${p.price}\n  ${p.url}`
     ).join('\n')
-    return `בדקתי לפי ��ה שכתבת. אלו המוצ��ים שמצאתי:\n${list}\n\nאם התכוונת לדגם מסוים, כתוב לי מילה מהשם או מק"ט ואבדוק יותר מדויק.`
+    return `בדקתי לפי מה שכתבת. אלו המוצרים שמצאתי:\n${list}\n\nאם התכוונת לדגם מסוים, כתוב לי מילה מהשם או מק"ט ואבדוק יותר מדויק.`
   }
 
   return 'בשמחה, אני כאן לעזור. אם זו שאלה על הזמנה קיימת, כתוב מספר הזמנה ומייל כדי שאוכל לבדוק. אם זו שאלה על מוצר, כתוב לי את שם הספר או מה אתה מחפש.'
@@ -424,10 +477,10 @@ function suitabilityReason(product, query, profile) {
       return 'מתאים במיוחד לאמא או לאישה, כי זה מוצר שמכוון לשימוש אישי של נשים ולא לסדר תפילה ציבורי.'
     }
     if (name.includes('תהילים')) {
-      return 'מתאים כמתנה ��ישית ומכובדת לאמא, במיוחד למי שמתחברת לתפילה, בקשות וחיזוק יומי.'
+      return 'מתאים כמתנה אישית ומכובדת לאמא, במיוחד למי שמתחברת לתפילה, בקשות וחיזוק יומי.'
     }
     if (name.includes('סידור')) {
-      return 'מתאים לאמא אם רוצים מתנה ש��מושית לתפילה יומיומית, ועדיף לבחור נוסח וגודל ��פי ה��רגל שלה.'
+      return 'מתאים לאמא אם רוצים מתנה שימושית לתפילה יומיומית, ועדיף לבחור נוסח וגודל לפי ההרגל שלה.'
     }
     if (text.includes('שבת') || text.includes('בית')) {
       return 'מתאים לבית ולשולחן שבת, ולכן זו מתנה שימושית יותר ממשהו שמיועד ללימוד ישיבתי.'
@@ -447,7 +500,7 @@ function suitabilityReason(product, query, profile) {
     return 'מתאים למי שמחפש חיזוק, אמונה או לימוד פנימי יותר.'
   }
 
-  return profile?.reason || 'מתאים לפי שם המוצר, הקטגוריה ��ההתאמה לחיפוש באתר.'
+  return profile?.reason || 'מתאים לפי שם המוצר, הקטגוריה וההתאמה לחיפוש באתר.'
 }
 
 function openAiModelForMode(mode) {
@@ -492,50 +545,14 @@ async function callOpenAIModel({ mode, systemText, historyText, query }) {
   return String(directText || nestedText || '').trim()
 }
 
-
-function isSensitiveServiceAction(query) {
-  const q = cleanText(query).toLowerCase()
-  return [
-    'לבטל הזמנה',
-    'ביטול הזמנה',
-    'תבטל',
-    'שנה כתובת',
-    'לשנות כתובת',
-    'להחליף כתובת',
-    'להוסיף מוצר',
-    'להוריד מוצר',
-    'להחליף מוצר',
-    'תחייב',
-    'תשל��ם',
-    'החזר כס��י',
-    'זיכוי',
-    'תשלח מחדש',
-    'שלח מחדש',
-    'תיצור הזמנה',
-    'תזמין לי',
-  ].some((term) => q.includes(term))
-}
-
-function safeServiceActionReply(query, order) {
-  const orderLine = order
-    ? `מצאתי את ההזמנה #${order.number}. הסטטוס כרגע: ${order.status || 'בטיפול'}.`
-    : 'כדי להכין בקשת טיפול להזמנה קיימת צריך מספר הזמנה ומייל של ההזמנה.'
-
-  return `${orderLine}
-
-מטעמי בטיחות אני לא מבצע שינוי בפועל מתוך הצ'אט בלבד. אני יכול להכין בקשת טיפול מסודרת לצוות/ללוח הבקרה, ורק אחרי אישור במערכת הפעולה תבוצע.
-
-כתוב לי בדיוק מה תרצה לשנות, ואם מדובר בהזמנה קיימת צרף מספר הזמנה ומייל.`
-}
-
 async function callGemini({ mode, messages, products, order, query }) {
   const apiKey = process.env.GEMINI_API_KEY
 
-  const model = geminiModelCandidates()[0]
+  const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
   const role = mode === 'advisor' ? 'AI יועץ קניות' : 'שירות לקוחות של המרכז למסורת יהודית'
   const disclosureRule = mode === 'advisor'
     ? 'אתה מוצג בגלוי כ-AI יועץ קניות.'
-    : 'אתה שירות לקוחות דיג��טלי של ה��תר. הסגנון טבעי, חם ולא רובוטי, אבל אם שואלים ישירות האם אתה מערכת אוטומטית, אל תשקר.'
+    : 'אתה שירות לקוחות דיגיטלי של האתר. הסגנון טבעי, חם ולא רובוטי, אבל אם שואלים ישירות האם אתה מערכת אוטומטית, אל תשקר.'
 
   const advisorRules = mode === 'advisor'
     ? `
@@ -554,7 +571,7 @@ async function callGemini({ mode, messages, products, order, query }) {
 אתה ${role}. ענה בעברית בלבד, בנימוס, בקצרה יחסית, בטון אישי וחם.
 ${disclosureRule}
 ${advisorRules}
-אסור להמ���יא סטטוס הזמנה, מחיר, מלאי או פעולה שבוצעה.
+אסור להמציא סטטוס הזמנה, מחיר, מלאי או פעולה שבוצעה.
 אם אתה שירות לקוחות והשאלה היא על מוצר, מלאי, מחיר, משלוח, החזרה או מדיניות: ענה ישירות לפי המוצרים והמדיניות. אל תבקש מספר הזמנה אלא אם השאלה באמת דורשת בדיקת הזמנה קיימת או שינוי הזמנה קיימת.
 אם יש כמה מוצרים דומים לשאלה, הצג כמה אפשרויות עם קישור ישיר לכל מוצר, מחיר ומצב מלאי.
 אם מבקשים שינוי הזמנה, ביטול, הוספה או הורדת מוצר: בקש אימות מספר הזמנה ומייל אם חסר, הסבר שתכין בקשת טיפול, ואל תגיד שהשינוי בוצע בפועל.
@@ -596,27 +613,19 @@ ${order ? JSON.stringify(order, null, 2) : 'אין הזמנה מאומתת'}
 
   if (!apiKey) return fallbackReply(mode, query, products, order)
 
-  for (const candidateModel of geminiModelCandidates()) {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${candidateModel}:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        }
-      )
-
-      if (!res.ok) continue
-      const data = await res.json()
-      const reply = data?.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('').trim()
-      if (reply) return reply
-    } catch {
-      // Try the next supported Gemini model before falling back to deterministic text.
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     }
-  }
+  )
 
-  return fallbackReply(mode, query, products, order)
+  if (!res.ok) return fallbackReply(mode, query, products, order)
+  const data = await res.json()
+  return data?.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('').trim() ||
+    fallbackReply(mode, query, products, order)
 }
 
 export async function POST(request) {
@@ -632,30 +641,17 @@ export async function POST(request) {
     if (safeOrder?.handled) {
       return NextResponse.json({
         reply: safeOrder.reply,
-        products,
+        products: safeOrder.products || products,
         orderFound: Boolean(order),
         safeMode: true,
         actionExecuted: false,
         draftOrderCreated: Boolean(safeOrder.created),
         draftOrderId: safeOrder.orderId || null,
+        needsProductConfirmation: Boolean(safeOrder.needsProductConfirmation),
       })
     }
 
-
-    if (mode === 'service' && isSensitiveServiceAction(query)) {
-      return NextResponse.json({
-        reply: safeServiceActionReply(query, order),
-        products,
-        orderFound: Boolean(order),
-        safeMode: true,
-        actionExecuted: false,
-      })
-    }
-
-    const modelReply = await callGemini({ mode, messages, products, order, query })
-    const reply = mode === 'advisor' && products.length > 0 && cleanText(modelReply).length < 180
-      ? fallbackReply(mode, query, products, order)
-      : modelReply
+    const reply = await callGemini({ mode, messages, products, order, query })
 
     return NextResponse.json({
       reply,
