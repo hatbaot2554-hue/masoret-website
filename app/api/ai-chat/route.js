@@ -375,6 +375,24 @@ function isProductConfirmationAccepted(messages) {
   })
 }
 
+function inferSequentialOrderFields(messages) {
+  const fields = {}
+  for (let index = 0; index < messages.length - 1; index += 1) {
+    const assistantText = cleanText(messages[index]?.text || '')
+    const nextMessage = messages[index + 1]
+    if (messages[index]?.role !== 'assistant' || nextMessage?.role !== 'user') continue
+    const answer = cleanText(nextMessage.text || '')
+    if (!answer) continue
+
+    if (/על איזה שם|שם לרשום/.test(assistantText)) fields.name = answer
+    if (/מספר הטלפון|טלפון לעדכונים/.test(assistantText)) fields.phone = answer
+    if (/כתובת המייל|מייל לשליחת/.test(assistantText)) fields.email = answer
+    if (/לאיזו כתובת|כתובת לשלוח/.test(assistantText)) fields.address = answer
+    if (/באיזו עיר|עיר נמצאת/.test(assistantText)) fields.city = answer
+  }
+  return fields
+}
+
 function safeOrderProductConfirmation(product, index) {
   const sku = product.sku || product.product_id || product.id || ''
   const image = product.image || product.images?.[0]?.src || ''
@@ -405,20 +423,25 @@ async function createSafeAiOrder({ messages }) {
   const latestText = lastUserText(messages)
   const found = await findSafeOrderProduct(latestText) || await findSafeOrderProduct(text)
   const name = labeledValue(text, ['שם', 'שם מלא', 'לקוח', 'customer'])
-  const phone = extractPhone(text)
-  const email = extractEmail(text)
+  const sequentialFields = inferSequentialOrderFields(messages)
+  const phone = extractPhone(text) || sequentialFields.phone || ''
+  const email = extractEmail(text) || sequentialFields.email || ''
   const address = labeledValue(text, ['כתובת', 'address'])
   const city = labeledValue(text, ['עיר', 'city'])
   const quantity = extractQuantity(text)
   const note = labeledValue(text, ['הערות', 'הערה', 'note'])
 
+  const orderName = name || sequentialFields.name || ''
+  const orderAddress = address || sequentialFields.address || ''
+  const orderCity = city || sequentialFields.city || ''
+
   const fields = {
     productFound: Boolean(found?.product),
-    name,
+    name: orderName,
     phone,
     email,
-    address,
-    city,
+    address: orderAddress,
+    city: orderCity,
   }
   const missing = missingSafeOrderFields(fields)
   if (found?.product && !isProductConfirmationAccepted(messages)) {
@@ -445,7 +468,7 @@ async function createSafeAiOrder({ messages }) {
     }
   }
 
-  const [firstName, ...lastNameParts] = name.split(/\s+/)
+  const [firstName, ...lastNameParts] = orderName.split(/\s+/)
   const item = productToOrderItem(found.product, found.index, quantity)
   const customerPrice = Number(item.price || 0) * quantity
   const costPrice = Number(item.cost || 0) * quantity
@@ -454,10 +477,10 @@ async function createSafeAiOrder({ messages }) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      customer_name: name,
+      customer_name: orderName,
       customer_phone: phone,
       customer_email: email.toLowerCase(),
-      customer_address: `${address}, ${city}`,
+      customer_address: `${orderAddress}, ${orderCity}`,
       items: [item],
       total_price: customerPrice,
       cost_price: costPrice,
