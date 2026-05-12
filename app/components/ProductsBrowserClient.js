@@ -69,8 +69,17 @@ function Pagination({ page, totalPages, category, search, sort }) {
         p === '...' ? (
           <span key={'dots-' + i} style={{ ...btnBase, border: 'none', color: '#6B5C3E', cursor: 'default' }}>...</span>
         ) : (
-          <a key={p} href={buildPageHref(p, category, search, sort)}
-            style={{ ...btnBase, background: p === page ? '#C9A84C' : '#fff', color: p === page ? '#1A2332' : '#2C2416', borderColor: p === page ? '#C9A84C' : '#EDE6D9', fontWeight: p === page ? '700' : '400' }}>
+          <a
+            key={p}
+            href={buildPageHref(p, category, search, sort)}
+            style={{
+              ...btnBase,
+              background: p === page ? '#C9A84C' : '#fff',
+              color: p === page ? '#1A2332' : '#2C2416',
+              borderColor: p === page ? '#C9A84C' : '#EDE6D9',
+              fontWeight: p === page ? '700' : '400',
+            }}
+          >
             {p}
           </a>
         )
@@ -106,19 +115,20 @@ export default function ProductsBrowserClient({
   return (
     <div>
       <div className="inline-product-search">
-        <div>
-          <strong>חיפוש בתוך הדף</strong>
-          <span>{showingLive ? `${liveProducts.length} מוצרים תואמים` : 'הקלד אות או מילה ותראה מיד את כל המוצרים המתאימים'}</span>
-        </div>
-        <label>
-          <span>חפש</span>
+        <label className="inline-product-search-field">
+          <span className="sr-only">חיפוש בתוך הדף</span>
           <input
             value={liveSearch}
             onChange={(event) => setLiveSearch(event.target.value)}
-            placeholder="לדוגמה: סידור, עוז והדר, כריכה, מחבר..."
+            placeholder="שם הספר או שם המחבר או חלק ממנו"
             type="search"
           />
         </label>
+        {showingLive && (
+          <span className="inline-product-search-count">
+            {liveProducts.length} מוצרים נמצאו
+          </span>
+        )}
       </div>
 
       {activeProducts.length > 0 ? (
