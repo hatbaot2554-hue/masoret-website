@@ -66,7 +66,10 @@ function applyDocumentLanguage(lang) {
   document.documentElement.lang = config.code
   document.documentElement.dir = config.dir
   document.body.dataset.lang = config.code
+}
 
+function applyContentLanguage(lang) {
+  if (typeof document === 'undefined') return
   document.querySelectorAll('[data-i18n-he][data-i18n-en]').forEach((node) => {
     const next = lang === 'en' ? node.dataset.i18nEn : node.dataset.i18nHe
     if (node.textContent !== next) node.textContent = next
@@ -94,9 +97,17 @@ export function LanguageProvider({ children }) {
     window.localStorage.setItem('masoret_lang', lang)
     applyDocumentLanguage(lang)
 
-    const observer = new MutationObserver(() => applyDocumentLanguage(lang))
+    const timer = window.setTimeout(() => applyContentLanguage(lang), 900)
+    const observer = new MutationObserver(() => {
+      window.clearTimeout(observer._masoretTimer)
+      observer._masoretTimer = window.setTimeout(() => applyContentLanguage(lang), 120)
+    })
     observer.observe(document.body, { childList: true, subtree: true })
-    return () => observer.disconnect()
+    return () => {
+      window.clearTimeout(timer)
+      window.clearTimeout(observer._masoretTimer)
+      observer.disconnect()
+    }
   }, [lang])
 
   function setLang(nextLang) {
