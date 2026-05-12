@@ -1,6 +1,8 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useLanguage } from './LanguageRuntime'
+import { translateProductName } from '../lib/i18n'
 
 const MODES = {
   service: {
@@ -17,6 +19,25 @@ const MODES = {
     greeting: 'שלום, אני AI יועץ הקניות של מסורת. כתוב מה מחפשים, ואחזיר כמה אפשרויות מתאימות עם הסבר קצר.',
     placeholder: 'לדוגמה: מתנה לבר מצווה / ספר הלכה לבית...',
     launcher: 'AI יועץ קניות',
+    launcherClass: 'advisor',
+  },
+}
+
+const EN_MODES = {
+  service: {
+    title: 'Customer service',
+    subtitle: 'Help with orders, products, shipping and returns',
+    greeting: 'Hi, I will be happy to help. You can ask about an existing order, a product, shipping, cancellation or returns.',
+    placeholder: 'Write a message to customer service...',
+    launcher: 'Chat',
+    launcherClass: 'service',
+  },
+  advisor: {
+    title: 'AI shopping advisor',
+    subtitle: 'Book and gift recommendations by need',
+    greeting: 'Hi, I am Masoret’s AI shopping advisor. Tell me what you are looking for, and I will suggest suitable options with a short explanation.',
+    placeholder: 'For example: a bar mitzvah gift / a halacha book for home...',
+    launcher: 'AI shopping advisor',
     launcherClass: 'advisor',
   },
 }
@@ -46,6 +67,8 @@ function renderMessageLine(line) {
 }
 
 export default function AIChatWidget() {
+  const { isEnglish } = useLanguage()
+  const modeCopy = isEnglish ? EN_MODES : MODES
   const [openMode, setOpenMode] = useState(null)
   const [messages, setMessages] = useState({
     service: [{ role: 'assistant', text: MODES.service.greeting }],
@@ -59,13 +82,30 @@ export default function AIChatWidget() {
   const listRef = useRef(null)
 
   const mode = openMode || 'service'
-  const active = MODES[mode]
+  const active = modeCopy[mode]
   const activeMessages = messages[mode]
 
-  const quickPrompts = useMemo(() => mode === 'service'
-    ? ['מה מצב ההזמנה שלי?', 'אפשר לשנות כתובת משלוח?', 'איך מבטלים הזמנה?', 'קיבלתי מוצר פגום']
-    : ['מתנה לבר מצווה', 'ספר הלכה לבית', 'ספרי חסידות מומלצים', 'מתנה למארח שבת'],
-  [mode])
+  useEffect(() => {
+    setMessages((prev) => ({
+      service: prev.service.length === 1 && prev.service[0].role === 'assistant'
+        ? [{ role: 'assistant', text: modeCopy.service.greeting }]
+        : prev.service,
+      advisor: prev.advisor.length === 1 && prev.advisor[0].role === 'assistant'
+        ? [{ role: 'assistant', text: modeCopy.advisor.greeting }]
+        : prev.advisor,
+    }))
+  }, [isEnglish])
+
+  const quickPrompts = useMemo(() => {
+    if (mode === 'service') {
+      return isEnglish
+        ? ['What is my order status?', 'Can I change the shipping address?', 'How do I cancel an order?', 'I received a damaged item']
+        : ['מה מצב ההזמנה שלי?', 'אפשר לשנות כתובת משלוח?', 'איך מבטלים הזמנה?', 'קיבלתי מוצר פגום']
+    }
+    return isEnglish
+      ? ['A bar mitzvah gift', 'A halacha book for home', 'Recommended Chassidut books', 'A gift for a Shabbat host']
+      : ['מתנה לבר מצווה', 'ספר הלכה לבית', 'ספרי חסידות מומלצים', 'מתנה למארח שבת']
+  }, [mode, isEnglish])
 
   function scrollDown() {
     setTimeout(() => {
@@ -99,10 +139,11 @@ export default function AIChatWidget() {
           messages: nextMessages,
           orderNumber: orderNumber.trim(),
           email: email.trim(),
+          language: isEnglish ? 'en' : 'he',
         }),
       })
       const data = await res.json()
-      const reply = data.reply || 'הייתה תקלה רגעית. אפשר לנסות שוב?'
+      const reply = data.reply || (isEnglish ? 'There was a temporary issue. Can you try again?' : 'הייתה תקלה רגעית. אפשר לנסות שוב?')
       await new Promise((resolve) => setTimeout(resolve, typingDelay(reply)))
       setMessages((prev) => ({
         ...prev,
@@ -118,7 +159,7 @@ export default function AIChatWidget() {
     } catch {
       setMessages((prev) => ({
         ...prev,
-        [mode]: [...nextMessages, { role: 'assistant', text: 'יש כרגע תקלה בחיבור. נסה שוב בעוד רגע.' }],
+        [mode]: [...nextMessages, { role: 'assistant', text: isEnglish ? 'There is a connection issue right now. Please try again in a moment.' : 'יש כרגע תקלה בחיבור. נסה שוב בעוד רגע.' }],
       }))
     } finally {
       setLoading(false)
@@ -132,25 +173,25 @@ export default function AIChatWidget() {
       <div className="ai-chat-launchers">
         <button
           type="button"
-          className={`ai-chat-launcher ${MODES.service.launcherClass}`}
+          className={`ai-chat-launcher ${modeCopy.service.launcherClass}`}
           onClick={() => openChat('service')}
           aria-label="פתיחת שיחת שירות לקוחות"
         >
           <span className="chat-bubble-icon" aria-hidden="true" />
-          <span>{MODES.service.launcher}</span>
+          <span>{modeCopy.service.launcher}</span>
         </button>
         <button
           type="button"
-          className={`ai-chat-launcher ${MODES.advisor.launcherClass}`}
+          className={`ai-chat-launcher ${modeCopy.advisor.launcherClass}`}
           onClick={() => openChat('advisor')}
           aria-label="פתיחת AI יועץ קניות"
         >
-          <span>{MODES.advisor.launcher}</span>
+          <span>{modeCopy.advisor.launcher}</span>
         </button>
       </div>
 
       {openMode && (
-        <section className={`ai-chat-panel ${mode}`} dir="rtl">
+        <section className={`ai-chat-panel ${mode}`} dir={isEnglish ? 'ltr' : 'rtl'}>
           <header className="ai-chat-head">
             <div>
               <strong>{active.title}</strong>
@@ -182,10 +223,10 @@ export default function AIChatWidget() {
                         rel="noopener noreferrer"
                         style={{ display: 'flex', gap: '10px', alignItems: 'center', color: 'inherit', textDecoration: 'none', border: '1px solid #EDE6D9', background: '#fff', padding: '8px' }}
                       >
-                        {product.image && <img src={product.image} alt={product.name || 'מוצר'} style={{ width: '54px', height: '54px', objectFit: 'cover', flexShrink: 0 }} />}
+                        {product.image && <img src={product.image} alt={isEnglish ? translateProductName(product, 'en') : (product.name || 'מוצר')} style={{ width: '54px', height: '54px', objectFit: 'cover', flexShrink: 0 }} />}
                         <span style={{ display: 'grid', gap: '3px' }}>
-                          <strong style={{ fontSize: '13px' }}>{product.name}</strong>
-                          {product.sku && <small style={{ color: '#6B5C3E' }}>מק״ט: {product.sku}</small>}
+                          <strong style={{ fontSize: '13px' }}>{isEnglish ? translateProductName(product, 'en') : product.name}</strong>
+                          {product.sku && <small style={{ color: '#6B5C3E' }}>{isEnglish ? 'SKU' : 'מק״ט'}: {product.sku}</small>}
                           {product.price && <small style={{ color: '#8B6914', fontWeight: 700 }}>₪{product.price}</small>}
                         </span>
                       </a>
@@ -219,7 +260,7 @@ export default function AIChatWidget() {
             }}
           >
             <input value={input} onChange={(e) => setInput(e.target.value)} placeholder={active.placeholder} />
-            <button type="submit" disabled={loading || !input.trim()}>שלח</button>
+            <button type="submit" disabled={loading || !input.trim()}>{isEnglish ? 'Send' : 'שלח'}</button>
           </form>
         </section>
       )}
