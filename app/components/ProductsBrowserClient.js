@@ -2,15 +2,20 @@
 
 import { useMemo, useState } from 'react'
 import ProductCard from './ProductCard'
+import { useLanguage } from './LanguageRuntime'
+import { translateProductField, translateProductName } from '../lib/i18n'
 
 function matchesProduct(product, query) {
   const q = String(query || '').trim().toLowerCase()
   if (!q) return true
   const fields = [
     product.name,
+    translateProductName(product, 'en'),
     product.sku,
     product.description,
+    translateProductField(product.description, 'en'),
     product.full_description,
+    translateProductField(product.full_description, 'en'),
     product.category,
     product.parent_category,
     product.child_category,
@@ -103,6 +108,7 @@ export default function ProductsBrowserClient({
   search,
   sort,
 }) {
+  const { lang, t } = useLanguage()
   const [liveSearch, setLiveSearch] = useState('')
   const initialProducts = pageProducts && pageProducts.length ? pageProducts : products
   const liveProducts = useMemo(
@@ -120,13 +126,13 @@ export default function ProductsBrowserClient({
           <input
             value={liveSearch}
             onChange={(event) => setLiveSearch(event.target.value)}
-            placeholder="שם הספר או שם המחבר או חלק ממנו"
+            placeholder={t('שם הספר או שם המחבר או חלק ממנו', 'Book title, author, or part of it')}
             type="search"
           />
         </label>
         {showingLive && (
           <span className="inline-product-search-count">
-            {liveProducts.length} מוצרים נמצאו
+            {liveProducts.length} {t('מוצרים נמצאו', 'products found')}
           </span>
         )}
       </div>
@@ -143,9 +149,9 @@ export default function ProductsBrowserClient({
       ) : (
         <div style={{ textAlign: 'center', padding: '80px', background: '#F8F4EE', color: '#6B5C3E' }}>
           <p style={{ fontSize: '18px', marginBottom: '12px' }}>
-            לא נמצאו מוצרים עבור "{liveSearch}"
+            {t('לא נמצאו מוצרים עבור', 'No products found for')} "{liveSearch}"
           </p>
-          <p style={{ fontSize: '14px' }}>נסה מילה קצרה יותר או כתיב אחר.</p>
+          <p style={{ fontSize: '14px' }}>{t('נסה מילה קצרה יותר או כתיב אחר.', 'Try a shorter word or a different spelling.')}</p>
         </div>
       )}
     </div>
