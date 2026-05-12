@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react'
 import { useCart } from '../../components/CartContext'
 import { useWishlist } from '../../components/WishlistContext'
+import { useLanguage } from '../../components/LanguageRuntime'
+import { translateCategoryName, translateProductField, translateProductName, translateText } from '../../lib/i18n'
 import ReviewsCarousel from '../../components/ReviewsCarousel'
 import RecentlyViewed from '../../components/RecentlyViewed'
 import SeasonalAddons from '../../components/SeasonalAddons'
@@ -60,6 +62,24 @@ function productSpecItems(product) {
   if (pagesMatch) add('עמודים', pagesMatch[1])
 
   return details.slice(0, 6)
+}
+
+function productLongDescriptionSections(product, lang) {
+  const text = translateProductField(product.full_description || product.description || '', lang)
+  if (!text) return []
+  const parts = text
+    .split(/(?:\.\s+|\n+|;+\s*)/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  if (!parts.length) return []
+
+  const intro = parts.slice(0, 2).join('. ')
+  const rest = parts.slice(2, 7)
+  return [
+    { title: lang === 'en' ? 'What this book includes' : 'מה כולל הספר', text: intro },
+    ...(rest.length ? [{ title: lang === 'en' ? 'Additional details' : 'פרטים נוספים', items: rest }] : []),
+  ]
 }
 
 function fileToAttachment(file) {
@@ -124,6 +144,7 @@ function FAQSection() {
 export default function ProductPageClient({ product }) {
   const { addItem } = useCart()
   const { toggleItem, isInWishlist } = useWishlist()
+  const { lang, t } = useLanguage()
   const [activeImg, setActiveImg] = useState(product.image || '')
   const [selectedVariation, setSelectedVariation] = useState(null)
   const [selectedAttrs, setSelectedAttrs] = useState({})
@@ -163,7 +184,7 @@ export default function ProductPageClient({ product }) {
     try {
       const viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]')
       const filtered = viewed.filter(p => p.index !== product.index)
-      filtered.unshift({ index: product.index, name: product.name, image: product.image, price: product.price })
+      filtered.unshift({ index: product.index, name: displayName, image: product.image, price: product.price })
       localStorage.setItem('recentlyViewed', JSON.stringify(filtered.slice(0, 10)))
     } catch {}
     return () => window.removeEventListener('scroll', onScroll)
@@ -193,9 +214,14 @@ export default function ProductPageClient({ product }) {
   const activePrice = selectedVariation ? formatPrice(selectedVariation.price) : finalPrice
   const activeRegularPrice = selectedVariation ? formatPrice(selectedVariation.regular_our_price || selectedVariation.price) : regularFinalPrice
   const totalPrice = activePrice * quantity + engravingExtra
-  const summaryText = shortProductSummary(product)
-  const specItems = productSpecItems(product)
-  const publisherName = product.publisher || product.brand || product.parent_category || product.category || ''
+  const displayName = translateProductName(product, lang)
+  const summaryText = translateProductField(shortProductSummary(product), lang)
+  const specItems = productSpecItems(product).map((item) => ({
+    label: translateText(item.label, lang),
+    value: translateText(item.value, lang),
+  }))
+  const publisherName = translateCategoryName(product.publisher || product.brand || product.parent_category || product.category || '', lang)
+  const longDescriptionSections = productLongDescriptionSections(product, lang)
 
   function handleAttrChange(attrKey, value) {
     const newAttrs = { ...selectedAttrs, [attrKey]: value }
@@ -275,7 +301,7 @@ export default function ProductPageClient({ product }) {
             sourceProductId: product.product_id || product.url,
             sourceProductIndex: product.index,
             variationId: selectedVariation?.variation_id || null,
-            name: product.name || '',
+            name: displayName || product.name || '',
             image: product.image || '',
             sku: selectedVariation?.sku || product.sku || '',
             selectedAttributes: selectedAttrs,
@@ -309,7 +335,7 @@ export default function ProductPageClient({ product }) {
       const res = await fetch('/api/waitlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: waitlistEmail, productIndex: product.index, productName: product.name })
+        body: JSON.stringify({ email: waitlistEmail, productIndex: product.index, productName: displayName || product.name })
       })
       if (!res.ok) throw new Error()
       setWaitlistStatus('success')
@@ -347,7 +373,7 @@ export default function ProductPageClient({ product }) {
       {inStock && showStickyBar && (
         <div className="sticky-cta-bar">
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '13px', fontWeight: '600', color: '#1A2332', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.name}</div>
+            <div style={{ fontSize: '13px', fontWeight: '600', color: '#1A2332', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</div>
             <div style={{ fontSize: '16px', fontWeight: '700', color: '#8B6914', fontFamily: 'serif' }}>₪{totalPrice}</div>
           </div>
           <button onClick={handleAddToCart}
@@ -362,7 +388,7 @@ export default function ProductPageClient({ product }) {
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}>
           <button onClick={() => setLightboxOpen(false)}
             style={{ position: 'absolute', top: '20px', left: '20px', background: 'none', border: 'none', color: '#fff', fontSize: '32px', cursor: 'pointer' }}>✕</button>
-          <img src={activeImg} alt={product.name} style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain' }} onClick={e => e.stopPropagation()} />
+          <img src={activeImg} alt={displayName} style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain' }} onClick={e => e.stopPropagation()} />
         </div>
       )}
 
@@ -370,7 +396,7 @@ export default function ProductPageClient({ product }) {
         <p style={{ fontSize: '13px', color: '#6B5C3E', marginBottom: '24px' }}>
           <a href="/" style={{ color: 'inherit', textDecoration: 'none' }}>בית</a>{' > '}
           <a href="/products" style={{ color: 'inherit', textDecoration: 'none' }}>ספרים</a>{' > '}
-          {product.name}
+          {displayName}
         </p>
 
         <div className="product-layout">
@@ -385,16 +411,31 @@ export default function ProductPageClient({ product }) {
               onClick={() => setLightboxOpen(true)}>
               {!inStock && <div style={{ position: 'absolute', top: '16px', right: '16px', background: '#c0392b', color: '#fff', padding: '6px 14px', fontSize: '13px', fontWeight: '700', zIndex: 2 }}>חסר במלאי</div>}
               {activeImg
-                ? <img src={activeImg} alt={product.name} style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', display: 'block' }} />
+                ? <img src={activeImg} alt={displayName} style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', display: 'block' }} />
                 : <div style={{ aspectRatio: '3/4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '64px' }}>📖</div>}
             </div>
             {product.images && product.images.length > 1 && (
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {product.images.map((img, i) => (
-                  <img key={i} src={img} alt={`${product.name} ${i + 1}`} onClick={() => setActiveImg(img)}
+                  <img key={i} src={img} alt={`${displayName} ${i + 1}`} onClick={() => setActiveImg(img)}
                     style={{ width: '64px', height: '64px', objectFit: 'cover', cursor: 'pointer', border: `2px solid ${activeImg === img ? '#8B6914' : '#EDE6D9'}`, opacity: activeImg === img ? 1 : 0.7 }} />
                 ))}
               </div>
+            )}
+            {longDescriptionSections.length > 0 && (
+              <aside className="product-long-description">
+                {longDescriptionSections.map((section) => (
+                  <section key={section.title}>
+                    <h3>{section.title}</h3>
+                    {section.text && <p>{section.text}</p>}
+                    {section.items && (
+                      <ul>
+                        {section.items.map((item) => <li key={item}>{item}</li>)}
+                      </ul>
+                    )}
+                  </section>
+                ))}
+              </aside>
             )}
           </div>
 
@@ -405,7 +446,7 @@ export default function ProductPageClient({ product }) {
               </div>
             )}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '8px' }}>
-              <h1 style={{ fontFamily: 'serif', fontSize: '32px', fontWeight: '900', lineHeight: 1.3, flex: 1 }}>{product.name}</h1>
+              <h1 style={{ fontFamily: 'serif', fontSize: '32px', fontWeight: '900', lineHeight: 1.3, flex: 1 }}>{displayName}</h1>
               <button onClick={() => toggleItem({ ...product })}
                 style={{ background: 'none', border: '2px solid #EDE6D9', borderRadius: '50%', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '20px', flexShrink: 0, marginTop: '4px' }}>
                 {wished ? '❤️' : '🤍'}
@@ -647,7 +688,7 @@ export default function ProductPageClient({ product }) {
               </div>
             )}
 
-            {product.full_description && cleanProductText(product.full_description) !== summaryText && (
+            {false && product.full_description && cleanProductText(product.full_description) !== summaryText && (
               <div style={{ borderTop: '1px solid #EDE6D9', paddingTop: '24px', marginTop: '24px' }}>
                 <h3 style={{ fontFamily: 'serif', fontSize: '20px', marginBottom: '12px', color: '#2C2416' }}>אודות הספר</h3>
                 <div style={{ fontSize: '15px', lineHeight: 1.9, color: '#2C2416' }}>{product.full_description}</div>
