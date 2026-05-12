@@ -125,10 +125,9 @@ export function LanguageProvider({ children }) {
   const [lang, setLangState] = useState('he')
 
   useEffect(() => {
-    const saved = window.localStorage.getItem('masoret_lang')
-    const initial = saved === 'en' ? 'en' : 'he'
-    setLangState(initial)
-    applyLanguage(initial)
+    window.localStorage.removeItem('masoret_lang')
+    setLangState('he')
+    applyLanguage('he')
   }, [])
 
   useEffect(() => {
@@ -141,7 +140,6 @@ export function LanguageProvider({ children }) {
 
   function setLang(nextLang) {
     const normalized = nextLang === 'en' ? 'en' : 'he'
-    window.localStorage.setItem('masoret_lang', normalized)
     setLangState(normalized)
   }
 
