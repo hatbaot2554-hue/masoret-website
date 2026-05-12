@@ -2,10 +2,12 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useCart } from './CartContext'
 import { useRouter } from 'next/navigation'
-import { LanguageToggle } from './LanguageRuntime'
+import { LanguageToggle, useLanguage } from './LanguageRuntime'
+import { translateCategoryName, translateProductName, translateText } from '../lib/i18n'
 
 export default function Header() {
   const { totalItems } = useCart()
+  const { lang, t } = useLanguage()
   const [search, setSearch] = useState('')
   const [suggestions, setSuggestions] = useState([])
   const [allProducts, setAllProducts] = useState([])
@@ -68,8 +70,10 @@ export default function Header() {
     const q = search.toLowerCase()
     const results = allProducts.filter(p =>
       p.name?.toLowerCase().includes(q) ||
+      translateProductName(p, 'en').toLowerCase().includes(q) ||
       p.sku?.toLowerCase().includes(q) ||
-      p.description?.toLowerCase().includes(q)
+      p.description?.toLowerCase().includes(q) ||
+      translateText(p.description || '', 'en').toLowerCase().includes(q)
     ).slice(0, 8)
     setSuggestions(results)
     setShowSuggestions(true)
@@ -118,7 +122,7 @@ export default function Header() {
     return (
       <header className="site-header" style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)', width: '100%' }}>
         <div style={{ background: 'var(--gold)', color: 'var(--navy)', textAlign: 'center', fontSize: '12px', fontWeight: '500', padding: '5px 10px' }}>
-          משלוח חינם מעל ₪200 | א׳-ה׳ 9:00-15:00
+          {t('משלוח חינם מעל ₪200 | א׳-ה׳ 9:00-15:00', 'Free shipping over ₪200 | Sun-Thu 9:00-15:00')}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px' }}>
           <button onClick={() => setMenuOpen(!menuOpen)}
@@ -145,14 +149,14 @@ export default function Header() {
         <div style={{ padding: '0 12px 10px' }}>
           <form onSubmit={handleSearch} style={{ display: 'flex' }}>
             <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-              placeholder='חיפוש...'
+              placeholder={t('חיפוש...', 'Search...')}
               style={{ flex: 1, padding: '9px 12px', border: 'none', fontSize: '14px', fontFamily: 'Heebo, sans-serif', outline: 'none', background: 'rgba(255,255,255,0.95)', color: '#2C2416', direction: 'rtl' }} />
             <button type="submit" style={{ background: 'var(--gold)', color: 'var(--navy)', border: 'none', padding: '9px 14px', cursor: 'pointer', fontSize: '16px' }}>🔍</button>
           </form>
         </div>
         {menuOpen && (
           <div style={{ background: '#1A2332', borderTop: '1px solid rgba(201,168,76,0.3)', maxHeight: '70vh', overflowY: 'auto' }}>
-            <a href="/products" style={{ display: 'block', padding: '13px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>כל הספרים</a>
+            <a href="/products" style={{ display: 'block', padding: '13px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>{t('כל הספרים', 'All books')}</a>
             {categoryTree.map(function(item) {
               var isExpanded = expandedMobile === item.parent
               return (
@@ -160,7 +164,7 @@ export default function Header() {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
                     <a href={'/products?category=' + encodeURIComponent(item.parent)}
                       style={{ flex: 1, display: 'block', padding: '13px 20px', color: 'var(--gold)', textDecoration: 'none', fontSize: '14px', fontWeight: '700' }}>
-                      {item.parent}
+                      {translateCategoryName(item.parent, lang)}
                     </a>
                     {item.children && item.children.length > 0 && (
                       <button onClick={() => setExpandedMobile(isExpanded ? null : item.parent)}
@@ -173,17 +177,17 @@ export default function Header() {
                     return (
                       <a key={child} href={'/products?category=' + encodeURIComponent(child)}
                         style={{ display: 'block', padding: '10px 36px', color: 'rgba(255,255,255,0.65)', textDecoration: 'none', fontSize: '13px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                        {child}
+                        {translateCategoryName(child, lang)}
                       </a>
                     )
                   })}
                 </div>
               )
             })}
-            <a href="/track" style={{ display: 'block', padding: '13px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>מעקב הזמנה</a>
-            <a href="/wishlist" style={{ display: 'block', padding: '13px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>❤️ מועדפים</a>
-            <a href="/account" style={{ display: 'block', padding: '13px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>👤 אזור אישי</a>
-            <a href="/contact" style={{ display: 'block', padding: '13px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px' }}>צור קשר</a>
+            <a href="/track" style={{ display: 'block', padding: '13px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>{t('מעקב הזמנה', 'Track order')}</a>
+            <a href="/wishlist" style={{ display: 'block', padding: '13px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>❤️ {t('מועדפים', 'Wishlist')}</a>
+            <a href="/account" style={{ display: 'block', padding: '13px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>👤 {t('אזור אישי', 'My account')}</a>
+            <a href="/contact" style={{ display: 'block', padding: '13px 20px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '15px' }}>{t('צור קשר', 'Contact')}</a>
           </div>
         )}
       </header>
@@ -193,14 +197,14 @@ export default function Header() {
   return (
     <header className="site-header" style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)', width: '100%' }}>
       <div style={{ background: 'var(--gold)', color: 'var(--navy)', textAlign: 'center', fontSize: '13px', fontWeight: '500', padding: '6px' }}>
-        משלוח חינם בהזמנה מעל ₪200 | שירות לקוחות: א׳-ה׳ 9:00-15:00
+        {t('משלוח חינם בהזמנה מעל ₪200 | שירות לקוחות: א׳-ה׳ 9:00-15:00', 'Free shipping over ₪200 | Customer service: Sun-Thu 9:00-15:00')}
       </div>
 
       <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', gap: '20px' }}>
         <a href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-            <span style={{ fontFamily: 'serif', fontSize: '24px', fontWeight: '900', color: 'var(--gold)', lineHeight: 1.1 }}>המרכז למסורת יהודית</span>
-            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>ספרי קודש ויהדות • מאז תמיד</span>
+            <span style={{ fontFamily: 'serif', fontSize: '24px', fontWeight: '900', color: 'var(--gold)', lineHeight: 1.1 }}>{t('המרכז למסורת יהודית', 'Jewish Heritage Center')}</span>
+            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>{t('ספרי קודש ויהדות • מאז תמיד', 'Jewish books and Judaica • Since always')}</span>
           </div>
         </a>
 
@@ -208,7 +212,7 @@ export default function Header() {
           <form onSubmit={handleSearch} style={{ display: 'flex' }}>
             <input type="text" value={search} onChange={e => setSearch(e.target.value)}
               onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-              placeholder='חיפוש לפי שם או מק"ט...'
+              placeholder={t('חיפוש לפי שם או מק"ט...', 'Search by name or SKU...')}
               style={{ flex: 1, padding: '9px 14px', border: 'none', fontSize: '14px', fontFamily: 'Heebo, sans-serif', outline: 'none', background: 'rgba(255,255,255,0.95)', color: '#2C2416', direction: 'rtl' }} />
             <button type="submit" style={{ background: 'var(--gold)', color: 'var(--navy)', border: 'none', padding: '9px 16px', cursor: 'pointer', fontSize: '16px', fontWeight: '700' }}>🔍</button>
           </form>
@@ -224,8 +228,8 @@ export default function Header() {
                     {product.image ? <img src={product.image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: '20px' }}>📖</span>}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#2C2416', lineHeight: 1.3, direction: 'rtl' }}>{highlight(product.name, search)}</div>
-                    {product.sku && <div style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>מק&quot;ט: {highlight(product.sku, search)}</div>}
+                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#2C2416', lineHeight: 1.3, direction: lang === 'en' ? 'ltr' : 'rtl' }}>{highlight(translateProductName(product, lang), search)}</div>
+                    {product.sku && <div style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>{t('מק"ט', 'SKU')}: {highlight(product.sku, search)}</div>}
                   </div>
                   <div style={{ fontFamily: 'serif', fontSize: '15px', color: '#8B6914', fontWeight: '700', flexShrink: 0 }}>₪{Math.ceil(parseFloat(product.price || 0))}</div>
                 </div>
@@ -234,7 +238,7 @@ export default function Header() {
                 style={{ padding: '10px 14px', textAlign: 'center', fontSize: '13px', color: '#8B6914', cursor: 'pointer', fontWeight: '600', background: '#F8F4EE', borderTop: '1px solid #EDE6D9' }}
                 onMouseEnter={e => { e.currentTarget.style.background = '#EDE6D9' }}
                 onMouseLeave={e => { e.currentTarget.style.background = '#F8F4EE' }}>
-                לכל התוצאות עבור &quot;{search}&quot; ←
+                {t('לכל התוצאות עבור', 'All results for')} &quot;{search}&quot; ←
               </div>
             </div>
           )}
@@ -242,10 +246,10 @@ export default function Header() {
 
         {/* ===== NAV ===== */}
         <nav style={{ display: 'flex', gap: '16px', alignItems: 'center', flexShrink: 0 }}>
-          <a href="/products" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px' }}>כל הספרים</a>
-          <a href="/track" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px' }}>מעקב הזמנה</a>
-          <a href="/contact" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px' }}>צור קשר</a>
-          <a href="/wishlist" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px' }}>❤️ מועדפים</a>
+          <a href="/products" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px' }}>{t('כל הספרים', 'All books')}</a>
+          <a href="/track" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px' }}>{t('מעקב הזמנה', 'Track order')}</a>
+          <a href="/contact" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px' }}>{t('צור קשר', 'Contact')}</a>
+          <a href="/wishlist" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px' }}>❤️ {t('מועדפים', 'Wishlist')}</a>
           <LanguageToggle />
 
           {/* עגלה */}
@@ -256,7 +260,7 @@ export default function Header() {
                 {totalItems}
               </span>
             )}
-            עגלה
+            {t('עגלה', 'Cart')}
           </a>
 
           {/* אזור אישי — מרוחק מהעגלה */}
@@ -270,7 +274,7 @@ export default function Header() {
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)' }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.color = 'rgba(255,255,255,0.8)' }}>
-            👤 אזור אישי
+            👤 {t('אזור אישי', 'My account')}
           </a>
         </nav>
       </div>
@@ -297,7 +301,7 @@ export default function Header() {
                 React.createElement('a', {
                   href: '/products?category=' + encodeURIComponent(item.parent),
                   style: { display: 'block', padding: '11px 14px', color: isActive ? 'var(--gold)' : 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '13px', fontWeight: '500', borderBottom: isActive ? '2px solid var(--gold)' : '2px solid transparent', whiteSpace: 'nowrap' }
-                }, item.parent, hasChildren ? ' ▾' : ''),
+                }, translateCategoryName(item.parent, lang), hasChildren ? ' ▾' : ''),
                 isActive && hasChildren ? React.createElement('div', {
                   style: { position: 'fixed', background: '#fff', border: '1px solid #EDE6D9', boxShadow: '0 6px 20px rgba(0,0,0,0.15)', zIndex: 9999, minWidth: '200px' },
                   onMouseEnter: function() { handleMenuEnter(item.parent) },
@@ -310,7 +314,7 @@ export default function Header() {
                       style: { display: 'block', padding: '10px 18px', color: '#2C2416', textDecoration: 'none', fontSize: '14px', borderBottom: '1px solid #f0ebe0' },
                       onMouseEnter: function(e) { e.currentTarget.style.background = '#F8F4EE'; e.currentTarget.style.color = '#8B6914' },
                       onMouseLeave: function(e) { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#2C2416' }
-                    }, child)
+                    }, translateCategoryName(child, lang))
                   })
                 ) : null
               )
