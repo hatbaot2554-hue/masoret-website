@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useCart } from './CartContext'
 import { useRouter } from 'next/navigation'
+import { LanguageToggle } from './LanguageRuntime'
 
 export default function Header() {
   const { totalItems } = useCart()
@@ -115,7 +116,7 @@ export default function Header() {
 
   if (isMobile) {
     return (
-      <header style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)', width: '100%' }}>
+      <header className="site-header" style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)', width: '100%' }}>
         <div style={{ background: 'var(--gold)', color: 'var(--navy)', textAlign: 'center', fontSize: '12px', fontWeight: '500', padding: '5px 10px' }}>
           משלוח חינם מעל ₪200 | א׳-ה׳ 9:00-15:00
         </div>
@@ -128,6 +129,7 @@ export default function Header() {
             <span style={{ fontFamily: 'serif', fontSize: '17px', fontWeight: '900', color: 'var(--gold)' }}>המרכז למסורת יהודית</span>
           </a>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <LanguageToggle compact />
             <a href="/wishlist" style={{ color: 'var(--gold)', textDecoration: 'none', fontSize: '22px' }}>❤️</a>
             <a href="/account" style={{ color: 'var(--gold)', textDecoration: 'none', fontSize: '22px' }}>👤</a>
             <a href="/cart" style={{ color: 'var(--gold)', textDecoration: 'none', fontSize: '22px', position: 'relative', padding: '4px 8px' }}>
@@ -189,7 +191,7 @@ export default function Header() {
   }
 
   return (
-    <header style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)', width: '100%' }}>
+    <header className="site-header" style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)', width: '100%' }}>
       <div style={{ background: 'var(--gold)', color: 'var(--navy)', textAlign: 'center', fontSize: '13px', fontWeight: '500', padding: '6px' }}>
         משלוח חינם בהזמנה מעל ₪200 | שירות לקוחות: א׳-ה׳ 9:00-15:00
       </div>
@@ -244,6 +246,7 @@ export default function Header() {
           <a href="/track" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px' }}>מעקב הזמנה</a>
           <a href="/contact" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px' }}>צור קשר</a>
           <a href="/wishlist" style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: '14px' }}>❤️ מועדפים</a>
+          <LanguageToggle />
 
           {/* עגלה */}
           <a href="/cart" style={{ background: 'var(--gold)', color: 'var(--navy)', padding: '9px 18px', textDecoration: 'none', fontSize: '14px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
