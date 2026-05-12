@@ -163,10 +163,10 @@ export function LanguageToggle({ compact = false }) {
 
   return (
     <div className="language-toggle" dir="ltr" aria-label="Language selector">
-      <button type="button" className={lang === 'he' ? 'active' : ''} aria-pressed={lang === 'he'} onClick={() => setLang('he')}>
+      <button type="button" data-masoret-lang="he" className={lang === 'he' ? 'active' : ''} aria-pressed={lang === 'he'} onClick={() => setLang('he')}>
         {compact ? 'עב' : 'עברית'}
       </button>
-      <button type="button" className={lang === 'en' ? 'active' : ''} aria-pressed={lang === 'en'} onClick={() => setLang('en')}>
+      <button type="button" data-masoret-lang="en" className={lang === 'en' ? 'active' : ''} aria-pressed={lang === 'en'} onClick={() => setLang('en')}>
         EN
       </button>
     </div>
