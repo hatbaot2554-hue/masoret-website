@@ -25,7 +25,7 @@ export default async function HomePage() {
     <>
       {/* ===== HERO ===== */}
       <section style={{
-        background: 'linear-gradient(135deg, #1A2332 0%, #243040 100%)',
+        background: 'linear-gradient(135deg, #263A66 0%, #1D2B4F 100%)',
         color: '#fff',
         padding: '80px 0 70px',
         position: 'relative',
@@ -88,7 +88,7 @@ export default async function HomePage() {
                   display: 'inline-block',
                   boxShadow: '0 4px 20px rgba(201,168,76,0.4)',
                 }}>לכל הספרים ←</a>
-                <a href="/products?category=bestsellers" style={{
+                <a href="/products?sort=popular" style={{
                   background: 'transparent', color: '#C9A84C',
                   padding: '15px 28px', textDecoration: 'none',
                   fontSize: '15px', border: '1.5px solid rgba(201,168,76,0.5)',
