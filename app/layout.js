@@ -184,6 +184,12 @@ const fullSiteTranslateScript = `
 
   function translateToEnglish() {
     setTranslateCookie('/iw/en');
+    setTranslateCookie('/he/en');
+    if (window.sessionStorage.getItem('masoret_translate_loaded') !== window.location.href) {
+      window.sessionStorage.setItem('masoret_translate_loaded', window.location.href);
+      window.location.reload();
+      return;
+    }
     loadGoogleTranslate();
     var tries = 0;
     var timer = setInterval(function () {
@@ -193,6 +199,7 @@ const fullSiteTranslateScript = `
   }
 
   function restoreHebrew() {
+    window.sessionStorage.removeItem('masoret_translate_loaded');
     clearTranslateCookie();
     window.location.reload();
   }
