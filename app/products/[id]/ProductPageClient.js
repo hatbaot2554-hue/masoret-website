@@ -4,6 +4,7 @@ import { useCart } from '../../components/CartContext'
 import { useWishlist } from '../../components/WishlistContext'
 import ReviewsCarousel from '../../components/ReviewsCarousel'
 import RecentlyViewed from '../../components/RecentlyViewed'
+import SeasonalAddons from '../../components/SeasonalAddons'
 
 function formatPrice(price) {
   const p = parseFloat(price || 0)
@@ -654,6 +655,8 @@ export default function ProductPageClient({ product }) {
             )}
           </div>
         </div>
+
+        <SeasonalAddons currentIndex={product.index} />
 
         {/* FAQ */}
         <FAQSection />
