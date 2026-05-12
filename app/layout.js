@@ -104,6 +104,121 @@ const languageFallbackScript = `
 })();
 `
 
+const fullSiteTranslateScript = `
+(function () {
+  if (window.__masoretFullSiteTranslate) return;
+  window.__masoretFullSiteTranslate = true;
+
+  function setTranslateCookie(value) {
+    var expires = 'expires=Fri, 31 Dec 9999 23:59:59 GMT';
+    document.cookie = 'googtrans=' + value + ';path=/;' + expires;
+    document.cookie = 'googtrans=' + value + ';path=/;domain=' + window.location.hostname + ';' + expires;
+    if (window.location.hostname.split('.').length > 2) {
+      var rootDomain = '.' + window.location.hostname.split('.').slice(-2).join('.');
+      document.cookie = 'googtrans=' + value + ';path=/;domain=' + rootDomain + ';' + expires;
+    }
+  }
+
+  function clearTranslateCookie() {
+    ['googtrans=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT',
+     'googtrans=;path=/;domain=' + window.location.hostname + ';expires=Thu, 01 Jan 1970 00:00:00 GMT',
+     'googtrans=;path=/;domain=.' + window.location.hostname.split('.').slice(-2).join('.') + ';expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    ].forEach(function (cookie) { document.cookie = cookie; });
+  }
+
+  function ensureTranslateContainer() {
+    var container = document.getElementById('google_translate_element');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'google_translate_element';
+      container.style.position = 'fixed';
+      container.style.left = '-9999px';
+      container.style.top = '-9999px';
+      container.style.width = '1px';
+      container.style.height = '1px';
+      container.style.overflow = 'hidden';
+      document.body.appendChild(container);
+    }
+    return container;
+  }
+
+  function activateEnglishSelect() {
+    var combo = document.querySelector('.goog-te-combo');
+    if (!combo) return false;
+    combo.value = 'en';
+    combo.dispatchEvent(new Event('change'));
+    document.documentElement.lang = 'en';
+    document.documentElement.dir = 'ltr';
+    document.body.dataset.lang = 'en';
+    document.querySelectorAll('[data-masoret-lang]').forEach(function (button) {
+      var active = button.getAttribute('data-masoret-lang') === 'en';
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    return true;
+  }
+
+  function loadGoogleTranslate() {
+    ensureTranslateContainer();
+    window.googleTranslateElementInit = function () {
+      new window.google.translate.TranslateElement({
+        pageLanguage: 'iw',
+        includedLanguages: 'en,iw,he',
+        autoDisplay: false
+      }, 'google_translate_element');
+      var tries = 0;
+      var timer = setInterval(function () {
+        tries += 1;
+        if (activateEnglishSelect() || tries > 30) clearInterval(timer);
+      }, 300);
+    };
+    if (!document.querySelector('script[src*="translate_a/element.js"]')) {
+      var script = document.createElement('script');
+      script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      script.async = true;
+      document.body.appendChild(script);
+    } else if (window.google && window.google.translate) {
+      window.googleTranslateElementInit();
+    }
+  }
+
+  function translateToEnglish() {
+    setTranslateCookie('/iw/en');
+    loadGoogleTranslate();
+    var tries = 0;
+    var timer = setInterval(function () {
+      tries += 1;
+      if (activateEnglishSelect() || tries > 40) clearInterval(timer);
+    }, 250);
+  }
+
+  function restoreHebrew() {
+    clearTranslateCookie();
+    window.location.reload();
+  }
+
+  document.addEventListener('click', function (event) {
+    var button = event.target && event.target.closest ? event.target.closest('[data-masoret-lang]') : null;
+    if (!button) return;
+    event.preventDefault();
+    var lang = button.getAttribute('data-masoret-lang');
+    if (lang === 'en') {
+      translateToEnglish();
+    } else {
+      restoreHebrew();
+    }
+  }, true);
+
+  if (document.cookie.indexOf('googtrans=/iw/en') !== -1 || document.cookie.indexOf('googtrans=/he/en') !== -1) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', translateToEnglish);
+    } else {
+      translateToEnglish();
+    }
+  }
+})();
+`
+
 export const metadata = {
   title: 'המרכז למסורת יהודית — ספרי קודש ויהדות',
   description: 'מבחר עשיר של ספרי קודש, יהדות ומסורת. משלוח מהיר לכל הארץ.',
@@ -171,6 +286,7 @@ export default function RootLayout({ children }) {
           </CartProvider>
         </LanguageProvider>
         <script dangerouslySetInnerHTML={{ __html: languageFallbackScript }} />
+        <script dangerouslySetInnerHTML={{ __html: fullSiteTranslateScript }} />
       </body>
     </html>
   )
