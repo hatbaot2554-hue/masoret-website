@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { LANGUAGES, translateText } from '../lib/i18n'
 
 const LanguageContext = createContext({
   lang: 'he',
@@ -8,78 +9,22 @@ const LanguageContext = createContext({
   setLang: () => {},
   toggleLang: () => {},
   t: (he, en) => he || en || '',
+  translate: (value) => value || '',
 })
 
-const TEXT_MAP = {
-  'המרכז למסורת יהודית': 'Jewish Heritage Center',
-  'ספרי קודש ויהדות': 'Jewish books and Judaica',
-  'מאז תמיד': 'Since always',
-  'משלוח חינם בהזמנה מעל ₪200 | שירות לקוחות: א׳-ה׳ 9:00-15:00': 'Free shipping over ₪200 | Customer service: Sun-Thu 9:00-15:00',
-  'משלוח חינם מעל ₪200 | א׳-ה׳ 9:00-15:00': 'Free shipping over ₪200 | Sun-Thu 9:00-15:00',
-  'ספרי קודש איכותיים — מהמדף שלנו לבית שלך': 'Quality Jewish books, from our shelves to your home',
-  'ספרי קודש איכותיים —': 'Quality Jewish books —',
-  'מהמדף שלנו לבית שלך': 'from our shelves to your home',
-  'משלוח מהיר לכל הארץ, הטבעת הקדשה אישית, ושירות לקוחות שתמיד זמין לעזור. כי כל ספר קודש מגיע עם לב.': 'Fast shipping nationwide, personal dedication embossing, and customer service that is always ready to help. Every sacred book arrives with care.',
-  'למעלה מ-5,000 ספרי קודש': 'Over 5,000 Jewish books',
-  'כל הספרים': 'All books',
-  'מעקב הזמנה': 'Track order',
-  'צור קשר': 'Contact',
-  'מועדפים': 'Wishlist',
-  'עגלה': 'Cart',
-  'אזור אישי': 'My account',
-  'דף הבית': 'Home',
-  'תקנון ותנאי שימוש': 'Terms and conditions',
-  'ניווט מהיר': 'Quick navigation',
-  'אמצעי תשלום': 'Payment options',
-  'משלוח עד הבית': 'Home delivery',
-  'הטבעה אישית': 'Personal embossing',
-  'עד 6 תשלומים': 'Up to 6 payments',
-  'שירות מעולה': 'Excellent service',
-  'משלוח תוך 8 ימי עסקים': 'Delivery within 8 business days',
-  'תשלום מאובטח': 'Secure payment',
-  'איסוף עצמי זמין': 'Pickup available',
-  'עד 6 תשלומים ללא ריבית': 'Up to 6 interest-free payments',
-  'ביטול: 5% דמי ביטול': 'Cancellation fee: 5%',
-  'לכל הספרים ←': 'All books ←',
-  'רב-מכרים 🔥': 'Best sellers 🔥',
-  'אוסף נבחר': 'Featured collection',
-  'ספרים מומלצים': 'Recommended books',
-  'הספרים הנמכרים והאהובים ביותר על הלקוחות שלנו': 'Our customers’ most popular and loved books',
-  'חיפוש...': 'Search...',
-  'חיפוש לפי שם או מק"ט...': 'Search by name or SKU...',
-  'שם הספר או שם המחבר או חלק ממנו': 'Book title, author, or part of it',
-  'חיפוש בתוך הדף': 'Search within this page',
-  'מוצרים נמצאו': 'products found',
-  'לא נמצאו מוצרים עבור': 'No products found for',
-  'נסה מילה קצרה יותר או כתיב אחר.': 'Try a shorter word or a different spelling.',
-  'שיחה': 'Chat',
-  'AI יועץ קניות': 'AI shopping advisor',
-  'שירות לקוחות': 'Customer service',
-  'עזרה בהזמנות, מוצרים, משלוחים והחזרות': 'Help with orders, products, shipping and returns',
-  'שלח': 'Send',
-  'מספר הזמנה': 'Order number',
-  'מייל להזמנה': 'Order email',
-  'הוסף לסל': 'Add to cart',
-  'תיאור הספר': 'Book description',
-  'פרטי הספר': 'Book details',
-}
-
-const sortedTranslations = Object.entries(TEXT_MAP).sort((a, b) => b[0].length - a[0].length)
 const originalTextNodes = new WeakMap()
 const originalAttributes = new WeakMap()
-
-function translateValue(value) {
-  return sortedTranslations.reduce((next, [he, en]) => next.split(he).join(en), String(value || ''))
-}
 
 function shouldSkipNode(node) {
   const parent = node.parentElement
   if (!parent) return true
-  return ['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT', 'CODE', 'PRE'].includes(parent.tagName)
+  return ['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT', 'CODE', 'PRE', 'NOSCRIPT'].includes(parent.tagName)
 }
 
-function translateTextNodes(root, lang) {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+function applyBuiltInDomTranslation(lang) {
+  if (typeof document === 'undefined' || !document.body) return
+
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       if (shouldSkipNode(node)) return NodeFilter.FILTER_REJECT
       if (!String(node.nodeValue || '').trim()) return NodeFilter.FILTER_REJECT
@@ -91,56 +36,71 @@ function translateTextNodes(root, lang) {
   while (walker.nextNode()) nodes.push(walker.currentNode)
 
   nodes.forEach((node) => {
+    if (lang !== 'en') {
+      originalTextNodes.set(node, node.nodeValue)
+      return
+    }
     if (!originalTextNodes.has(node)) originalTextNodes.set(node, node.nodeValue)
     const original = originalTextNodes.get(node)
-    node.nodeValue = lang === 'en' ? translateValue(original) : original
+    node.nodeValue = translateText(original, 'en')
   })
-}
 
-function translateAttributes(root, lang) {
-  root.querySelectorAll('input[placeholder], textarea[placeholder], [aria-label], [title]').forEach((element) => {
-    if (!originalAttributes.has(element)) originalAttributes.set(element, {})
-    const originals = originalAttributes.get(element)
-
-    ;['placeholder', 'aria-label', 'title'].forEach((attribute) => {
-      if (!element.hasAttribute(attribute)) return
-      if (!originals[attribute]) originals[attribute] = element.getAttribute(attribute)
-      const original = originals[attribute]
-      element.setAttribute(attribute, lang === 'en' ? translateValue(original) : original)
+  document.querySelectorAll('[placeholder], [aria-label], [title]').forEach((node) => {
+    if (!originalAttributes.has(node)) originalAttributes.set(node, {})
+    const attrs = originalAttributes.get(node)
+    ;['placeholder', 'aria-label', 'title'].forEach((attr) => {
+      if (!node.hasAttribute(attr)) return
+      if (lang !== 'en') {
+        attrs[attr] = node.getAttribute(attr)
+        return
+      }
+      if (!attrs[attr]) attrs[attr] = node.getAttribute(attr)
+      node.setAttribute(attr, translateText(attrs[attr], 'en'))
     })
   })
 }
 
-function applyLanguage(lang) {
+function applyDocumentLanguage(lang) {
   if (typeof document === 'undefined') return
-  document.documentElement.lang = lang
-  document.documentElement.dir = lang === 'en' ? 'ltr' : 'rtl'
-  document.body.dataset.lang = lang
-  document.title = lang === 'en' ? translateValue(document.title) : 'מסורת - המרכז למסורת יהודית'
-  translateTextNodes(document.body, lang)
-  translateAttributes(document.body, lang)
+  const config = LANGUAGES[lang] || LANGUAGES.he
+  document.documentElement.lang = config.code
+  document.documentElement.dir = config.dir
+  document.body.dataset.lang = config.code
+
+  document.querySelectorAll('[data-i18n-he][data-i18n-en]').forEach((node) => {
+    const next = lang === 'en' ? node.dataset.i18nEn : node.dataset.i18nHe
+    if (node.textContent !== next) node.textContent = next
+  })
+
+  document.querySelectorAll('[data-placeholder-he][data-placeholder-en]').forEach((node) => {
+    const next = lang === 'en' ? node.dataset.placeholderEn : node.dataset.placeholderHe
+    if (node.getAttribute('placeholder') !== next) node.setAttribute('placeholder', next)
+  })
+
+  applyBuiltInDomTranslation(lang)
 }
 
 export function LanguageProvider({ children }) {
   const [lang, setLangState] = useState('he')
 
   useEffect(() => {
-    window.localStorage.removeItem('masoret_lang')
-    setLangState('he')
-    applyLanguage('he')
+    const stored = window.localStorage.getItem('masoret_lang')
+    const initial = stored === 'en' ? 'en' : 'he'
+    setLangState(initial)
+    applyDocumentLanguage(initial)
   }, [])
 
   useEffect(() => {
-    applyLanguage(lang)
+    window.localStorage.setItem('masoret_lang', lang)
+    applyDocumentLanguage(lang)
 
-    const observer = new MutationObserver(() => applyLanguage(lang))
+    const observer = new MutationObserver(() => applyDocumentLanguage(lang))
     observer.observe(document.body, { childList: true, subtree: true })
     return () => observer.disconnect()
   }, [lang])
 
   function setLang(nextLang) {
-    const normalized = nextLang === 'en' ? 'en' : 'he'
-    setLangState(normalized)
+    setLangState(nextLang === 'en' ? 'en' : 'he')
   }
 
   const value = useMemo(() => ({
@@ -148,7 +108,8 @@ export function LanguageProvider({ children }) {
     isEnglish: lang === 'en',
     setLang,
     toggleLang: () => setLang(lang === 'en' ? 'he' : 'en'),
-    t: (he, en) => (lang === 'en' ? en : he),
+    t: (he, en) => (lang === 'en' ? (en || translateText(he, 'en')) : he),
+    translate: (value) => translateText(value, lang),
   }), [lang])
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>
@@ -163,10 +124,10 @@ export function LanguageToggle({ compact = false }) {
 
   return (
     <div className="language-toggle" dir="ltr" aria-label="Language selector">
-      <button type="button" data-masoret-lang="he" className={lang === 'he' ? 'active' : ''} aria-pressed={lang === 'he'} onClick={() => setLang('he')}>
-        {compact ? 'עב' : 'עברית'}
+      <button type="button" className={lang === 'he' ? 'active' : ''} aria-pressed={lang === 'he'} onClick={() => setLang('he')}>
+        {compact ? 'HE' : 'עברית'}
       </button>
-      <button type="button" data-masoret-lang="en" className={lang === 'en' ? 'active' : ''} aria-pressed={lang === 'en'} onClick={() => setLang('en')}>
+      <button type="button" className={lang === 'en' ? 'active' : ''} aria-pressed={lang === 'en'} onClick={() => setLang('en')}>
         EN
       </button>
     </div>
