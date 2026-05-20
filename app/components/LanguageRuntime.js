@@ -12,54 +12,6 @@ const LanguageContext = createContext({
   translate: (value) => value || '',
 })
 
-const originalTextNodes = new WeakMap()
-const originalAttributes = new WeakMap()
-
-function shouldSkipNode(node) {
-  const parent = node.parentElement
-  if (!parent) return true
-  return ['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT', 'CODE', 'PRE', 'NOSCRIPT'].includes(parent.tagName)
-}
-
-function applyBuiltInDomTranslation(lang) {
-  if (typeof document === 'undefined' || !document.body) return
-
-  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
-    acceptNode(node) {
-      if (shouldSkipNode(node)) return NodeFilter.FILTER_REJECT
-      if (!String(node.nodeValue || '').trim()) return NodeFilter.FILTER_REJECT
-      return NodeFilter.FILTER_ACCEPT
-    },
-  })
-
-  const nodes = []
-  while (walker.nextNode()) nodes.push(walker.currentNode)
-
-  nodes.forEach((node) => {
-    if (lang !== 'en') {
-      originalTextNodes.set(node, node.nodeValue)
-      return
-    }
-    if (!originalTextNodes.has(node)) originalTextNodes.set(node, node.nodeValue)
-    const original = originalTextNodes.get(node)
-    node.nodeValue = translateText(original, 'en')
-  })
-
-  document.querySelectorAll('[placeholder], [aria-label], [title]').forEach((node) => {
-    if (!originalAttributes.has(node)) originalAttributes.set(node, {})
-    const attrs = originalAttributes.get(node)
-    ;['placeholder', 'aria-label', 'title'].forEach((attr) => {
-      if (!node.hasAttribute(attr)) return
-      if (lang !== 'en') {
-        attrs[attr] = node.getAttribute(attr)
-        return
-      }
-      if (!attrs[attr]) attrs[attr] = node.getAttribute(attr)
-      node.setAttribute(attr, translateText(attrs[attr], 'en'))
-    })
-  })
-}
-
 function applyDocumentLanguage(lang) {
   if (typeof document === 'undefined') return
   const config = LANGUAGES[lang] || LANGUAGES.he
@@ -79,8 +31,6 @@ function applyContentLanguage(lang) {
     const next = lang === 'en' ? node.dataset.placeholderEn : node.dataset.placeholderHe
     if (node.getAttribute('placeholder') !== next) node.setAttribute('placeholder', next)
   })
-
-  applyBuiltInDomTranslation(lang)
 }
 
 export function LanguageProvider({ children }) {
