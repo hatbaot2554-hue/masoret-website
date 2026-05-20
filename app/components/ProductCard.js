@@ -25,6 +25,7 @@ export default function ProductCard({ product, index }) {
   const inStock = product.in_stock !== false
   const wished = isInWishlist(index)
   const displayName = translateProductName(product, lang)
+  const productUrl = '/products/' + index
 
   // תגית חכמה — נמכר ביותר אם index < 5, חדש אם index >= 5 && index < 10
   const smartBadge = index < 5 ? { label: t('🏆 נמכר ביותר', '🏆 Best seller'), bg: '#8B6914' }
@@ -59,17 +60,34 @@ export default function ProductCard({ product, index }) {
     toggleItem({ ...product, index })
   }
 
+  function rememberProductView() {
+    try {
+      const viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]')
+      const filtered = viewed.filter(p => p.index !== index)
+      filtered.unshift({ index, name: displayName, image: product.image, price: product.price })
+      localStorage.setItem('recentlyViewed', JSON.stringify(filtered.slice(0, 10)))
+    } catch {}
+  }
+
+  function openProduct() {
+    rememberProductView()
+    window.location.href = productUrl
+  }
+
+  function handleCardKeyDown(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      openProduct()
+    }
+  }
+
   return (
-    <a href={'/products/' + index}
-      style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
-      onClick={() => {
-        try {
-          const viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]')
-          const filtered = viewed.filter(p => p.index !== index)
-          filtered.unshift({ index, name: displayName, image: product.image, price: product.price })
-          localStorage.setItem('recentlyViewed', JSON.stringify(filtered.slice(0, 10)))
-        } catch {}
-      }}>
+    <div
+      role="link"
+      tabIndex={0}
+      onClick={openProduct}
+      onKeyDown={handleCardKeyDown}
+      style={{ textDecoration: 'none', color: 'inherit', display: 'block', cursor: 'pointer' }}>
       <div
         className="product-card"
         style={{ transition: 'all 0.25s', overflow: 'hidden', position: 'relative' }}
@@ -113,7 +131,7 @@ export default function ProductCard({ product, index }) {
           </div>
 
           {inStock ? (
-            <div onClick={e => e.preventDefault()}>
+            <div onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
                 <button onClick={e => handleQty(e, -1)}
                   style={{ width: '28px', height: '28px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
@@ -126,20 +144,20 @@ export default function ProductCard({ product, index }) {
                   style={{ flex: 1, background: added ? '#27ae60' : '#C9A84C', color: added ? '#fff' : '#1A2332', padding: '9px 6px', border: 'none', fontSize: '12px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}>
                   {added ? t('✓ נוסף!', '✓ Added!') : t('🛒 לסל', '🛒 Cart')}
                 </button>
-                <a href={'/products/' + index} onClick={e => e.stopPropagation()}
+                <a href={productUrl} onClick={(e) => { e.stopPropagation(); rememberProductView() }}
                   style={{ flex: 1, background: '#1A2332', color: '#C9A84C', padding: '9px 6px', textDecoration: 'none', fontSize: '12px', fontWeight: '600', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {t('פרטים', 'Details')}
                 </a>
               </div>
             </div>
           ) : (
-            <a href={'/products/' + index} onClick={e => e.stopPropagation()}
+            <a href={productUrl} onClick={(e) => { e.stopPropagation(); rememberProductView() }}
               style={{ display: 'block', background: '#1A2332', color: '#C9A84C', padding: '10px', textAlign: 'center', fontSize: '13px', fontWeight: '600', textDecoration: 'none' }}>
               {t('לפרטים ←', 'Details ←')}
             </a>
           )}
         </div>
       </div>
-    </a>
+    </div>
   )
 }
