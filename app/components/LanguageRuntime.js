@@ -20,19 +20,6 @@ function applyDocumentLanguage(lang) {
   document.body.dataset.lang = config.code
 }
 
-function applyContentLanguage(lang) {
-  if (typeof document === 'undefined') return
-  document.querySelectorAll('[data-i18n-he][data-i18n-en]').forEach((node) => {
-    const next = lang === 'en' ? node.dataset.i18nEn : node.dataset.i18nHe
-    if (node.textContent !== next) node.textContent = next
-  })
-
-  document.querySelectorAll('[data-placeholder-he][data-placeholder-en]').forEach((node) => {
-    const next = lang === 'en' ? node.dataset.placeholderEn : node.dataset.placeholderHe
-    if (node.getAttribute('placeholder') !== next) node.setAttribute('placeholder', next)
-  })
-}
-
 export function LanguageProvider({ children }) {
   const [lang, setLangState] = useState('he')
 
@@ -46,18 +33,6 @@ export function LanguageProvider({ children }) {
   useEffect(() => {
     window.localStorage.setItem('masoret_lang', lang)
     applyDocumentLanguage(lang)
-
-    const timer = window.setTimeout(() => applyContentLanguage(lang), 900)
-    const observer = new MutationObserver(() => {
-      window.clearTimeout(observer._masoretTimer)
-      observer._masoretTimer = window.setTimeout(() => applyContentLanguage(lang), 120)
-    })
-    observer.observe(document.body, { childList: true, subtree: true })
-    return () => {
-      window.clearTimeout(timer)
-      window.clearTimeout(observer._masoretTimer)
-      observer.disconnect()
-    }
   }, [lang])
 
   function setLang(nextLang) {
