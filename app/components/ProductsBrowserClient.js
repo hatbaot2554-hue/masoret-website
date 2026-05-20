@@ -110,7 +110,8 @@ export default function ProductsBrowserClient({
 }) {
   const { lang, t } = useLanguage()
   const [liveSearch, setLiveSearch] = useState('')
-  const initialProducts = pageProducts && pageProducts.length ? pageProducts : products
+  const shouldShowFullList = Boolean(category || search)
+  const initialProducts = shouldShowFullList ? products : (pageProducts && pageProducts.length ? pageProducts : products)
   const liveProducts = useMemo(
     () => products.filter((product) => matchesProduct(product, liveSearch)),
     [products, liveSearch]
@@ -144,7 +145,7 @@ export default function ProductsBrowserClient({
               <ProductCard key={product.index} product={product} index={product.index} />
             ))}
           </div>
-          {!showingLive && <Pagination page={page} totalPages={totalPages} category={category} search={search} sort={sort} />}
+          {!showingLive && !shouldShowFullList && <Pagination page={page} totalPages={totalPages} category={category} search={search} sort={sort} />}
         </div>
       ) : (
         <div style={{ textAlign: 'center', padding: '80px', background: '#F8F4EE', color: '#6B5C3E' }}>

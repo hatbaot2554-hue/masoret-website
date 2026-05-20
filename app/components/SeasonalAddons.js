@@ -91,7 +91,7 @@ export default function SeasonalAddons({ currentIndex }) {
   const season = useMemo(() => currentSeason(), [])
 
   useEffect(() => {
-    fetch(PRODUCT_SOURCE)
+    fetch(PRODUCT_SOURCE, { cache: 'no-store' })
       .then((response) => response.ok ? response.json() : [])
       .then((data) => {
         const withIndex = Array.isArray(data) ? data.map((product, index) => ({ ...product, index })) : []

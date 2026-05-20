@@ -27,12 +27,12 @@ export default function Header() {
   const scrollDir = useRef(1)
 
   useEffect(() => {
-    fetch('https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/products.json')
+    fetch('https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/products.json', { cache: 'no-store' })
       .then(r => r.json())
       .then(data => setAllProducts(data.map((p, i) => ({ ...p, index: i }))))
       .catch(() => {})
 
-    fetch('https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/categories.json')
+    fetch('https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/categories.json', { cache: 'no-store' })
       .then(r => r.json())
       .then(data => setCategoryTree(data))
       .catch(() => {})

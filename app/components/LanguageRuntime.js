@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { LANGUAGES, translateText } from '../lib/i18n'
 
 const LanguageContext = createContext({
@@ -62,11 +63,18 @@ function applyDocumentLanguage(lang) {
 }
 
 export function LanguageProvider({ children }) {
+  const pathname = usePathname()
   const [lang, setLangState] = useState('he')
   const manualSwitchRef = useRef(false)
 
   useEffect(() => {
-    applyDocumentLanguage('he')
+    const stored = window.localStorage.getItem('masoret_lang')
+    if (stored === 'en') {
+      manualSwitchRef.current = true
+      setLangState('en')
+    } else {
+      applyDocumentLanguage('he')
+    }
   }, [])
 
   useEffect(() => {
@@ -80,7 +88,7 @@ export function LanguageProvider({ children }) {
       window.clearTimeout(firstPass)
       window.clearTimeout(secondPass)
     }
-  }, [lang])
+  }, [lang, pathname])
 
   function setLang(nextLang) {
     manualSwitchRef.current = true
@@ -107,7 +115,7 @@ export function LanguageToggle({ compact = false }) {
   const { lang, setLang } = useLanguage()
 
   return (
-    <div className="language-toggle" dir="ltr" aria-label="Language selector">
+    <div className="language-toggle" dir="ltr" aria-label="Language selector" data-no-auto-translate>
       <button type="button" className={lang === 'he' ? 'active' : ''} aria-pressed={lang === 'he'} onClick={() => setLang('he')}>
         {compact ? 'HE' : 'עברית'}
       </button>

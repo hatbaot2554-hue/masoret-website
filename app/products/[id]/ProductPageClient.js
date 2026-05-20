@@ -82,6 +82,71 @@ function productLongDescriptionSections(product, lang) {
   ]
 }
 
+function firstCleanValue(...values) {
+  return values.map(cleanProductText).find(Boolean) || ''
+}
+
+function findCleanDetail(text, patterns) {
+  for (const pattern of patterns) {
+    const match = text.match(pattern)
+    if (match && match[1]) return cleanProductText(match[1])
+  }
+  return ''
+}
+
+function enhancedProductSpecItems(product) {
+  const text = cleanProductText([product.description, product.full_description].filter(Boolean).join(' '))
+  const base = productSpecItems(product)
+  const byLabel = new Map(base.map((item) => [item.label, item.value]))
+
+  const set = (label, value) => {
+    const cleanValue = cleanProductText(value)
+    if (cleanValue) byLabel.set(label, cleanValue)
+  }
+
+  set('מחבר', firstCleanValue(
+    product.author,
+    product.writer,
+    product.rabbi,
+    findCleanDetail(text, [
+      /(?:מאת|מחבר|המחבר|הרב המחבר|הרב)\s*[:\-]?\s*([^.,;|]{2,55})/,
+      /(?:Author|By)\s*[:\-]?\s*([^.,;|]{2,55})/i,
+    ])
+  ))
+
+  set('הוצאה לאור', firstCleanValue(
+    product.publisher,
+    product.brand,
+    product.publishers,
+    findCleanDetail(text, [
+      /(?:הוצאת|בהוצאת|הוצאה לאור|הוצאה)\s*[:\-]?\s*([^.,;|]{2,45})/,
+      /(?:Publisher|Published by)\s*[:\-]?\s*([^.,;|]{2,45})/i,
+    ])
+  ))
+
+  const explicitWidth = findCleanDetail(text, [
+    /(?:רוחב)\s*[:\-]?\s*(\d{1,3}(?:\.\d+)?\s*(?:ס"מ|סמ|cm)?)/i,
+  ])
+  const explicitLength = findCleanDetail(text, [
+    /(?:אורך|גובה)\s*[:\-]?\s*(\d{1,3}(?:\.\d+)?\s*(?:ס"מ|סמ|cm)?)/i,
+  ])
+  const sizePair = findCleanDetail(text, [
+    /(\d{1,3}(?:\.\d+)?\s*(?:x|X|×|על)\s*\d{1,3}(?:\.\d+)?\s*(?:ס"מ|סמ|cm)?)/,
+  ])
+  const dimensions = explicitLength && explicitWidth
+    ? `אורך ${explicitLength} / רוחב ${explicitWidth}`
+    : sizePair
+  set('מידות', dimensions)
+
+  const binding = findCleanDetail(text, [
+    /(?:כריכה|כריכת)\s*[:\-]?\s*([^.,;|]{2,28})/,
+    /(?:Binding)\s*[:\-]?\s*([^.,;|]{2,28})/i,
+  ])
+  set('כריכה', binding)
+
+  return Array.from(byLabel, ([label, value]) => ({ label, value })).slice(0, 8)
+}
+
 function fileToAttachment(file) {
   if (!file) return Promise.resolve(null)
   const meta = { name: file.name, type: file.type, size: file.size }
@@ -216,7 +281,7 @@ export default function ProductPageClient({ product }) {
   const totalPrice = activePrice * quantity + engravingExtra
   const displayName = translateProductName(product, lang)
   const summaryText = translateProductField(shortProductSummary(product), lang)
-  const specItems = productSpecItems(product).map((item) => ({
+  const specItems = enhancedProductSpecItems(product).map((item) => ({
     label: translateText(item.label, lang),
     value: translateText(item.value, lang),
   }))

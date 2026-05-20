@@ -7,7 +7,7 @@ async function getProducts() {
   try {
     const res = await fetch(
       'https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/products.json',
-      { next: { revalidate: 3600 } }
+      { cache: 'no-store' }
     )
     if (!res.ok) return []
     const all = await res.json()
