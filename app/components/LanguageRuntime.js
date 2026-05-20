@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { LANGUAGES, translateText } from '../lib/i18n'
 
 const LanguageContext = createContext({
@@ -12,6 +12,47 @@ const LanguageContext = createContext({
   translate: (value) => value || '',
 })
 
+const originalTextNodes = new WeakMap()
+const originalAttributes = new WeakMap()
+
+function shouldSkipNode(node) {
+  const parent = node.parentElement
+  if (!parent) return true
+  if (parent.closest('[data-no-auto-translate]')) return true
+  return ['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT', 'CODE', 'PRE', 'NOSCRIPT'].includes(parent.tagName)
+}
+
+function applyClientTranslation(lang) {
+  if (typeof document === 'undefined' || !document.body) return
+
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (shouldSkipNode(node)) return NodeFilter.FILTER_REJECT
+      if (!String(node.nodeValue || '').trim()) return NodeFilter.FILTER_REJECT
+      return NodeFilter.FILTER_ACCEPT
+    },
+  })
+
+  const nodes = []
+  while (walker.nextNode()) nodes.push(walker.currentNode)
+
+  nodes.forEach((node) => {
+    if (!originalTextNodes.has(node)) originalTextNodes.set(node, node.nodeValue)
+    const original = originalTextNodes.get(node)
+    node.nodeValue = lang === 'en' ? translateText(original, 'en') : original
+  })
+
+  document.querySelectorAll('[placeholder], [aria-label], [title]').forEach((node) => {
+    if (!originalAttributes.has(node)) originalAttributes.set(node, {})
+    const attrs = originalAttributes.get(node)
+    ;['placeholder', 'aria-label', 'title'].forEach((attr) => {
+      if (!node.hasAttribute(attr)) return
+      if (!attrs[attr]) attrs[attr] = node.getAttribute(attr)
+      node.setAttribute(attr, lang === 'en' ? translateText(attrs[attr], 'en') : attrs[attr])
+    })
+  })
+}
+
 function applyDocumentLanguage(lang) {
   if (typeof document === 'undefined') return
   const config = LANGUAGES[lang] || LANGUAGES.he
@@ -22,6 +63,7 @@ function applyDocumentLanguage(lang) {
 
 export function LanguageProvider({ children }) {
   const [lang, setLangState] = useState('he')
+  const manualSwitchRef = useRef(false)
 
   useEffect(() => {
     applyDocumentLanguage('he')
@@ -30,9 +72,18 @@ export function LanguageProvider({ children }) {
   useEffect(() => {
     window.localStorage.setItem('masoret_lang', lang)
     applyDocumentLanguage(lang)
+    if (!manualSwitchRef.current) return
+
+    const firstPass = window.setTimeout(() => applyClientTranslation(lang), 300)
+    const secondPass = window.setTimeout(() => applyClientTranslation(lang), 1200)
+    return () => {
+      window.clearTimeout(firstPass)
+      window.clearTimeout(secondPass)
+    }
   }, [lang])
 
   function setLang(nextLang) {
+    manualSwitchRef.current = true
     setLangState(nextLang === 'en' ? 'en' : 'he')
   }
 
