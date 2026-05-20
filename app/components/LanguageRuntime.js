@@ -24,10 +24,7 @@ export function LanguageProvider({ children }) {
   const [lang, setLangState] = useState('he')
 
   useEffect(() => {
-    const stored = window.localStorage.getItem('masoret_lang')
-    const initial = stored === 'en' ? 'en' : 'he'
-    setLangState(initial)
-    applyDocumentLanguage(initial)
+    applyDocumentLanguage('he')
   }, [])
 
   useEffect(() => {
