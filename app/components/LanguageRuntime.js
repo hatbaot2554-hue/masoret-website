@@ -90,6 +90,29 @@ export function LanguageProvider({ children }) {
     }
   }, [lang, pathname])
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof MutationObserver === 'undefined') return
+    if (!manualSwitchRef.current || lang !== 'en') return
+
+    let scheduled = false
+    const observer = new MutationObserver(() => {
+      if (scheduled) return
+      scheduled = true
+      window.requestAnimationFrame(() => {
+        scheduled = false
+        applyClientTranslation('en')
+      })
+    })
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    })
+
+    return () => observer.disconnect()
+  }, [lang])
+
   function setLang(nextLang) {
     manualSwitchRef.current = true
     setLangState(nextLang === 'en' ? 'en' : 'he')
