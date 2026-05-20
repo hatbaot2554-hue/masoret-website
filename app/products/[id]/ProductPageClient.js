@@ -22,6 +22,15 @@ function cleanProductText(value) {
     .trim()
 }
 
+function readableAttributeName(value) {
+  const text = String(value || '').replace('attribute_', '')
+  try {
+    return decodeURIComponent(text)
+  } catch {
+    return text
+  }
+}
+
 function shortProductSummary(product) {
   const text = cleanProductText(product.description || product.full_description || '')
   if (!text) return ''
@@ -265,9 +274,11 @@ export default function ProductPageClient({ product }) {
   })()
 
   const attributeOptions = (() => {
-    if (!hasVariations) return {}
     const options = {}
-    product.variations.forEach(v => {
+    Object.entries(product.attribute_options || {}).forEach(([key, values]) => {
+      options[key] = new Set(Array.isArray(values) ? values.filter(Boolean) : [])
+    })
+    ;(product.variations || []).forEach(v => {
       Object.entries(v.attributes || {}).forEach(([key, val]) => {
         if (!options[key]) options[key] = new Set()
         if (val) options[key].add(val)
@@ -275,6 +286,7 @@ export default function ProductPageClient({ product }) {
     })
     return options
   })()
+  const hasSelectableOptions = Object.keys(attributeOptions).length > 0
 
   const activePrice = selectedVariation ? formatPrice(selectedVariation.price) : finalPrice
   const activeRegularPrice = selectedVariation ? formatPrice(selectedVariation.regular_our_price || selectedVariation.price) : regularFinalPrice
@@ -291,7 +303,7 @@ export default function ProductPageClient({ product }) {
   function handleAttrChange(attrKey, value) {
     const newAttrs = { ...selectedAttrs, [attrKey]: value }
     setSelectedAttrs(newAttrs)
-    const match = product.variations.find(v =>
+    const match = (product.variations || []).find(v =>
       Object.entries(newAttrs).every(([k, val]) => !v.attributes[k] || v.attributes[k] === val)
     )
     setSelectedVariation(match || null)
@@ -323,8 +335,23 @@ export default function ProductPageClient({ product }) {
     return true
   }
 
+  function validateProductOptions() {
+    const missingOption = Object.keys(attributeOptions).find(key => !selectedAttrs[key])
+    if (missingOption) {
+      const label = product.attribute_labels?.[missingOption] || readableAttributeName(missingOption)
+      setEngravingError(`יש לבחור ${label}`)
+      return false
+    }
+    if (hasVariations && !selectedVariation) {
+      setEngravingError('יש לבחור אפשרות זמינה לפני הוספה לסל')
+      return false
+    }
+    setEngravingError('')
+    return true
+  }
+
   async function handleAddToCart() {
-    if (!validateEngraving()) return
+    if (!validateProductOptions() || !validateEngraving()) return
     const engravingNote = buildEngravingNote()
     const sketchAttachment = await fileToAttachment(sketchFile)
     const engravingData = engravingType !== 'none' ? {
@@ -346,7 +373,7 @@ export default function ProductPageClient({ product }) {
 
   async function handleQuickBuy(e) {
     e.preventDefault()
-    if (!validateEngraving()) return
+    if (!validateProductOptions() || !validateEngraving()) return
     setOrderStatus('loading')
     setOrderError('')
     try {
@@ -545,7 +572,7 @@ export default function ProductPageClient({ product }) {
               </div>
             )}
 
-            {hasVariations && Object.entries(attributeOptions).map(([attrKey, values]) => (
+            {hasSelectableOptions && Object.entries(attributeOptions).map(([attrKey, values]) => (
               <div key={attrKey} style={{ marginBottom: '16px' }}>
                 <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>
                   {product.attribute_labels?.[attrKey] || attrKey.replace('attribute_', '')}:

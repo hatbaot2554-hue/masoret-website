@@ -19,6 +19,15 @@ function fileToAttachment(file) {
   })
 }
 
+function readableAttributeName(value) {
+  const text = String(value || '').replace('attribute_', '')
+  try {
+    return decodeURIComponent(text)
+  } catch {
+    return text
+  }
+}
+
 const ENGRAVING_PRICING_TEXT = `מחירון:
 - הקדשה על ספרים בודדים - 15 ש"ח לספר
 - גלופה עד 100 ספרים - 170 ש"ח לכל הכמות. תישלח אליכם סקיצה לאישור.
@@ -94,9 +103,11 @@ export default function OrderForm({
   }
 
   function getAttributeOptions() {
-    if (!hasVariations) return {}
     const options = {}
-    product.variations.forEach(v => {
+    Object.entries(product.attribute_options || {}).forEach(([key, values]) => {
+      options[key] = new Set(Array.isArray(values) ? values.filter(Boolean) : [])
+    })
+    ;(product.variations || []).forEach(v => {
       Object.entries(v.attributes || {}).forEach(([key, val]) => {
         if (!options[key]) options[key] = new Set()
         if (val) options[key].add(val)
@@ -108,7 +119,7 @@ export default function OrderForm({
   function handleAttrChange(attrKey, value) {
     const newAttrs = { ...selectedAttrs, [attrKey]: value }
     setSelectedAttrs(newAttrs)
-    const match = product.variations.find(v =>
+    const match = (product.variations || []).find(v =>
       Object.entries(newAttrs).every(([k, val]) =>
         !v.attributes[k] || v.attributes[k] === val
       )
@@ -133,6 +144,13 @@ export default function OrderForm({
 
   async function handleSubmit(e) {
     e.preventDefault()
+    const attributeOptions = getAttributeOptions()
+    const missingOption = Object.keys(attributeOptions).find(key => !selectedAttrs[key])
+    if (missingOption) {
+      const label = product.attribute_labels?.[missingOption] || readableAttributeName(missingOption)
+      setErrorMsg(`יש לבחור ${label}`)
+      return
+    }
     if (hasVariations && !selectedVariation) {
       setErrorMsg('יש לבחור אפשרות לפני ההזמנה')
       return
@@ -221,6 +239,7 @@ export default function OrderForm({
 
   const inputStyle = { width: '100%', padding: '11px 14px', border: '1px solid #EDE6D9', background: '#fff', fontSize: '15px', fontFamily: 'Heebo, sans-serif', color: '#2C2416', outline: 'none' }
   const attributeOptions = getAttributeOptions()
+  const hasSelectableOptions = Object.keys(attributeOptions).length > 0
   const sectionStyle = { background: '#F8F4EE', border: '1px solid #EDE6D9', borderRadius: '4px', padding: '16px', marginBottom: '16px' }
 
   const colorBtnStyle = (val) => ({
@@ -246,7 +265,7 @@ export default function OrderForm({
     <form onSubmit={handleSubmit}>
       <h3 style={{ fontFamily: 'serif', fontSize: '20px', marginBottom: '20px', color: '#2C2416' }}>פרטי הזמנה</h3>
 
-      {hasVariations && Object.entries(attributeOptions).map(([attrKey, values]) => (
+      {hasSelectableOptions && Object.entries(attributeOptions).map(([attrKey, values]) => (
         <div key={attrKey} style={{ marginBottom: '16px' }}>
           <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>
             {product.attribute_labels?.[attrKey] || attrKey.replace('attribute_', '')}:
