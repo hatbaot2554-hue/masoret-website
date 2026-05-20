@@ -34,6 +34,8 @@ function buildPageHref(page, category, search, sort) {
 }
 
 function Pagination({ page, totalPages, category, search, sort }) {
+  const { t } = useLanguage()
+
   if (totalPages <= 1) return null
 
   const pages = []
@@ -63,7 +65,11 @@ function Pagination({ page, totalPages, category, search, sort }) {
   }
 
   return (
-    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', marginTop: '48px' }}>
+    <div className="products-pagination" aria-label={t('דפדוף בין עמודים', 'Product pages')}>
+      <div className="products-pagination-status">
+        {t('עמוד', 'Page')} {page} {t('מתוך', 'of')} {totalPages}
+      </div>
+      <div className="products-pagination-controls">
       {page > 1 ? (
         <a href={buildPageHref(page - 1, category, search, sort)} style={{ ...btnBase, background: 'transparent', color: '#C9A84C', borderColor: '#C9A84C' }}>→ הקודם</a>
       ) : (
@@ -95,6 +101,7 @@ function Pagination({ page, totalPages, category, search, sort }) {
       ) : (
         <span style={{ ...btnBase, background: '#F8F4EE', color: '#CCC', borderColor: '#EDE6D9', cursor: 'default' }}>הבא ←</span>
       )}
+      </div>
     </div>
   )
 }
@@ -110,8 +117,7 @@ export default function ProductsBrowserClient({
 }) {
   const { lang, t } = useLanguage()
   const [liveSearch, setLiveSearch] = useState('')
-  const shouldShowFullList = Boolean(category || search)
-  const initialProducts = shouldShowFullList ? products : (pageProducts && pageProducts.length ? pageProducts : products)
+  const initialProducts = pageProducts && pageProducts.length ? pageProducts : products
   const liveProducts = useMemo(
     () => products.filter((product) => matchesProduct(product, liveSearch)),
     [products, liveSearch]
@@ -145,7 +151,7 @@ export default function ProductsBrowserClient({
               <ProductCard key={product.index} product={product} index={product.index} />
             ))}
           </div>
-          {!showingLive && !shouldShowFullList && <Pagination page={page} totalPages={totalPages} category={category} search={search} sort={sort} />}
+          {!showingLive && <Pagination page={page} totalPages={totalPages} category={category} search={search} sort={sort} />}
         </div>
       ) : (
         <div style={{ textAlign: 'center', padding: '80px', background: '#F8F4EE', color: '#6B5C3E' }}>

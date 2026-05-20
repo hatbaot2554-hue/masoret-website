@@ -117,7 +117,7 @@ function sortProducts(products, sort) {
 }
 
 export default async function ProductsPage({ searchParams }) {
-  const page = parseInt(searchParams?.page || '1')
+  const requestedPage = Math.max(1, parseInt(searchParams?.page || '1') || 1)
   const category = searchParams?.category || ''
   const search = searchParams?.search || ''
   const sort = searchParams?.sort || 'popular'
@@ -164,8 +164,9 @@ export default async function ProductsPage({ searchParams }) {
   // מיון
   filtered = sortProducts(filtered, sort)
 
-  const perPage = 20
-  const totalPages = Math.ceil(filtered.length / perPage)
+  const perPage = 50
+  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage))
+  const page = Math.min(requestedPage, totalPages)
   const start = (page - 1) * perPage
   const products = filtered.slice(start, start + perPage)
 

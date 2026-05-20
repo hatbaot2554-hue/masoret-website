@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import ProductCard from './ProductCard'
 
-const ROW_SIZE = 5
+const ROW_SIZE = 6
 
 function productKey(product, index, prefix) {
   return `${prefix}-${product?.index ?? index}-${index}`
