@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 const DASHBOARD_URL = 'https://masoret-dashboard.vercel.app';
+const DASHBOARD_ORDERS_API_SECRET = process.env.DASHBOARD_ORDERS_API_SECRET || '';
 
 function generateOrderId(dbId) {
   if (dbId) {
@@ -39,7 +40,10 @@ export async function POST(request) {
 
     const response = await fetch(`${DASHBOARD_URL}/api/orders`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(DASHBOARD_ORDERS_API_SECRET ? { 'x-dashboard-orders-secret': DASHBOARD_ORDERS_API_SECRET } : {}),
+      },
       body: JSON.stringify(orderData)
     });
 
@@ -64,7 +68,8 @@ export async function POST(request) {
     });
 
   } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    console.error(e);
+    return NextResponse.json({ error: 'לא ניתן ליצור הזמנה כרגע. נסה שוב מאוחר יותר.' }, { status: 500 });
   }
 }
 
@@ -105,6 +110,7 @@ export async function GET(request) {
     return NextResponse.json(data);
 
   } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    console.error(e);
+    return NextResponse.json({ error: 'לא ניתן לבדוק הזמנה כרגע.' }, { status: 500 });
   }
 }

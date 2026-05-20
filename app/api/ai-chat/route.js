@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 const PRODUCTS_URL = 'https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/main/products.json'
 const DASHBOARD_URL = 'https://masoret-dashboard.vercel.app'
 const SITE_URL = 'https://masoret-website.vercel.app'
+const DASHBOARD_ORDERS_API_SECRET = process.env.DASHBOARD_ORDERS_API_SECRET || ''
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses'
 const DEFAULT_ADVISOR_MODEL = 'gpt-5.1'
 const DEFAULT_SERVICE_MODEL = 'gpt-5-mini'
@@ -622,7 +623,10 @@ async function createSafeAiOrder({ messages, force = false }) {
 
   const response = await fetch(`${DASHBOARD_URL}/api/orders`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(DASHBOARD_ORDERS_API_SECRET ? { 'x-dashboard-orders-secret': DASHBOARD_ORDERS_API_SECRET } : {}),
+    },
     body: JSON.stringify({
       customer_name: orderName,
       customer_phone: phone,
