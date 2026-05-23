@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { LANGUAGES, translateText } from '../lib/i18n'
 
@@ -15,6 +15,7 @@ const LanguageContext = createContext({
 
 const originalTextNodes = new WeakMap()
 const originalAttributes = new WeakMap()
+const STORAGE_KEY = 'masoret_lang'
 
 function shouldSkipNode(node) {
   const parent = node.parentElement
@@ -25,6 +26,11 @@ function shouldSkipNode(node) {
 
 function applyClientTranslation(lang) {
   if (typeof document === 'undefined' || !document.body) return
+
+  document.querySelectorAll('[data-i18n-he][data-i18n-en]').forEach((node) => {
+    const nextText = lang === 'en' ? node.getAttribute('data-i18n-en') : node.getAttribute('data-i18n-he')
+    if (node.textContent !== nextText) node.textContent = nextText
+  })
 
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
@@ -40,7 +46,8 @@ function applyClientTranslation(lang) {
   nodes.forEach((node) => {
     if (!originalTextNodes.has(node)) originalTextNodes.set(node, node.nodeValue)
     const original = originalTextNodes.get(node)
-    node.nodeValue = lang === 'en' ? translateText(original, 'en') : original
+    const nextText = lang === 'en' ? translateText(original, 'en') : original
+    if (node.nodeValue !== nextText) node.nodeValue = nextText
   })
 
   document.querySelectorAll('[placeholder], [aria-label], [title]').forEach((node) => {
@@ -49,7 +56,8 @@ function applyClientTranslation(lang) {
     ;['placeholder', 'aria-label', 'title'].forEach((attr) => {
       if (!node.hasAttribute(attr)) return
       if (!attrs[attr]) attrs[attr] = node.getAttribute(attr)
-      node.setAttribute(attr, lang === 'en' ? translateText(attrs[attr], 'en') : attrs[attr])
+      const nextAttr = lang === 'en' ? translateText(attrs[attr], 'en') : attrs[attr]
+      if (node.getAttribute(attr) !== nextAttr) node.setAttribute(attr, nextAttr)
     })
   })
 }
@@ -60,17 +68,16 @@ function applyDocumentLanguage(lang) {
   document.documentElement.lang = config.code
   document.documentElement.dir = config.dir
   document.body.dataset.lang = config.code
+  document.cookie = `${STORAGE_KEY}=${config.code}; path=/; max-age=31536000; SameSite=Lax`
 }
 
 export function LanguageProvider({ children }) {
   const pathname = usePathname()
   const [lang, setLangState] = useState('he')
-  const manualSwitchRef = useRef(false)
 
   useEffect(() => {
-    const stored = window.localStorage.getItem('masoret_lang')
+    const stored = window.localStorage.getItem(STORAGE_KEY)
     if (stored === 'en') {
-      manualSwitchRef.current = true
       setLangState('en')
     } else {
       applyDocumentLanguage('he')
@@ -78,13 +85,14 @@ export function LanguageProvider({ children }) {
   }, [])
 
   useEffect(() => {
-    window.localStorage.setItem('masoret_lang', lang)
+    window.localStorage.setItem(STORAGE_KEY, lang)
     applyDocumentLanguage(lang)
-    if (!manualSwitchRef.current) return
 
-    const firstPass = window.setTimeout(() => applyClientTranslation(lang), 300)
+    const immediatePass = window.setTimeout(() => applyClientTranslation(lang), 0)
+    const firstPass = window.setTimeout(() => applyClientTranslation(lang), 250)
     const secondPass = window.setTimeout(() => applyClientTranslation(lang), 1200)
     return () => {
+      window.clearTimeout(immediatePass)
       window.clearTimeout(firstPass)
       window.clearTimeout(secondPass)
     }
@@ -92,7 +100,6 @@ export function LanguageProvider({ children }) {
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof MutationObserver === 'undefined') return
-    if (!manualSwitchRef.current || lang !== 'en') return
 
     let scheduled = false
     const observer = new MutationObserver(() => {
@@ -100,7 +107,7 @@ export function LanguageProvider({ children }) {
       scheduled = true
       window.requestAnimationFrame(() => {
         scheduled = false
-        applyClientTranslation('en')
+        applyClientTranslation(lang)
       })
     })
 
@@ -111,10 +118,9 @@ export function LanguageProvider({ children }) {
     })
 
     return () => observer.disconnect()
-  }, [lang])
+  }, [lang, pathname])
 
   function setLang(nextLang) {
-    manualSwitchRef.current = true
     setLangState(nextLang === 'en' ? 'en' : 'he')
   }
 
