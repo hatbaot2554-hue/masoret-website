@@ -22,10 +22,14 @@ function fileToAttachment(file) {
 function readableAttributeName(value) {
   const text = String(value || '').replace('attribute_', '')
   try {
-    return decodeURIComponent(text)
+    return decodeURIComponent(text).replace(/-/g, ' ')
   } catch {
-    return text
+    return text.replace(/-/g, ' ')
   }
+}
+
+function variationOptionKey(value) {
+  return String(value || '').trim().toLowerCase()
 }
 
 const ENGRAVING_PRICING_TEXT = `מחירון:
@@ -105,12 +109,15 @@ export default function OrderForm({
   function getAttributeOptions() {
     const options = {}
     Object.entries(product.attribute_options || {}).forEach(([key, values]) => {
-      options[key] = new Set(Array.isArray(values) ? values.filter(Boolean) : [])
+      options[key] = new Map()
+      ;(Array.isArray(values) ? values.filter(Boolean) : []).forEach(value => {
+        options[key].set(variationOptionKey(value), value)
+      })
     })
     ;(product.variations || []).forEach(v => {
       Object.entries(v.attributes || {}).forEach(([key, val]) => {
-        if (!options[key]) options[key] = new Set()
-        if (val) options[key].add(val)
+        if (!options[key]) options[key] = new Map()
+        if (val) options[key].set(variationOptionKey(val), val)
       })
     })
     return options
@@ -268,21 +275,18 @@ export default function OrderForm({
       {hasSelectableOptions && Object.entries(attributeOptions).map(([attrKey, values]) => (
         <div key={attrKey} style={{ marginBottom: '16px' }}>
           <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-            {product.attribute_labels?.[attrKey] || attrKey.replace('attribute_', '')}:
+            {product.attribute_labels?.[attrKey] || readableAttributeName(attrKey)}:
           </label>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {[...values].map(val => (
-              <button key={val} type="button" onClick={() => handleAttrChange(attrKey, val)}
-                style={{
-                  padding: '8px 16px', border: '1px solid', cursor: 'pointer', fontSize: '14px',
-                  borderColor: selectedAttrs[attrKey] === val ? '#8B6914' : '#EDE6D9',
-                  background: selectedAttrs[attrKey] === val ? '#8B6914' : '#fff',
-                  color: selectedAttrs[attrKey] === val ? '#fff' : '#2C2416',
-                }}>
-                {val}
-              </button>
+          <select
+            value={selectedAttrs[attrKey] || ''}
+            onChange={(event) => handleAttrChange(attrKey, event.target.value)}
+            style={{ ...inputStyle, cursor: 'pointer' }}
+          >
+            <option value="">בחר אפשרות</option>
+            {[...values.values()].map(val => (
+              <option key={val} value={val}>{val}</option>
             ))}
-          </div>
+          </select>
         </div>
       ))}
 
