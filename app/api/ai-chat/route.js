@@ -67,6 +67,20 @@ function cleanText(value) {
   return String(value || '').replace(/\s+/g, ' ').trim()
 }
 
+function sanitizeCustomerReply(value) {
+  return String(value || '')
+    .replace(/נשלח לאתר המקורי/g, 'ההזמנה בטיפול')
+    .replace(/נשלחה לאתר המקורי/g, 'ההזמנה בטיפול')
+    .replace(/אתר מקורי/g, 'החנות')
+    .replace(/האתר המקורי/g, 'החנות')
+    .replace(/שליחה בתהליך/g, 'הזמנה בתהליך')
+    .replace(/מאושר לשליחה/g, 'הזמנה בעיבוד')
+    .replace(/טיוטת AI/g, 'הזמנה')
+    .replace(/אוטומציה פנימית/g, 'מערכת הטיפול')
+    .replace(/הזמנה זמנית/g, 'הזמנה')
+    .trim()
+}
+
 function lastUserText(messages) {
   const last = [...(messages || [])].reverse().find((message) => message.role === 'user')
   return cleanText(last?.text || '')
@@ -651,7 +665,7 @@ async function createSafeAiOrder({ messages, force = false }) {
     return {
       handled: true,
       created: false,
-      reply: 'ניסיתי לפתוח הזמנה זמנית, אבל הייתה תקלה בשמירה. אפשר לנסות שוב בעוד רגע.',
+      reply: 'ניסיתי לפתוח הזמנה, אבל הייתה תקלה בשמירה. אפשר לנסות שוב בעוד רגע.',
     }
   }
 
@@ -840,9 +854,9 @@ ${order ? JSON.stringify(order, null, 2) : 'אין הזמנה מאומתת'}
   }
 
   const openAiReply = await callOpenAIModel({ mode, systemText, historyText, query })
-  if (openAiReply) return openAiReply
+  if (openAiReply) return sanitizeCustomerReply(openAiReply)
 
-  if (!apiKey) return fallbackReply(mode, query, products, order)
+  if (!apiKey) return sanitizeCustomerReply(fallbackReply(mode, query, products, order))
 
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -853,10 +867,12 @@ ${order ? JSON.stringify(order, null, 2) : 'אין הזמנה מאומתת'}
     }
   )
 
-  if (!res.ok) return fallbackReply(mode, query, products, order)
+  if (!res.ok) return sanitizeCustomerReply(fallbackReply(mode, query, products, order))
   const data = await res.json()
-  return data?.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('').trim() ||
+  return sanitizeCustomerReply(
+    data?.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('').trim() ||
     fallbackReply(mode, query, products, order)
+  )
 }
 
 export async function POST(request) {
@@ -882,7 +898,7 @@ export async function POST(request) {
 
     if (safeOrder?.handled) {
       return NextResponse.json({
-        reply: safeOrder.reply,
+        reply: sanitizeCustomerReply(safeOrder.reply),
         products: safeOrder.products || products,
         orderFound: Boolean(order),
         safeMode: true,
@@ -896,7 +912,7 @@ export async function POST(request) {
 
     if ((explicitOrderIntent || productOrderCandidate) && products[0]) {
       return NextResponse.json({
-        reply: safeOrderProductConfirmation(products[0], products[0].index),
+        reply: sanitizeCustomerReply(safeOrderProductConfirmation(products[0], products[0].index)),
         products: [products[0]],
         orderFound: Boolean(order),
         safeMode: true,
@@ -908,7 +924,7 @@ export async function POST(request) {
       })
     }
 
-    const reply = await callGemini({ mode, messages, products, order, query })
+    const reply = sanitizeCustomerReply(await callGemini({ mode, messages, products, order, query }))
 
     return NextResponse.json({
       reply,
