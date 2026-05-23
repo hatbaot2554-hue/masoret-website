@@ -26,6 +26,13 @@ export default function ProductCard({ product, index }) {
   const wished = isInWishlist(index)
   const displayName = translateProductName(product, lang)
   const productUrl = '/products/' + index
+  const requiresOptions = Boolean(
+    (Array.isArray(product.variations) && product.variations.length > 0) ||
+    (product.attribute_options &&
+      Object.values(product.attribute_options).some(values =>
+        Array.isArray(values) && values.filter(Boolean).length > 0
+      ))
+  )
 
   // תגית חכמה — נמכר ביותר אם index < 5, חדש אם index >= 5 && index < 10
   const smartBadge = index < 5 ? { label: t('🏆 נמכר ביותר', '🏆 Best seller'), bg: '#8B6914' }
@@ -35,6 +42,10 @@ export default function ProductCard({ product, index }) {
   function handleAdd(e) {
     e.preventDefault()
     e.stopPropagation()
+    if (requiresOptions) {
+      openProduct()
+      return
+    }
     addItem(product, quantity, {}, null, null)
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
@@ -142,7 +153,9 @@ export default function ProductCard({ product, index }) {
               <div style={{ display: 'flex', gap: '6px' }}>
                 <button onClick={handleAdd}
                   style={{ flex: 1, background: added ? '#27ae60' : '#C9A84C', color: added ? '#fff' : '#1A2332', padding: '9px 6px', border: 'none', fontSize: '12px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}>
-                  {added ? t('✓ נוסף!', '✓ Added!') : t('🛒 לסל', '🛒 Cart')}
+                  {requiresOptions
+                    ? t('בחר אפשרויות', 'Choose options')
+                    : added ? t('✓ נוסף!', '✓ Added!') : t('🛒 לסל', '🛒 Cart')}
                 </button>
                 <a href={productUrl} onClick={(e) => { e.stopPropagation(); rememberProductView() }}
                   style={{ flex: 1, background: '#1A2332', color: '#C9A84C', padding: '9px 6px', textDecoration: 'none', fontSize: '12px', fontWeight: '600', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
