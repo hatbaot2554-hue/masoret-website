@@ -116,6 +116,30 @@ function sortProducts(products, sort) {
   }
 }
 
+function normalizeText(value) {
+  return String(value || '').trim().toLowerCase()
+}
+
+function productCategoryNames(product) {
+  return [
+    product.category,
+    product.parent_category,
+    product.child_category,
+    ...(product.categories || []),
+  ].filter(Boolean).map(normalizeText)
+}
+
+function productMatchesAnyCategory(product, categoryNames) {
+  const productCats = productCategoryNames(product)
+  return productCats.some((productCat) =>
+    categoryNames.some((categoryName) =>
+      productCat === categoryName ||
+      productCat.includes(categoryName) ||
+      categoryName.includes(productCat)
+    )
+  )
+}
+
 export default async function ProductsPage({ searchParams }) {
   const requestedPage = Math.max(1, parseInt(searchParams?.page || '1') || 1)
   const category = searchParams?.category || ''
@@ -133,22 +157,10 @@ export default async function ProductsPage({ searchParams }) {
   if (category) {
     const parentItem = categoryTree.find(item => item.parent === category)
     if (parentItem && parentItem.children && parentItem.children.length > 0) {
-      const allChildren = parentItem.children
-      filtered = filtered.filter(p =>
-        allChildren.includes(p.category) ||
-        allChildren.includes(p.parent_category) ||
-        allChildren.includes(p.child_category) ||
-        (p.categories && p.categories.some(c => allChildren.includes(c))) ||
-        p.category === category ||
-        p.parent_category === category
-      )
+      const allCategories = [category, ...parentItem.children].map(normalizeText)
+      filtered = filtered.filter(p => productMatchesAnyCategory(p, allCategories))
     } else {
-      filtered = filtered.filter(p =>
-        p.category === category ||
-        p.parent_category === category ||
-        p.child_category === category ||
-        (p.categories && p.categories.includes(category))
-      )
+      filtered = filtered.filter(p => productMatchesAnyCategory(p, [normalizeText(category)]))
     }
   }
 
