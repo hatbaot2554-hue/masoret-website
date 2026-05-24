@@ -123,7 +123,7 @@ export default function ProductCard({ product, index }) {
           {wished ? '❤️' : '🤍'}
         </button>
 
-        <div style={{ aspectRatio: '3/4', overflow: 'hidden', background: 'var(--parchment)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '14px' }}>
+        <div style={{ aspectRatio: '3/4', overflow: 'hidden', background: 'var(--color-cream-150)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '14px' }}>
           {image
             ? <img src={image} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'contain' }} loading="lazy" />
             : <span style={{ fontSize: '48px' }}>📖</span>}
@@ -145,27 +145,27 @@ export default function ProductCard({ product, index }) {
             <div onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
                 <button onClick={e => handleQty(e, -1)}
-                  style={{ width: '28px', height: '28px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                  style={{ width: '30px', height: '30px', border: '1px solid var(--color-border-light)', borderRadius: '10px', background: 'var(--color-cream-150)', color: 'var(--color-navy-900)', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
                 <span style={{ fontWeight: '700', minWidth: '28px', textAlign: 'center', fontSize: '15px' }}>{quantity}</span>
                 <button onClick={e => handleQty(e, 1)}
-                  style={{ width: '28px', height: '28px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                  style={{ width: '30px', height: '30px', border: '1px solid var(--color-border-light)', borderRadius: '10px', background: 'var(--color-cream-150)', color: 'var(--color-navy-900)', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
               </div>
               <div style={{ display: 'flex', gap: '6px' }}>
                 <button onClick={handleAdd}
-                  style={{ flex: 1, background: added ? '#27ae60' : '#C9A84C', color: added ? '#fff' : '#1A2332', padding: '9px 6px', border: 'none', fontSize: '12px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}>
+                  style={{ flex: 1, background: added ? 'var(--color-success-600)' : 'var(--color-cta-600)', color: '#fff', minHeight: '44px', padding: '11px 8px', border: 'none', borderRadius: '12px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s' }}>
                   {requiresOptions
                     ? t('בחר אפשרויות', 'Choose options')
                     : added ? t('✓ נוסף!', '✓ Added!') : t('🛒 לסל', '🛒 Cart')}
                 </button>
                 <a href={productUrl} onClick={(e) => { e.stopPropagation(); rememberProductView() }}
-                  style={{ flex: 1, background: '#1A2332', color: '#C9A84C', padding: '9px 6px', textDecoration: 'none', fontSize: '12px', fontWeight: '600', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  style={{ flex: 1, background: 'transparent', color: 'var(--color-navy-900)', border: '1px solid var(--color-border-medium)', borderRadius: '12px', minHeight: '44px', padding: '10px 8px', textDecoration: 'none', fontSize: '13px', fontWeight: '700', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {t('פרטים', 'Details')}
                 </a>
               </div>
             </div>
           ) : (
             <a href={productUrl} onClick={(e) => { e.stopPropagation(); rememberProductView() }}
-              style={{ display: 'block', background: '#1A2332', color: '#C9A84C', padding: '10px', textAlign: 'center', fontSize: '13px', fontWeight: '600', textDecoration: 'none' }}>
+              style={{ display: 'block', background: 'transparent', color: 'var(--color-navy-900)', border: '1px solid var(--color-border-medium)', borderRadius: '12px', minHeight: '44px', padding: '11px', textAlign: 'center', fontSize: '13px', fontWeight: '700', textDecoration: 'none' }}>
               {t('לפרטים ←', 'Details ←')}
             </a>
           )}
