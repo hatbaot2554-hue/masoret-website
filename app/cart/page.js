@@ -8,6 +8,21 @@ function formatPrice(price) {
   return Math.ceil(p)
 }
 
+function readableAttributeName(value) {
+  const text = String(value || '').replace('attribute_', '')
+  try {
+    return decodeURIComponent(text).replace(/-/g, ' ')
+  } catch {
+    return text.replace(/-/g, ' ')
+  }
+}
+
+function visibleAttributeEntries(attrs) {
+  return Object.entries(attrs || {})
+    .filter(([key, value]) => value && !String(key).includes('טבע'))
+    .map(([key, value]) => `${readableAttributeName(key)}: ${value}`)
+}
+
 const UPSELL_ITEMS = [
   { name: 'סידור תפילה כיס', price: 29, emoji: '📖', desc: 'מתאים לנסיעות ויומיום' },
   { name: 'הגדה של פסח מהודרת', price: 49, emoji: '📜', desc: 'עם פירוש מורחב' },
@@ -89,8 +104,9 @@ export default function CartPage() {
           shippingPrice,
           altAddress: showAltAddress ? altForm : null,
           items: items.map(i => ({
-            sourceProductId: i.product_id || i.key,
+            sourceProductId: i.sourceProductId || i.source_product_id || i.product_id || i.key,
             sourceProductIndex: i.index,
+            variationId: i.variationId || i.variation_id || null,
             name: i.name,
             image: i.image || '',
             sku: i.sku || '',
@@ -187,14 +203,14 @@ export default function CartPage() {
             {items.map(item => (
               <div key={item.key} style={{ display: 'grid', gridTemplateColumns: '80px 1fr auto', gap: '16px', padding: '20px 0', borderBottom: '1px solid #EDE6D9', alignItems: 'center' }}>
                 <div style={{ background: '#EDE6D9', width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                  {item.image ? <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: '32px' }}>📖</span>}
+                  {item.image ? <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '6px' }} /> : <span style={{ fontSize: '32px' }}>📖</span>}
                 </div>
                 <div>
                   <a href={`/products/${item.index}`} style={{ textDecoration: 'none', color: '#2C2416', fontWeight: '600', fontSize: '15px' }}>{item.name}</a>
                   {item.sku && <div style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>מק"ט: {item.sku}</div>}
-                  {Object.keys(item.selectedAttrs || {}).filter(k => k !== 'הטבעה').length > 0 && (
+                  {visibleAttributeEntries(item.selectedAttrs).length > 0 && (
                     <div style={{ fontSize: '12px', color: '#6B5C3E', marginTop: '4px' }}>
-                      {Object.entries(item.selectedAttrs).filter(([k]) => k !== 'הטבעה').map(([k, v]) => v).join(' | ')}
+                      {visibleAttributeEntries(item.selectedAttrs).join(' | ')}
                     </div>
                   )}
                   {item.selectedAttrs?.הטבעה && (
