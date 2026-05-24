@@ -61,6 +61,37 @@ export const CURATED_CATEGORIES = [
   },
 ]
 
+export const PERSONAL_EMBOSSING_COLLECTION = {
+  name: 'ספרים עם הטבעה אישית',
+  parent: 'ספרים עם הטבעה אישית',
+  icon: '◇',
+  includeKeywords: [
+    'מזכרות לאירועים',
+    'חגים ומועדים',
+    'סידור',
+    'סידורים',
+    'מחזור',
+    'מחזורים',
+  ],
+  excludeKeywords: [
+    'תשעה באב',
+    'ט באב',
+    'ט׳ באב',
+    'בין המצרים',
+    'קינות',
+    'קינה',
+    'שניים מקרא',
+    'שנים מקרא',
+    'אחד תרגום',
+    'סידור לשליח ציבור',
+    'סידור לשליח צבור',
+    'שליח ציבור',
+    'שליח צבור',
+    'ש"ץ',
+    'שץ',
+  ],
+}
+
 export function normalizeCategoryText(value) {
   return String(value || '')
     .replace(/[\u0591-\u05C7]/g, '')
@@ -73,7 +104,7 @@ export function normalizeCategoryText(value) {
 
 export function isCuratedCategory(categoryName) {
   const normalized = normalizeCategoryText(categoryName)
-  return CURATED_CATEGORIES.some((category) => normalizeCategoryText(category.name) === normalized)
+  return [...CURATED_CATEGORIES, PERSONAL_EMBOSSING_COLLECTION].some((category) => normalizeCategoryText(category.name) === normalized)
 }
 
 function productSearchText(product) {
@@ -92,17 +123,51 @@ function productSearchText(product) {
   ].filter(Boolean).join(' '))
 }
 
+function productCatalogText(product) {
+  return normalizeCategoryText([
+    product?.name,
+    product?.sku,
+    product?.category,
+    product?.parent_category,
+    product?.child_category,
+    product?.publisher,
+    product?.brand,
+    ...(product?.categories || []),
+    ...(product?.tags || []),
+  ].filter(Boolean).join(' '))
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function includesKeyword(text, keyword) {
+  const normalizedKeyword = normalizeCategoryText(keyword)
+  if (!normalizedKeyword) return false
+  if (normalizedKeyword.includes(' ')) return text.includes(normalizedKeyword)
+
+  const pattern = new RegExp(`(^|[^\\u0590-\\u05FFa-z0-9])${escapeRegExp(normalizedKeyword)}(?=$|[^\\u0590-\\u05FFa-z0-9])`, 'i')
+  return pattern.test(text)
+}
+
 export function productMatchesCuratedCategory(product, categoryName) {
   const normalized = normalizeCategoryText(categoryName)
-  const category = CURATED_CATEGORIES.find((item) => normalizeCategoryText(item.name) === normalized)
+  const category = [...CURATED_CATEGORIES, PERSONAL_EMBOSSING_COLLECTION].find((item) => normalizeCategoryText(item.name) === normalized)
   if (!category) return false
 
+  if (category.name === PERSONAL_EMBOSSING_COLLECTION.name) {
+    const text = productCatalogText(product)
+    const excluded = category.excludeKeywords.some((keyword) => includesKeyword(text, keyword))
+    if (excluded) return false
+    return category.includeKeywords.some((keyword) => includesKeyword(text, keyword))
+  }
+
   const text = productSearchText(product)
-  const directMatch = category.keywords.some((keyword) => text.includes(normalizeCategoryText(keyword)))
+  const directMatch = category.keywords.some((keyword) => includesKeyword(text, keyword))
   if (directMatch) return true
 
   const hasAnyCuratedMatch = CURATED_CATEGORIES.some((item) =>
-    item.keywords.some((keyword) => text.includes(normalizeCategoryText(keyword)))
+    item.keywords.some((keyword) => includesKeyword(text, keyword))
   )
 
   return !hasAnyCuratedMatch && category.name === 'מתנות והקדשות'

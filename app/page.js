@@ -68,7 +68,7 @@ export default async function HomePage() {
 
             <div className="home-hero-actions">
               <a className="home-button home-button-primary" href="/products">לקניית ספרים</a>
-              <a className="home-button home-button-secondary" href="/products?search=הטבעה">ספרים עם הטבעה אישית</a>
+              <a className="home-button home-button-secondary" href="/products?category=ספרים%20עם%20הטבעה%20אישית">ספרים עם הטבעה אישית</a>
             </div>
           </div>
 

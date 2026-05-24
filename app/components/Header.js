@@ -4,7 +4,6 @@ import { useCart } from './CartContext'
 import { useRouter } from 'next/navigation'
 import { LanguageToggle, useLanguage } from './LanguageRuntime'
 import { translateCategoryName, translateProductName, translateText } from '../lib/i18n'
-import { CURATED_CATEGORIES } from '../lib/curatedCategories'
 
 export default function Header() {
   const { totalItems } = useCart()
@@ -13,7 +12,7 @@ export default function Header() {
   const [suggestions, setSuggestions] = useState([])
   const [allProducts, setAllProducts] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const [categoryTree, setCategoryTree] = useState(CURATED_CATEGORIES)
+  const [categoryTree, setCategoryTree] = useState([])
   const [activeParent, setActiveParent] = useState(null)
   const [isMobile, setIsMobile] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -37,11 +36,9 @@ export default function Header() {
       .then(r => r.json())
       .then(data => {
         const existing = Array.isArray(data) ? data : []
-        const existingNames = new Set(existing.map(item => item.parent))
-        const added = CURATED_CATEGORIES.filter(item => !existingNames.has(item.parent))
-        setCategoryTree([...existing, ...added])
+        setCategoryTree(existing)
       })
-      .catch(() => setCategoryTree(CURATED_CATEGORIES))
+      .catch(() => setCategoryTree([]))
 
     function checkSize() { setIsMobile(window.innerWidth < 900) }
     checkSize()
