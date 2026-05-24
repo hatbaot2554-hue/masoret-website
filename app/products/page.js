@@ -117,7 +117,11 @@ function sortProducts(products, sort) {
 }
 
 function normalizeText(value) {
-  return String(value || '').trim().toLowerCase()
+  return String(value || '')
+    .replace(/[\u0591-\u05C7]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
 }
 
 function productCategoryNames(product) {
@@ -132,11 +136,7 @@ function productCategoryNames(product) {
 function productMatchesAnyCategory(product, categoryNames) {
   const productCats = productCategoryNames(product)
   return productCats.some((productCat) =>
-    categoryNames.some((categoryName) =>
-      productCat === categoryName ||
-      productCat.includes(categoryName) ||
-      categoryName.includes(productCat)
-    )
+    categoryNames.some((categoryName) => productCat === categoryName)
   )
 }
 
