@@ -1,22 +1,40 @@
 @import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500&display=swap');
 
 :root {
-  --gold: #C9A84C;
-  --gold-light: #E8C97A;
-  --gold-dark: #8B6914;
-  --gold-deep: #C4933F;
-  --navy: #1A2332;
-  --navy-light: #243040;
-  --navy-ink: #1D2B4F;
-  --cream: #F8F4EE;
-  --cream-warm: #FDFAF4;
-  --parchment: #F7F0E4;
-  --cream-dark: #EDE6D9;
-  --line-warm: #DDD5C4;
+  --color-navy-950: #071426;
+  --color-navy-900: #0B1E3A;
+  --color-navy-800: #12325C;
+  --color-navy-700: #1A477D;
+  --color-gold-700: #9A7418;
+  --color-gold-600: #B8860B;
+  --color-gold-500: #C9A646;
+  --color-gold-400: #D8BE6A;
+  --color-gold-200: #EFE2B0;
+  --color-cream-100: #FFFDF8;
+  --color-cream-150: #FBF7EF;
+  --color-cream-200: #F8F4EA;
+  --color-cream-300: #EFE7D8;
+  --color-paper: #FFFDF8;
+  --color-border-light: #E7DECF;
+  --color-border-medium: #D8CBB8;
+  --gold: var(--color-gold-500);
+  --gold-light: var(--color-gold-400);
+  --gold-dark: var(--color-gold-700);
+  --gold-deep: var(--color-gold-600);
+  --navy: var(--color-navy-900);
+  --navy-light: var(--color-navy-800);
+  --navy-ink: var(--color-navy-950);
+  --cream: var(--color-cream-200);
+  --cream-warm: var(--color-cream-100);
+  --parchment: var(--color-cream-150);
+  --cream-dark: var(--color-cream-300);
+  --line-warm: var(--color-border-medium);
   --burgundy: #6B2D3E;
-  --text: #2C2416;
-  --text-muted: #6B5C3E;
+  --text: #1C1A17;
+  --text-muted: #5A5248;
   --white: #FFFFFF;
+  --shadow-card: 0 4px 14px rgba(7, 20, 38, 0.08);
+  --shadow-card-hover: 0 8px 24px rgba(7, 20, 38, 0.13);
 }
 
 * {
@@ -37,6 +55,47 @@ body {
     linear-gradient(180deg, var(--cream-warm) 0%, var(--cream) 52%, #F3ECE0 100%);
   color: var(--text);
   line-height: 1.7;
+}
+
+.brand-logo-img {
+  display: block;
+  height: auto;
+  width: clamp(180px, 22vw, 300px);
+}
+
+.brand-logo-img-mobile {
+  display: block;
+  height: auto;
+  width: clamp(150px, 42vw, 220px);
+}
+
+.brand-logo-img + div,
+.brand-logo-img-mobile + span {
+  display: none !important;
+}
+
+.category-scrollbar {
+  scrollbar-color: var(--gold) rgba(255, 255, 255, 0.14);
+  scrollbar-width: thin;
+}
+
+.category-scrollbar::-webkit-scrollbar {
+  height: 9px;
+}
+
+.category-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}
+
+.category-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, var(--gold-dark), var(--gold-light), var(--gold-dark));
+  border: 2px solid rgba(11, 30, 58, 0.92);
+  border-radius: 999px;
+}
+
+.category-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, var(--gold), #f5d676, var(--gold));
 }
 
 body[data-lang="en"] {

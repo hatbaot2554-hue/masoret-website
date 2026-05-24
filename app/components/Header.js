@@ -130,6 +130,7 @@ export default function Header() {
             {menuOpen ? '✕' : '☰'}
           </button>
           <a href="/" style={{ textDecoration: 'none', textAlign: 'center' }}>
+            <img className="brand-logo-img-mobile" src="/brand/masoret-logo.svg" alt={t('המרכז למסורת יהודית', 'Jewish Heritage Center')} />
             <span style={{ fontFamily: 'serif', fontSize: '17px', fontWeight: '900', color: 'var(--gold)' }}>המרכז למסורת יהודית</span>
           </a>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -202,6 +203,7 @@ export default function Header() {
 
       <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', gap: '20px' }}>
         <a href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
+          <img className="brand-logo-img" src="/brand/masoret-logo.svg" alt={t('המרכז למסורת יהודית', 'Jewish Heritage Center')} />
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
             <span style={{ fontFamily: 'serif', fontSize: '24px', fontWeight: '900', color: 'var(--gold)', lineHeight: 1.1 }}>{t('המרכז למסורת יהודית', 'Jewish Heritage Center')}</span>
             <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>{t('ספרי קודש ויהדות • מאז תמיד', 'Jewish books and Judaica • Since always')}</span>
@@ -288,7 +290,8 @@ export default function Header() {
             ‹
           </button>
           <div ref={catBarRef}
-            style={{ margin: '0 36px', display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', scrollBehavior: 'smooth' }}>
+            className="category-scrollbar"
+            style={{ margin: '0 36px', display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', overflowY: 'hidden', scrollBehavior: 'smooth', paddingBottom: '7px' }}>
             {categoryTree.map(function(item) {
               var isActive = activeParent === item.parent
               var hasChildren = item.children && item.children.length > 0
