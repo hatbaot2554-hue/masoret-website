@@ -1,4 +1,5 @@
 import ProductsBrowserClient from '../components/ProductsBrowserClient'
+import { isCuratedCategory, productMatchesCuratedCategory } from '../lib/curatedCategories'
 
 async function getAllProducts() {
   try {
@@ -155,12 +156,16 @@ export default async function ProductsPage({ searchParams }) {
   let filtered = allWithIndex
 
   if (category) {
-    const parentItem = categoryTree.find(item => item.parent === category)
-    if (parentItem && parentItem.children && parentItem.children.length > 0) {
+    if (isCuratedCategory(category)) {
+      filtered = filtered.filter(p => productMatchesCuratedCategory(p, category))
+    } else {
+      const parentItem = categoryTree.find(item => item.parent === category)
+      if (parentItem && parentItem.children && parentItem.children.length > 0) {
       const allCategories = [category, ...parentItem.children].map(normalizeText)
       filtered = filtered.filter(p => productMatchesAnyCategory(p, allCategories))
-    } else {
-      filtered = filtered.filter(p => productMatchesAnyCategory(p, [normalizeText(category)]))
+      } else {
+        filtered = filtered.filter(p => productMatchesAnyCategory(p, [normalizeText(category)]))
+      }
     }
   }
 

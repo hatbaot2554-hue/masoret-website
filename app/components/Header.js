@@ -4,6 +4,7 @@ import { useCart } from './CartContext'
 import { useRouter } from 'next/navigation'
 import { LanguageToggle, useLanguage } from './LanguageRuntime'
 import { translateCategoryName, translateProductName, translateText } from '../lib/i18n'
+import { CURATED_CATEGORIES } from '../lib/curatedCategories'
 
 export default function Header() {
   const { totalItems } = useCart()
@@ -12,7 +13,7 @@ export default function Header() {
   const [suggestions, setSuggestions] = useState([])
   const [allProducts, setAllProducts] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const [categoryTree, setCategoryTree] = useState([])
+  const categoryTree = CURATED_CATEGORIES
   const [activeParent, setActiveParent] = useState(null)
   const [isMobile, setIsMobile] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -30,11 +31,6 @@ export default function Header() {
     fetch('https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/products.json', { cache: 'no-store' })
       .then(r => r.json())
       .then(data => setAllProducts(data.map((p, i) => ({ ...p, index: i }))))
-      .catch(() => {})
-
-    fetch('https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/categories.json', { cache: 'no-store' })
-      .then(r => r.json())
-      .then(data => setCategoryTree(data))
       .catch(() => {})
 
     function checkSize() { setIsMobile(window.innerWidth < 900) }

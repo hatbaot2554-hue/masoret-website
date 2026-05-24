@@ -1503,8 +1503,7 @@ body[data-lang="en"] .product-layout > div {
 }
 
 .home-trust-card span,
-.home-why-card span,
-.home-category-mark {
+.home-why-card span {
   background: var(--color-gold-500);
   border-radius: 999px;
   display: block;
@@ -1580,13 +1579,18 @@ body[data-lang="en"] .product-layout > div {
 .home-category-grid {
   display: grid;
   gap: 16px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .home-category-card {
+  align-items: center;
   color: var(--color-text-950);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  justify-content: center;
   min-height: 128px;
-  padding: 22px;
+  padding: 24px 18px;
   position: relative;
   text-decoration: none;
   transition: all 180ms ease;
@@ -1613,13 +1617,18 @@ body[data-lang="en"] .product-layout > div {
   display: block;
   font-size: 18px;
   line-height: 1.35;
+  text-align: center;
 }
 
-.home-category-card small {
-  color: var(--color-text-500);
-  display: block;
-  font-size: 13px;
-  margin-top: 8px;
+.home-category-icon {
+  align-items: center;
+  color: var(--color-cta-600);
+  display: flex;
+  font-size: 32px;
+  font-weight: 400;
+  height: 38px;
+  justify-content: center;
+  line-height: 1;
 }
 
 .home-empty-products {
@@ -1668,17 +1677,120 @@ body[data-lang="en"] .product-layout > div {
 }
 
 .home-reviews-section {
-  background: var(--color-navy-950);
+  background: var(--color-cream-100);
+  border-top: 5px solid var(--color-navy-950);
   overflow: hidden;
   padding: 70px 0;
 }
 
 .home-reviews-heading h2 {
-  color: var(--color-cream-100);
+  color: var(--color-navy-900);
 }
 
 .home-reviews-heading span {
-  color: rgba(255, 253, 248, 0.66);
+  color: var(--color-text-500);
+}
+
+.reviews-grid-wrap {
+  margin: 0 auto;
+  max-width: 1320px;
+  padding: 0 32px;
+}
+
+.reviews-grid {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.review-card-static {
+  background: var(--color-paper);
+  border: 1px solid var(--color-border-medium);
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(7, 20, 38, 0.04);
+  display: flex;
+  flex-direction: column;
+  min-height: 228px;
+  padding: 28px;
+}
+
+.review-stars {
+  color: var(--color-gold-600);
+  font-size: 15px;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+
+.review-text {
+  color: var(--color-text-800);
+  flex: 1;
+  font-size: 16px;
+  line-height: 1.85;
+}
+
+.review-divider {
+  background: var(--color-border-light);
+  height: 1px;
+  margin: 18px 0;
+}
+
+.review-person {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.review-initial {
+  align-items: center;
+  background: var(--color-navy-950);
+  border-radius: 999px;
+  color: var(--color-gold-400);
+  display: flex;
+  flex-shrink: 0;
+  font-weight: 900;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.review-person strong,
+.review-person small {
+  display: block;
+}
+
+.review-person strong {
+  color: var(--color-navy-950);
+  font-size: 16px;
+}
+
+.review-person small {
+  color: var(--color-text-500);
+  font-size: 13px;
+}
+
+.review-person em {
+  background: var(--color-cream-150);
+  border-radius: 8px;
+  color: var(--color-cta-700);
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 800;
+  margin-inline-start: auto;
+  padding: 6px 10px;
+}
+
+.reviews-more-link {
+  align-items: center;
+  border: 1.5px solid var(--color-navy-900);
+  border-radius: 12px;
+  color: var(--color-navy-900);
+  display: flex;
+  font-weight: 900;
+  justify-content: center;
+  margin: 48px auto 0;
+  min-height: 46px;
+  text-decoration: none;
+  width: 182px;
 }
 
 .home-bottom-cta {
@@ -1715,8 +1827,12 @@ body[data-lang="en"] .product-layout > div {
     grid-template-columns: 1fr;
   }
 
-  .home-category-grid,
   .home-why-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-category-grid,
+  .reviews-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -1736,6 +1852,7 @@ body[data-lang="en"] .product-layout > div {
 
   .home-trust-panel,
   .home-category-grid,
+  .reviews-grid,
   .home-why-grid {
     grid-template-columns: 1fr;
   }

@@ -1,5 +1,6 @@
 import ReviewsCarousel from './components/ReviewsCarousel'
 import RotatingProductShowcase from './components/RotatingProductShowcase'
+import { CURATED_CATEGORIES } from './lib/curatedCategories'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,20 +14,6 @@ async function getProducts() {
     const all = await res.json()
     const withIndex = all.map((p, i) => ({ ...p, index: i }))
     return withIndex.filter(p => p.in_stock !== false).slice(0, 24)
-  } catch {
-    return []
-  }
-}
-
-async function getCategories() {
-  try {
-    const res = await fetch(
-      'https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/categories.json',
-      { cache: 'no-store' }
-    )
-    if (!res.ok) return []
-    const categories = await res.json()
-    return Array.isArray(categories) ? categories.filter(Boolean) : []
   } catch {
     return []
   }
@@ -49,8 +36,8 @@ const whyItems = [
 ]
 
 export default async function HomePage() {
-  const [products, categories] = await Promise.all([getProducts(), getCategories()])
-  const categoryCards = categories.slice(0, 12)
+  const products = await getProducts()
+  const categoryCards = CURATED_CATEGORIES
 
   return (
     <>
@@ -120,11 +107,8 @@ export default async function HomePage() {
                   className="home-category-card"
                   href={`/products?category=${encodeURIComponent(category.name)}`}
                 >
-                  <span className="home-category-mark" aria-hidden="true" />
+                  <span className="home-category-icon" aria-hidden="true">{category.icon}</span>
                   <strong>{category.name}</strong>
-                  {Array.isArray(category.children) && category.children.length > 0 && (
-                    <small>{category.children.length} תתי קטגוריות</small>
-                  )}
                 </a>
               ))}
             </div>
@@ -179,7 +163,7 @@ export default async function HomePage() {
           <h2>מה אומרים עלינו</h2>
           <span>תצוגה קצרה ונקייה של חוויות לקוחות.</span>
         </div>
-        <ReviewsCarousel darkBg={true} />
+        <ReviewsCarousel />
       </section>
 
       <section className="home-bottom-cta">
