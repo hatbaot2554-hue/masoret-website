@@ -123,9 +123,9 @@ export default function ProductCard({ product, index }) {
           {wished ? '❤️' : '🤍'}
         </button>
 
-        <div style={{ aspectRatio: '3/4', overflow: 'hidden', background: 'var(--parchment)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ aspectRatio: '3/4', overflow: 'hidden', background: 'var(--parchment)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '14px' }}>
           {image
-            ? <img src={image} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+            ? <img src={image} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'contain' }} loading="lazy" />
             : <span style={{ fontSize: '48px' }}>📖</span>}
         </div>
 

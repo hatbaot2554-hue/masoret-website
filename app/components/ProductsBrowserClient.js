@@ -122,8 +122,9 @@ export default function ProductsBrowserClient({
     () => products.filter((product) => matchesProduct(product, liveSearch)),
     [products, liveSearch]
   )
-  const activeProducts = liveSearch.trim() ? liveProducts : initialProducts
   const showingLive = liveSearch.trim().length > 0
+  const visibleLiveProducts = liveProducts.slice(0, 50)
+  const activeProducts = showingLive ? visibleLiveProducts : initialProducts
 
   return (
     <div>
