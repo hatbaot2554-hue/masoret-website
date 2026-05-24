@@ -13,7 +13,7 @@ export default function Header() {
   const [suggestions, setSuggestions] = useState([])
   const [allProducts, setAllProducts] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const categoryTree = CURATED_CATEGORIES
+  const [categoryTree, setCategoryTree] = useState(CURATED_CATEGORIES)
   const [activeParent, setActiveParent] = useState(null)
   const [isMobile, setIsMobile] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -32,6 +32,16 @@ export default function Header() {
       .then(r => r.json())
       .then(data => setAllProducts(data.map((p, i) => ({ ...p, index: i }))))
       .catch(() => {})
+
+    fetch('https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/categories.json', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(data => {
+        const existing = Array.isArray(data) ? data : []
+        const existingNames = new Set(existing.map(item => item.parent))
+        const added = CURATED_CATEGORIES.filter(item => !existingNames.has(item.parent))
+        setCategoryTree([...existing, ...added])
+      })
+      .catch(() => setCategoryTree(CURATED_CATEGORIES))
 
     function checkSize() { setIsMobile(window.innerWidth < 900) }
     checkSize()
