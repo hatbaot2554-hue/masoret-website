@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useCart } from '../components/CartContext'
+import { loadCustomerDetails, saveCustomerDetails } from '../lib/customerDetails'
 
 function formatPrice(price) {
   const p = parseFloat(price || 0)
@@ -32,6 +33,7 @@ const UPSELL_ITEMS = [
 export default function CartPage() {
   const { items, removeItem, updateQty, clearCart, totalPrice } = useCart()
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', address: '', city: '', note: '' })
+  const [customerDetailsLoaded, setCustomerDetailsLoaded] = useState(false)
   const [altForm, setAltForm] = useState({ firstName: '', lastName: '', address: '', city: '', phone: '' })
   const [showAltAddress, setShowAltAddress] = useState(false)
   const [shipping, setShipping] = useState('home')
@@ -52,6 +54,15 @@ export default function CartPage() {
   const selectedShipping = SHIPPING_OPTIONS.find(s => s.id === shipping)
   const shippingPrice = selectedShipping?.price || 0
   const grandTotal = Math.ceil(totalPrice) + shippingPrice
+
+  useEffect(() => {
+    setForm(prev => ({ ...prev, ...loadCustomerDetails() }))
+    setCustomerDetailsLoaded(true)
+  }, [])
+
+  useEffect(() => {
+    if (customerDetailsLoaded) saveCustomerDetails(form)
+  }, [form, customerDetailsLoaded])
 
   useEffect(() => {
     if (!items.length) return
@@ -122,6 +133,7 @@ export default function CartPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'שגיאה')
+      saveCustomerDetails(form)
       setOrderId(data.ourOrderId)
       clearCart()
       setStatus('success')

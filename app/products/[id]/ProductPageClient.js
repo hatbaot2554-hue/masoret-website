@@ -4,6 +4,7 @@ import { useCart } from '../../components/CartContext'
 import { useWishlist } from '../../components/WishlistContext'
 import { useLanguage } from '../../components/LanguageRuntime'
 import { translateCategoryName, translateProductField, translateProductName, translateText } from '../../lib/i18n'
+import { loadCustomerDetails, saveCustomerDetails } from '../../lib/customerDetails'
 import ReviewsCarousel from '../../components/ReviewsCarousel'
 import RecentlyViewed from '../../components/RecentlyViewed'
 import SeasonalAddons from '../../components/SeasonalAddons'
@@ -238,6 +239,7 @@ export default function ProductPageClient({ product }) {
   const [orderError, setOrderError] = useState('')
   const [orderId, setOrderId] = useState(null)
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', address: '', city: '', note: '' })
+  const [customerDetailsLoaded, setCustomerDetailsLoaded] = useState(false)
   const [showQuickBuy, setShowQuickBuy] = useState(false)
   const [waitlistEmail, setWaitlistEmail] = useState('')
   const [waitlistStatus, setWaitlistStatus] = useState(null)
@@ -276,6 +278,15 @@ export default function ProductPageClient({ product }) {
     const image = selectedVariationImage(selectedVariation)
     if (image) setActiveImg(image)
   }, [selectedVariation])
+
+  useEffect(() => {
+    setForm(prev => ({ ...prev, ...loadCustomerDetails() }))
+    setCustomerDetailsLoaded(true)
+  }, [])
+
+  useEffect(() => {
+    if (customerDetailsLoaded) saveCustomerDetails(form)
+  }, [form, customerDetailsLoaded])
 
   const engravingExtra = (() => {
     if (engravingType === 'single') return engravingQty * 15
@@ -427,6 +438,7 @@ export default function ProductPageClient({ product }) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'שגיאה')
+      saveCustomerDetails(form)
       setOrderId(data.ourOrderId)
       setOrderStatus('success')
     } catch (err) {

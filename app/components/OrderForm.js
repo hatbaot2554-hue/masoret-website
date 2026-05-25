@@ -1,5 +1,6 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { loadCustomerDetails, saveCustomerDetails } from '../lib/customerDetails'
 
 function formatPrice(price) {
   const p = parseFloat(price || 0)
@@ -56,6 +57,7 @@ export default function OrderForm({
   const [selectedVariation, setSelectedVariation] = useState(preSelectedVariation)
   const [selectedAttrs, setSelectedAttrs] = useState(preSelectedAttrs)
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', address: '', city: '', note: '' })
+  const [customerDetailsLoaded, setCustomerDetailsLoaded] = useState(false)
   const [quantity, setQuantity] = useState(preQuantity)
   const [status, setStatus] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
@@ -93,6 +95,15 @@ export default function OrderForm({
     return 0
   })()
   const totalPrice = bookTotal + engravingExtra
+
+  useEffect(() => {
+    setForm(prev => ({ ...prev, ...loadCustomerDetails() }))
+    setCustomerDetailsLoaded(true)
+  }, [])
+
+  useEffect(() => {
+    if (customerDetailsLoaded) saveCustomerDetails(form)
+  }, [form, customerDetailsLoaded])
 
   function buildBreakdown() {
     const parts = []
@@ -215,6 +226,7 @@ export default function OrderForm({
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'שגיאה')
+      saveCustomerDetails(form)
       setOrderIds({ ours: data.ourOrderId })
       setStatus('success')
     } catch (err) {
