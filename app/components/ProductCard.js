@@ -118,7 +118,7 @@ export default function ProductCard({ product, index }) {
           </div>
         )}
 
-        <button onClick={handleWishlist}
+        <button type="button" onClick={handleWishlist} onPointerDown={(e) => e.stopPropagation()} aria-label={wished ? t('הסר מהמועדפים', 'Remove from wishlist') : t('הוסף למועדפים', 'Add to wishlist')} aria-pressed={wished}
           style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2, fontSize: '16px', boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }}>
           {wished ? '❤️' : '🤍'}
         </button>

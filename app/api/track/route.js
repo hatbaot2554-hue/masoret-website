@@ -5,15 +5,18 @@ const DASHBOARD_URL = 'https://masoret-dashboard.vercel.app'
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const orderNumber = searchParams.get('order')?.trim()
-  const email = searchParams.get('email')?.trim().toLowerCase()
+  const contact = searchParams.get('contact')?.trim() || searchParams.get('email')?.trim()
 
-  if (!orderNumber || !email) {
+  if (!orderNumber || !contact) {
     return NextResponse.json({ error: 'חסרים פרטים' }, { status: 400 })
   }
 
   try {
+    const isEmail = contact.includes('@')
     const response = await fetch(
-      `${DASHBOARD_URL}/api/orders?order=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(email)}`,
+      isEmail
+        ? `${DASHBOARD_URL}/api/orders?order=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(contact.toLowerCase())}`
+        : `${DASHBOARD_URL}/api/orders?account=${encodeURIComponent(contact)}`,
       { cache: 'no-store' }
     )
 
@@ -26,6 +29,11 @@ export async function GET(request) {
     }
 
     const data = await response.json()
+    if (!isEmail) {
+      const order = (data.orders || []).find((item) => String(item.our_order_id || '').replace(/\D/g, '') === String(orderNumber).replace(/\D/g, ''))
+      if (!order) return NextResponse.json({ error: 'הזמנה לא נמצאה' }, { status: 404 })
+      return NextResponse.json({ order })
+    }
     return NextResponse.json(data)
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 })

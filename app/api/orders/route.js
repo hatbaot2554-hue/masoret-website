@@ -78,7 +78,8 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const account = searchParams.get('account')?.trim();
     const orderNumber = searchParams.get('order')?.trim();
-    const email = searchParams.get('email')?.toLowerCase();
+    const email = searchParams.get('email')?.trim().toLowerCase();
+    const contact = searchParams.get('contact')?.trim();
 
     if (account) {
       const response = await fetch(
@@ -89,12 +90,29 @@ export async function GET(request) {
       return NextResponse.json(data, { status: response.status });
     }
 
-    if (!orderNumber || !email) {
+    const lookupValue = contact || email
+    if (!orderNumber || !lookupValue) {
       return NextResponse.json({ error: 'חסרים פרטים' }, { status: 400 });
     }
 
+    const isEmail = lookupValue.includes('@')
+
+    if (!isEmail) {
+      const response = await fetch(
+        `${DASHBOARD_URL}/api/orders?account=${encodeURIComponent(lookupValue)}`,
+        { cache: 'no-store' }
+      )
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        return NextResponse.json({ error: data.error || 'הזמנה לא נמצאה' }, { status: response.status })
+      }
+      const order = (data.orders || []).find((item) => String(item.our_order_id || '').replace(/\D/g, '') === String(orderNumber).replace(/\D/g, ''))
+      if (!order) return NextResponse.json({ error: 'הזמנה לא נמצאה' }, { status: 404 })
+      return NextResponse.json({ order })
+    }
+
     const response = await fetch(
-      `${DASHBOARD_URL}/api/orders?order=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(email)}`,
+      `${DASHBOARD_URL}/api/orders?order=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(lookupValue)}`,
       { cache: 'no-store' }
     );
 

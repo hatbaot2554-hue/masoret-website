@@ -183,7 +183,7 @@ const ENGRAVING_PRICING_TEXT = `• הקדשה על ספרים בודדים - 15
 - במידה ובחרתם בהטבעת גלופה, ואתם רוכשים כמה סוגי מוצרים, נא להוסיף בהערת הרכישה על אלו מוצרים תרצו להטביע.`
 
 const FAQ_ITEMS = [
-  { q: 'כמה זמן לוקח המשלוח?', a: 'המשלוח מגיע תוך 2-8 ימי עסקים. במקרים חריגים ייתכן עיכוב קצר.' },
+  { q: 'כמה זמן לוקח המשלוח?', a: 'המשלוח מגיע בדרך כלל עד 10 ימי עסקים. במקרים חריגים ייתכן עיכוב קצר.' },
   { q: 'מה מדיניות הביטול?', a: 'ניתן לבטל הזמנה בהודעה בכתב לדוא"ל hatbaot2554@gmail.com. דמי ביטול: 5% מסכום העסקה או 100 ש"ח (לפי הנמוך).' },
   { q: 'האם ניתן להזמין הטבעה אישית?', a: 'כן! ניתן להוסיף הטבעת הקדשה — על ספרים בודדים (עד 13) או גלופה לכמות גדולה. פרטים ומחירון מופיעים בדף המוצר.' },
   { q: 'האם יש אפשרות לאיסוף עצמי?', a: 'כן, ניתן לאסוף מהחנות שלנו: מנחם בגין 52, בני ברק. ללא עלות משלוח.' },
@@ -555,7 +555,7 @@ export default function ProductPageClient({ product }) {
             )}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '8px' }}>
               <h1 style={{ fontFamily: 'serif', fontSize: '32px', fontWeight: '900', lineHeight: 1.3, flex: 1 }}>{displayName}</h1>
-              <button onClick={() => toggleItem({ ...product })}
+              <button type="button" onClick={() => toggleItem({ ...product })} aria-label={wished ? 'הסר מהמועדפים' : 'הוסף למועדפים'} aria-pressed={wished}
                 style={{ background: 'none', border: '2px solid #EDE6D9', borderRadius: '50%', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '20px', flexShrink: 0, marginTop: '4px' }}>
                 {wished ? '❤️' : '🤍'}
               </button>

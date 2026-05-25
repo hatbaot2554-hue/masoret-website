@@ -7,23 +7,24 @@ import { Suspense } from 'react'
 function TrackContent() {
   const searchParams = useSearchParams()
   const [orderNumber, setOrderNumber] = useState(searchParams.get('order') || '')
-  const [email, setEmail] = useState(searchParams.get('email') || '')
+  const [contact, setContact] = useState(searchParams.get('contact') || searchParams.get('email') || '')
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [searched, setSearched] = useState(false)
 
   useEffect(() => {
-    if (searchParams.get('order') && searchParams.get('email')) {
-      handleSearch(null, searchParams.get('order'), searchParams.get('email'))
+    const initialContact = searchParams.get('contact') || searchParams.get('email')
+    if (searchParams.get('order') && initialContact) {
+      handleSearch(null, searchParams.get('order'), initialContact)
     }
   }, [])
 
-  async function handleSearch(e, preOrder, preEmail) {
+  async function handleSearch(e, preOrder, preContact) {
     if (e) e.preventDefault()
     const orderNum = preOrder || orderNumber
-    const emailVal = preEmail || email
-    if (!orderNum || !emailVal) return
+    const contactVal = preContact || contact
+    if (!orderNum || !contactVal) return
 
     setLoading(true)
     setError('')
@@ -31,7 +32,7 @@ function TrackContent() {
     setSearched(true)
 
     try {
-      const res = await fetch(`/api/orders?order=${orderNum}&email=${encodeURIComponent(emailVal)}`)
+      const res = await fetch(`/api/orders?order=${encodeURIComponent(orderNum)}&contact=${encodeURIComponent(contactVal)}`)
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'הזמנה לא נמצאה')
       setOrder(data.order)
@@ -46,7 +47,7 @@ function TrackContent() {
     <div style={{ padding: '56px 0', minHeight: '60vh' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto', padding: '0 24px' }}>
         <h1 style={{ fontFamily: 'serif', fontSize: '36px', fontWeight: '900', marginBottom: '8px' }}>מעקב הזמנה</h1>
-        <p style={{ color: '#6B5C3E', marginBottom: '40px' }}>הזן את מספר ההזמנה וכתובת המייל לאיתור ההזמנה</p>
+        <p style={{ color: '#6B5C3E', marginBottom: '40px' }}>הזן את מספר ההזמנה ומייל או טלפון לאיתור ההזמנה</p>
 
         <form onSubmit={handleSearch} style={{ marginBottom: '40px' }}>
           <div style={{ marginBottom: '16px' }}>
@@ -56,9 +57,9 @@ function TrackContent() {
               style={{ width: '100%', padding: '12px 14px', border: '1px solid #EDE6D9', fontSize: '16px', fontFamily: 'Heebo, sans-serif', outline: 'none' }} />
           </div>
           <div style={{ marginBottom: '20px' }}>
-            <label style={{ fontSize: '13px', color: '#6B5C3E', display: 'block', marginBottom: '6px' }}>כתובת מייל</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-              placeholder="israel@example.com" required
+            <label style={{ fontSize: '13px', color: '#6B5C3E', display: 'block', marginBottom: '6px' }}>מייל או טלפון</label>
+            <input type="text" value={contact} onChange={e => setContact(e.target.value)}
+              placeholder="israel@example.com / 0500000000" required
               style={{ width: '100%', padding: '12px 14px', border: '1px solid #EDE6D9', fontSize: '16px', fontFamily: 'Heebo, sans-serif', outline: 'none' }} />
           </div>
           <button type="submit" disabled={loading}

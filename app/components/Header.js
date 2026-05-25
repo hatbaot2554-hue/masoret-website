@@ -14,6 +14,7 @@ export default function Header() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [categoryTree, setCategoryTree] = useState([])
   const [activeParent, setActiveParent] = useState(null)
+  const [submenuPosition, setSubmenuPosition] = useState(null)
   const [isMobile, setIsMobile] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [expandedMobile, setExpandedMobile] = useState(null)
@@ -106,15 +107,22 @@ export default function Header() {
     router.push('/products/' + product.index)
   }
 
-  function handleMenuEnter(parentName) {
+  function handleMenuEnter(parentName, event) {
     isHovering.current = true
     if (leaveTimer.current) clearTimeout(leaveTimer.current)
+    if (event?.currentTarget) {
+      const rect = event.currentTarget.getBoundingClientRect()
+      setSubmenuPosition({
+        top: rect.bottom + 2,
+        left: Math.max(8, Math.min(rect.left, window.innerWidth - 240)),
+      })
+    }
     setActiveParent(parentName)
   }
 
   function handleMenuLeave() {
     isHovering.current = false
-    leaveTimer.current = setTimeout(function() { setActiveParent(null) }, 200)
+    leaveTimer.current = setTimeout(function() { setActiveParent(null); setSubmenuPosition(null) }, 200)
   }
 
   function scrollBar(dir) {
@@ -123,9 +131,9 @@ export default function Header() {
 
   if (isMobile) {
     return (
-      <header className="site-header" style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)', width: '100%' }}>
+      <header className="site-header" data-no-auto-translate style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)', width: '100%' }}>
         <div style={{ background: 'var(--gold)', color: 'var(--navy)', textAlign: 'center', fontSize: '12px', fontWeight: '500', padding: '5px 10px' }}>
-          {t('משלוח חינם מעל ₪200 | א׳-ה׳ 9:00-15:00', 'Free shipping over ₪200 | Sun-Thu 9:00-15:00')}
+          {t('שירות לקוחות א׳-ה׳ 9:00-15:00 | משלוחים עד 10 ימי עסקים', 'Customer service Sun-Thu 9:00-15:00 | Delivery up to 10 business days')}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px' }}>
           <button onClick={() => setMenuOpen(!menuOpen)}
@@ -199,9 +207,9 @@ export default function Header() {
   }
 
   return (
-    <header className="site-header" style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)', width: '100%' }}>
+    <header className="site-header" data-no-auto-translate style={{ background: 'var(--navy)', borderBottom: '2px solid var(--gold)', width: '100%' }}>
       <div style={{ background: 'var(--gold)', color: 'var(--navy)', textAlign: 'center', fontSize: '13px', fontWeight: '500', padding: '6px' }}>
-        {t('משלוח חינם בהזמנה מעל ₪200 | שירות לקוחות: א׳-ה׳ 9:00-15:00', 'Free shipping over ₪200 | Customer service: Sun-Thu 9:00-15:00')}
+        {t('שירות לקוחות: א׳-ה׳ 9:00-15:00 | משלוחים עד 10 ימי עסקים', 'Customer service: Sun-Thu 9:00-15:00 | Delivery up to 10 business days')}
       </div>
 
       <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', gap: '20px' }}>
@@ -301,7 +309,7 @@ export default function Header() {
               return React.createElement('div', {
                 key: item.parent,
                 style: { position: 'static', flexShrink: 0 },
-                onMouseEnter: function() { handleMenuEnter(item.parent) },
+                onMouseEnter: function(event) { handleMenuEnter(item.parent, event) },
                 onMouseLeave: handleMenuLeave
               },
                 React.createElement('a', {
@@ -309,7 +317,7 @@ export default function Header() {
                   style: { display: 'block', padding: '11px 14px', color: isActive ? 'var(--gold)' : 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '13px', fontWeight: '500', borderBottom: isActive ? '2px solid var(--gold)' : '2px solid transparent', whiteSpace: 'nowrap' }
                 }, translateCategoryName(item.parent, lang), hasChildren ? ' ▾' : ''),
                 isActive && hasChildren ? React.createElement('div', {
-                  style: { position: 'fixed', background: '#fff', border: '1px solid #EDE6D9', boxShadow: '0 6px 20px rgba(0,0,0,0.15)', zIndex: 9999, minWidth: '200px' },
+                  style: { position: 'fixed', top: submenuPosition?.top || 0, left: submenuPosition?.left || 0, background: '#fff', border: '1px solid #EDE6D9', boxShadow: '0 6px 20px rgba(0,0,0,0.15)', zIndex: 9999, minWidth: '220px', maxHeight: '70vh', overflowY: 'auto' },
                   onMouseEnter: function() { handleMenuEnter(item.parent) },
                   onMouseLeave: handleMenuLeave
                 },

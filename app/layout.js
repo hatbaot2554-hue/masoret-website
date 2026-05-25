@@ -15,11 +15,12 @@ export default function RootLayout({ children }) {
   return (
     <html lang="he" dir="rtl">
       <body>
+        <a className="skip-link" href="#main-content" data-i18n-he="דלג לתוכן המרכזי" data-i18n-en="Skip to main content">דלג לתוכן המרכזי</a>
         <LanguageProvider>
           <CartProvider>
             <WishlistProvider>
               <Header />
-              <main>{children}</main>
+              <main id="main-content" tabIndex={-1}>{children}</main>
               <footer className="site-footer">
                 <div className="site-footer-inner">
                   <section>
@@ -35,11 +36,13 @@ export default function RootLayout({ children }) {
                     <a href="/cart" data-i18n-he="עגלה" data-i18n-en="Cart">עגלה</a>
                     <a href="/account" data-i18n-he="אזור אישי" data-i18n-en="My account">אזור אישי</a>
                     <a href="/terms" data-i18n-he="תקנון ותנאי שימוש" data-i18n-en="Terms and conditions">תקנון ותנאי שימוש</a>
+                    <a href="/privacy" data-i18n-he="מדיניות פרטיות" data-i18n-en="Privacy policy">מדיניות פרטיות</a>
+                    <a href="/accessibility" data-i18n-he="הצהרת נגישות" data-i18n-en="Accessibility statement">הצהרת נגישות</a>
                   </section>
                   <section>
                     <h3 data-i18n-he="צור קשר" data-i18n-en="Contact">צור קשר</h3>
                     <p>hatbaot2554@gmail.com</p>
-                    <p data-i18n-he="משלוח תוך 8 ימי עסקים" data-i18n-en="Delivery within 8 business days">משלוח תוך 8 ימי עסקים</p>
+                    <p data-i18n-he="משלוח עד 10 ימי עסקים" data-i18n-en="Delivery up to 10 business days">משלוח עד 10 ימי עסקים</p>
                     <p data-i18n-he="ביטול: 5% דמי ביטול" data-i18n-en="Cancellation fee: 5%">ביטול: 5% דמי ביטול</p>
                   </section>
                   <section>
