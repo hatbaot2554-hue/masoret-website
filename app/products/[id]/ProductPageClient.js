@@ -454,6 +454,13 @@ export default function ProductPageClient({ product }) {
 
   function handleChange(e) { setForm({ ...form, [e.target.name]: e.target.value }) }
 
+  function openQuickBuy() {
+    setShowQuickBuy(true)
+    window.setTimeout(() => {
+      document.getElementById('quick-buy-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 80)
+  }
+
   const inputStyle = { width: '100%', padding: '11px 14px', border: '1px solid #EDE6D9', background: '#fff', fontSize: '15px', fontFamily: 'Heebo, sans-serif', color: '#2C2416', outline: 'none' }
   const sectionStyle = { background: '#F8F4EE', border: '1px solid #EDE6D9', borderRadius: '4px', padding: '16px', marginBottom: '16px' }
   const colorBtnStyle = (val) => ({ padding: '8px 16px', border: '1px solid', cursor: 'pointer', fontSize: '14px', borderColor: letterColor === val ? '#8B6914' : '#EDE6D9', background: letterColor === val ? '#8B6914' : '#fff', color: letterColor === val ? '#fff' : '#2C2416' })
@@ -555,7 +562,7 @@ export default function ProductPageClient({ product }) {
             )}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '8px' }}>
               <h1 style={{ fontFamily: 'serif', fontSize: '32px', fontWeight: '900', lineHeight: 1.3, flex: 1 }}>{displayName}</h1>
-              <button type="button" onClick={() => toggleItem({ ...product })} aria-label={wished ? 'הסר מהמועדפים' : 'הוסף למועדפים'} aria-pressed={wished}
+              <button type="button" data-dynamic-text onClick={() => toggleItem({ ...product })} aria-label={wished ? 'הסר מהמועדפים' : 'הוסף למועדפים'} aria-pressed={wished}
                 style={{ background: 'none', border: '2px solid #EDE6D9', borderRadius: '50%', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '20px', flexShrink: 0, marginTop: '4px' }}>
                 {wished ? '❤️' : '🤍'}
               </button>
@@ -618,13 +625,13 @@ export default function ProductPageClient({ product }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px', background: '#F8F4EE', padding: '12px 16px', borderRadius: '4px' }}>
                 <label style={{ fontSize: '14px', color: '#6B5C3E', fontWeight: '600' }}>כמות:</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  <button type="button" data-dynamic-text onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
                     style={{ width: '36px', height: '36px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                  <span style={{ minWidth: '36px', textAlign: 'center', fontSize: '18px', fontWeight: '700' }}>{quantity}</span>
-                  <button type="button" onClick={() => setQuantity(quantity + 1)}
+                  <span data-dynamic-text style={{ minWidth: '36px', textAlign: 'center', fontSize: '18px', fontWeight: '700' }}>{quantity}</span>
+                  <button type="button" data-dynamic-text onClick={() => setQuantity(prev => prev + 1)}
                     style={{ width: '36px', height: '36px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                 </div>
-                <div style={{ fontSize: '16px', color: '#8B6914', fontWeight: '700' }}>סה"כ: ₪{totalPrice}</div>
+                <div data-dynamic-text style={{ fontSize: '16px', color: '#8B6914', fontWeight: '700' }}>סה"כ: ₪{totalPrice}</div>
               </div>
             )}
 
@@ -706,11 +713,11 @@ export default function ProductPageClient({ product }) {
 
             {inStock ? (
               <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-                <button onClick={handleAddToCart}
+                <button type="button" onClick={handleAddToCart}
                   style={{ flex: 2, minWidth: '200px', padding: '16px 24px', background: addedToCart ? '#27ae60' : '#C9A84C', color: '#1A2332', border: 'none', fontSize: '17px', fontFamily: 'serif', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s', boxShadow: addedToCart ? 'none' : '0 4px 12px rgba(201,168,76,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                   {addedToCart ? '✓ נוסף לסל!' : '🛒 הוסף לסל'}
                 </button>
-                <button onClick={() => setShowQuickBuy(!showQuickBuy)}
+                <button type="button" onClick={openQuickBuy}
                   style={{ flex: 1, minWidth: '140px', padding: '16px 20px', background: showQuickBuy ? '#8B6914' : '#1A2332', color: '#C9A84C', border: '2px solid #C9A84C', fontSize: '15px', fontFamily: 'serif', cursor: 'pointer' }}>
                   ⚡ רכישה מהירה
                 </button>
@@ -748,7 +755,7 @@ export default function ProductPageClient({ product }) {
             </div>
 
             {showQuickBuy && inStock && (
-              <div style={{ borderTop: '2px solid #EDE6D9', paddingTop: '24px' }}>
+              <div id="quick-buy-form" style={{ borderTop: '2px solid #EDE6D9', paddingTop: '24px', scrollMarginTop: '130px' }}>
                 <h3 style={{ fontFamily: 'serif', fontSize: '20px', marginBottom: '20px', color: '#2C2416' }}>פרטי הזמנה</h3>
                 <div style={{ background: '#F8F4EE', border: '1px solid #EDE6D9', borderRadius: '4px', padding: '14px', marginBottom: '20px', fontSize: '14px' }}>
                   <div style={{ fontWeight: '700', color: '#8B6914', marginBottom: '6px' }}>סיכום:</div>

@@ -5,23 +5,30 @@ const WishlistContext = createContext(null)
 
 export function WishlistProvider({ children }) {
   const [items, setItems] = useState([])
+  const [loaded, setLoaded] = useState(false)
+
+  function sameIndex(a, b) {
+    return String(a ?? '') === String(b ?? '')
+  }
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem('masoret_wishlist')
       if (saved) setItems(JSON.parse(saved))
     } catch {}
+    setLoaded(true)
   }, [])
 
   useEffect(() => {
+    if (!loaded) return
     try {
       localStorage.setItem('masoret_wishlist', JSON.stringify(items))
     } catch {}
-  }, [items])
+  }, [items, loaded])
 
   function addItem(product) {
     setItems(prev => {
-      if (prev.find(i => i.index === product.index)) return prev
+      if (prev.find(i => sameIndex(i.index, product.index))) return prev
       return [...prev, {
         index: product.index,
         name: product.name,
@@ -35,11 +42,11 @@ export function WishlistProvider({ children }) {
   }
 
   function removeItem(index) {
-    setItems(prev => prev.filter(i => i.index !== index))
+    setItems(prev => prev.filter(i => !sameIndex(i.index, index)))
   }
 
   function isInWishlist(index) {
-    return items.some(i => i.index === index)
+    return items.some(i => sameIndex(i.index, index))
   }
 
   function toggleItem(product) {

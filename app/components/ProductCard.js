@@ -118,7 +118,7 @@ export default function ProductCard({ product, index }) {
           </div>
         )}
 
-        <button type="button" onClick={handleWishlist} onPointerDown={(e) => e.stopPropagation()} aria-label={wished ? t('הסר מהמועדפים', 'Remove from wishlist') : t('הוסף למועדפים', 'Add to wishlist')} aria-pressed={wished}
+        <button type="button" data-dynamic-text onClick={handleWishlist} onPointerDown={(e) => e.stopPropagation()} aria-label={wished ? t('הסר מהמועדפים', 'Remove from wishlist') : t('הוסף למועדפים', 'Add to wishlist')} aria-pressed={wished}
           style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2, fontSize: '16px', boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }}>
           {wished ? '❤️' : '🤍'}
         </button>
@@ -144,10 +144,10 @@ export default function ProductCard({ product, index }) {
           {inStock ? (
             <div onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
-                <button onClick={e => handleQty(e, -1)}
+                <button type="button" data-dynamic-text onClick={e => handleQty(e, -1)}
                   style={{ width: '30px', height: '30px', border: '1px solid var(--color-border-light)', borderRadius: '10px', background: 'var(--color-cream-150)', color: 'var(--color-navy-900)', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                <span style={{ fontWeight: '700', minWidth: '28px', textAlign: 'center', fontSize: '15px' }}>{quantity}</span>
-                <button onClick={e => handleQty(e, 1)}
+                <span data-dynamic-text style={{ fontWeight: '700', minWidth: '28px', textAlign: 'center', fontSize: '15px' }}>{quantity}</span>
+                <button type="button" data-dynamic-text onClick={e => handleQty(e, 1)}
                   style={{ width: '30px', height: '30px', border: '1px solid var(--color-border-light)', borderRadius: '10px', background: 'var(--color-cream-150)', color: 'var(--color-navy-900)', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
               </div>
               <div style={{ display: 'flex', gap: '6px' }}>

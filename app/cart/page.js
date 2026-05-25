@@ -222,13 +222,13 @@ export default function CartPage() {
                     <div style={{ fontSize: '12px', color: '#8B6914', marginTop: '2px' }}>תוספת הטבעה: ₪{item.engravingExtra}</div>
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-                    <button type="button" onClick={() => updateQty(item.key, item.quantity - 1)} style={{ width: '28px', height: '28px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer' }}>-</button>
-                    <span style={{ fontWeight: '700', minWidth: '24px', textAlign: 'center' }}>{item.quantity}</span>
-                    <button type="button" onClick={() => updateQty(item.key, item.quantity + 1)} style={{ width: '28px', height: '28px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer' }}>+</button>
+                    <button type="button" data-dynamic-text onClick={() => updateQty(item.key, item.quantity - 1)} style={{ width: '28px', height: '28px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer' }}>-</button>
+                    <span data-dynamic-text style={{ fontWeight: '700', minWidth: '24px', textAlign: 'center' }}>{item.quantity}</span>
+                    <button type="button" data-dynamic-text onClick={() => updateQty(item.key, item.quantity + 1)} style={{ width: '28px', height: '28px', border: '1px solid #EDE6D9', background: '#fff', cursor: 'pointer' }}>+</button>
                   </div>
                 </div>
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontFamily: 'serif', fontSize: '1.3rem', color: '#8B6914', fontWeight: '700' }}>
+                  <div data-dynamic-text style={{ fontFamily: 'serif', fontSize: '1.3rem', color: '#8B6914', fontWeight: '700' }}>
                     ₪{formatPrice(item.price * item.quantity) + (item.engravingExtra || 0)}
                   </div>
                   <button type="button" onClick={() => removeItem(item.key)} style={{ background: 'none', border: 'none', color: '#c0392b', cursor: 'pointer', fontSize: '13px', marginTop: '8px' }}>הסר</button>

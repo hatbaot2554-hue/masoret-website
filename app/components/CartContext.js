@@ -3,17 +3,20 @@ import { createContext, useContext, useState, useEffect } from 'react'
 const CartContext = createContext(null)
 export function CartProvider({ children }) {
   const [items, setItems] = useState([])
+  const [loaded, setLoaded] = useState(false)
   useEffect(() => {
     try {
       const saved = localStorage.getItem('masoret_cart')
       if (saved) setItems(JSON.parse(saved))
     } catch {}
+    setLoaded(true)
   }, [])
   useEffect(() => {
+    if (!loaded) return
     try {
       localStorage.setItem('masoret_cart', JSON.stringify(items))
     } catch {}
-  }, [items])
+  }, [items, loaded])
   function addItem(product, quantity = 1, selectedAttrs = {}, selectedVariation = null, engravingData = null) {
     const key = `${product.index ?? product.url}_${JSON.stringify(selectedAttrs)}`
     const engravingExtra = engravingData ? (engravingData.extraCost || 0) : 0
@@ -44,8 +47,9 @@ export function CartProvider({ children }) {
     setItems(prev => prev.filter(i => i.key !== key))
   }
   function updateQty(key, quantity) {
-    if (quantity < 1) return removeItem(key)
-    setItems(prev => prev.map(i => i.key === key ? { ...i, quantity } : i))
+    const nextQuantity = Number(quantity) || 0
+    if (nextQuantity < 1) return removeItem(key)
+    setItems(prev => prev.map(i => i.key === key ? { ...i, quantity: nextQuantity } : i))
   }
   function clearCart() {
     setItems([])

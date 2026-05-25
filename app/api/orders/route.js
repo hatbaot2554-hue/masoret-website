@@ -84,7 +84,12 @@ export async function GET(request) {
     if (account) {
       const response = await fetch(
         `${DASHBOARD_URL}/api/orders?account=${encodeURIComponent(account)}`,
-        { cache: 'no-store' }
+        {
+          cache: 'no-store',
+          headers: {
+            ...(DASHBOARD_ORDERS_API_SECRET ? { 'x-dashboard-orders-secret': DASHBOARD_ORDERS_API_SECRET } : {}),
+          },
+        }
       );
       const data = await response.json().catch(() => ({}));
       return NextResponse.json(data, { status: response.status });
@@ -100,7 +105,12 @@ export async function GET(request) {
     if (!isEmail) {
       const response = await fetch(
         `${DASHBOARD_URL}/api/orders?account=${encodeURIComponent(lookupValue)}`,
-        { cache: 'no-store' }
+        {
+          cache: 'no-store',
+          headers: {
+            ...(DASHBOARD_ORDERS_API_SECRET ? { 'x-dashboard-orders-secret': DASHBOARD_ORDERS_API_SECRET } : {}),
+          },
+        }
       )
       const data = await response.json().catch(() => ({}))
       if (!response.ok) {
@@ -113,7 +123,12 @@ export async function GET(request) {
 
     const response = await fetch(
       `${DASHBOARD_URL}/api/orders?order=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(lookupValue)}`,
-      { cache: 'no-store' }
+      {
+        cache: 'no-store',
+        headers: {
+          ...(DASHBOARD_ORDERS_API_SECRET ? { 'x-dashboard-orders-secret': DASHBOARD_ORDERS_API_SECRET } : {}),
+        },
+      }
     );
 
     if (!response.ok) {

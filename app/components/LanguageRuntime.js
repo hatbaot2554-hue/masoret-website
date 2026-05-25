@@ -20,7 +20,7 @@ const STORAGE_KEY = 'masoret_lang'
 function shouldSkipNode(node) {
   const parent = node.parentElement
   if (!parent) return true
-  if (parent.closest('[data-no-auto-translate]')) return true
+  if (parent.closest('[data-no-auto-translate], [data-dynamic-text]')) return true
   return ['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT', 'CODE', 'PRE', 'NOSCRIPT'].includes(parent.tagName)
 }
 
@@ -100,6 +100,7 @@ export function LanguageProvider({ children }) {
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof MutationObserver === 'undefined') return
+    if (lang !== 'en') return
 
     let scheduled = false
     const observer = new MutationObserver(() => {
@@ -114,7 +115,6 @@ export function LanguageProvider({ children }) {
     observer.observe(document.body, {
       childList: true,
       subtree: true,
-      characterData: true,
     })
 
     return () => observer.disconnect()
