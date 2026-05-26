@@ -44,6 +44,9 @@ export default function CartPage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [shippingPrices, setShippingPrices] = useState({ home: 38, pickup: 23 })
   const [shippingLoading, setShippingLoading] = useState(false)
+  const [couponCode, setCouponCode] = useState('')
+  const [coupon, setCoupon] = useState(null)
+  const [couponStatus, setCouponStatus] = useState('')
 
   const SHIPPING_OPTIONS = [
     { id: 'home', label: 'משלוח עד הבית', price: shippingPrices.home, icon: '🏠' },
@@ -53,7 +56,8 @@ export default function CartPage() {
 
   const selectedShipping = SHIPPING_OPTIONS.find(s => s.id === shipping)
   const shippingPrice = selectedShipping?.price || 0
-  const grandTotal = Math.ceil(totalPrice) + shippingPrice
+  const couponDiscount = coupon?.discount || 0
+  const grandTotal = Math.max(0, Math.ceil(totalPrice) - couponDiscount) + shippingPrice
 
   useEffect(() => {
     setForm(prev => ({ ...prev, ...loadCustomerDetails() }))
@@ -91,6 +95,30 @@ export default function CartPage() {
   function handleChange(e) { setForm({ ...form, [e.target.name]: e.target.value }) }
   function handleAltChange(e) { setAltForm({ ...altForm, [e.target.name]: e.target.value }) }
 
+  async function applyCoupon() {
+    setCouponStatus('')
+    setCoupon(null)
+    const code = couponCode.trim().toUpperCase()
+    if (!code && !form.email && !form.phone) {
+      setCouponStatus('יש להזין קוד קופון או פרטי מייל/טלפון לזיכוי שמור.')
+      return
+    }
+    try {
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, email: form.email, phone: form.phone, subtotal: Math.ceil(totalPrice) }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.valid) throw new Error(data.error || 'הקופון לא נמצא או שכבר נוצל')
+      setCoupon(data.coupon)
+      setCouponCode(data.coupon.code || code)
+      setCouponStatus(`הקופון הופעל: הנחה של ₪${data.coupon.discount}`)
+    } catch (error) {
+      setCouponStatus(error.message || 'לא ניתן להפעיל קופון כרגע')
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     if (!items.length) return
@@ -114,6 +142,7 @@ export default function CartPage() {
           shippingMethod: shipping,
           shippingPrice,
           altAddress: showAltAddress ? altForm : null,
+          coupon: coupon ? { code: coupon.code, discount: coupon.discount } : null,
           items: items.map(i => ({
             sourceProductId: i.sourceProductId || i.source_product_id || i.product_id || i.key,
             sourceProductIndex: i.index,
@@ -365,6 +394,20 @@ export default function CartPage() {
                     {shippingPrice === 0 ? 'חינם' : `₪${shippingPrice}`}
                   </span>
                 </div>
+                <div style={{ marginBottom: '12px', background: '#fff', border: '1px solid #EDE6D9', borderRadius: '4px', padding: '12px' }}>
+                  <label style={{ fontSize: '12px', color: '#6B5C3E', display: 'block', marginBottom: '6px', fontWeight: '600' }}>קופון / זיכוי</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px' }}>
+                    <input value={couponCode} onChange={(event) => setCouponCode(event.target.value.toUpperCase())} placeholder="ABCDE" style={inputStyle} />
+                    <button type="button" onClick={applyCoupon} style={{ border: '1px solid #8B6914', background: '#fff', color: '#8B6914', borderRadius: '4px', padding: '0 12px', fontWeight: 700, cursor: 'pointer' }}>הפעל</button>
+                  </div>
+                  <p style={{ fontSize: '11px', color: coupon ? '#1d6f42' : '#8B6914', margin: '6px 0 0' }}>{couponStatus || 'אם הזיכוי שמור על שמך, אפשר ללחוץ הפעל אחרי מילוי מייל/טלפון.'}</p>
+                </div>
+                {couponDiscount > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#1d6f42', marginBottom: '12px', fontWeight: 700 }}>
+                    <span>הנחת קופון:</span>
+                    <span>-₪{couponDiscount}</span>
+                  </div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: '700', color: '#2C2416' }}>
                   <span>סה"כ לתשלום:</span>
                   <span style={{ color: '#8B6914', fontFamily: 'serif' }}>₪{grandTotal}</span>

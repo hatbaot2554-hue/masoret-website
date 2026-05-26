@@ -14,7 +14,7 @@ function generateOrderId(dbId) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { firstName, lastName, email, phone, address, city, items, note, source, utm_source } = body;
+    const { firstName, lastName, email, phone, address, city, items, note, source, utm_source, coupon } = body;
 
     if (!firstName || !lastName || !email || !phone || !address || !city || !items?.length) {
       return NextResponse.json({ error: 'יש למלא את כל שדות החובה' }, { status: 400 });
@@ -35,7 +35,8 @@ export async function POST(request) {
       payment_method: 'pending',
       notes: note || '',
       source: source || 'direct',
-      utm_source: utm_source || ''
+      utm_source: utm_source || '',
+      coupon: coupon?.code ? coupon : null
     };
 
     const response = await fetch(`${DASHBOARD_URL}/api/orders`, {
