@@ -1905,6 +1905,75 @@ html {
   border: 0;
 }
 
+.maintenance-screen {
+  align-items: center;
+  background: radial-gradient(circle at 50% 0%, #fff7df 0%, #f6efe1 48%, #e7dcc8 100%);
+  color: #092744;
+  display: flex;
+  min-height: 100vh;
+  justify-content: center;
+  padding: 28px;
+  text-align: center;
+}
+
+.maintenance-screen.shabbat {
+  background: linear-gradient(135deg, #071d35 0%, #12365f 52%, #d4af37 100%);
+  color: #fff;
+}
+
+.maintenance-panel {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  border-radius: 8px;
+  box-shadow: 0 24px 80px rgba(9, 39, 68, 0.18);
+  max-width: 620px;
+  padding: 42px 32px;
+  width: min(100%, 620px);
+}
+
+.maintenance-screen.shabbat .maintenance-panel {
+  background: rgba(7, 29, 53, 0.9);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.maintenance-panel img {
+  display: block;
+  height: 72px;
+  margin: 0 auto 22px;
+  max-width: 220px;
+  object-fit: contain;
+}
+
+.maintenance-kicker {
+  color: #b88a00;
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.maintenance-screen.shabbat .maintenance-kicker {
+  color: #f5d77b;
+}
+
+.maintenance-panel h1 {
+  font-size: clamp(30px, 5vw, 52px);
+  line-height: 1.15;
+  margin: 0 0 16px;
+}
+
+.maintenance-panel p {
+  font-size: 18px;
+  line-height: 1.7;
+  margin: 0 auto 14px;
+  max-width: 520px;
+}
+
+.maintenance-panel small {
+  display: block;
+  font-weight: 700;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

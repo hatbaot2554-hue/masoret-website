@@ -5,17 +5,40 @@ import Header from './components/Header'
 import AccessibilityWidget from './components/AccessibilityWidget'
 import AIChatWidget from './components/AIChatWidget'
 import { LanguageProvider } from './components/LanguageRuntime'
+import MaintenanceScreen from './components/MaintenanceScreen'
 
 export const metadata = {
   title: 'המרכז למסורת יהודית — ספרי קודש ויהדות',
   description: 'מבחר עשיר של ספרי קודש, יהדות ומסורת. משלוח מהיר לכל הארץ.',
 }
 
-export default function RootLayout({ children }) {
+async function getSiteControl() {
+  const url = process.env.DASHBOARD_URL || 'https://masoret-dashboard.vercel.app'
+  try {
+    const res = await fetch(`${url}/api/site-control`, { cache: 'no-store' })
+    if (!res.ok) return null
+    return await res.json()
+  } catch {
+    return null
+  }
+}
+
+export default async function RootLayout({ children }) {
+  const siteControl = await getSiteControl()
+  const maintenanceActive = siteControl?.active
+
   return (
     <html lang="he" dir="rtl">
       <body>
         <a className="skip-link" href="#main-content" data-i18n-he="דלג לתוכן המרכזי" data-i18n-en="Skip to main content">דלג לתוכן המרכזי</a>
+        {maintenanceActive ? (
+          <MaintenanceScreen
+            mode={siteControl.mode}
+            message={siteControl.message}
+            activeUntil={siteControl.activeUntil}
+            activeName={siteControl.activeName}
+          />
+        ) : (
         <LanguageProvider>
           <CartProvider>
             <WishlistProvider>
@@ -61,6 +84,7 @@ export default function RootLayout({ children }) {
             </WishlistProvider>
           </CartProvider>
         </LanguageProvider>
+        )}
       </body>
     </html>
   )
