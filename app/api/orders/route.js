@@ -117,7 +117,11 @@ export async function GET(request) {
       if (!response.ok) {
         return NextResponse.json({ error: data.error || 'הזמנה לא נמצאה' }, { status: response.status })
       }
-      const order = (data.orders || []).find((item) => String(item.our_order_id || '').replace(/\D/g, '') === String(orderNumber).replace(/\D/g, ''))
+      const normalizedOrder = String(orderNumber).replace(/\s/g, '')
+      const order = (data.orders || []).find((item) =>
+        String(item.our_order_id || '').replace(/\D/g, '') === String(orderNumber).replace(/\D/g, '') ||
+        String(item.external_order_id || '').replace(/\s/g, '') === normalizedOrder
+      )
       if (!order) return NextResponse.json({ error: 'הזמנה לא נמצאה' }, { status: 404 })
       return NextResponse.json({ order })
     }
