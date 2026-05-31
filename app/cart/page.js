@@ -177,6 +177,21 @@ export default function CartPage() {
   if (status === 'success') {
     return (
       <div style={{ maxWidth: '600px', margin: '80px auto', padding: '0 24px', textAlign: 'center' }}>
+        <div style={{ fontSize: '64px', marginBottom: '16px' }}>✓</div>
+        <h2 style={{ fontFamily: 'serif', fontSize: '28px', marginBottom: '12px' }}>ההזמנה התקבלה</h2>
+        <p style={{ color: '#6B5C3E', marginBottom: '24px', lineHeight: 1.8 }}>תודה {form.firstName}. לאחר סיום הטיפול, החשבונית ומספר ההזמנה הרשמי יישלחו אליך למייל בשעות הקרובות.</p>
+        <div style={{ background: '#F8F4EE', border: '1px solid #EDE6D9', padding: '24px', marginBottom: '24px', lineHeight: 1.8 }}>
+          <div style={{ fontSize: '15px', color: '#2C2416', fontWeight: '700', marginBottom: '6px' }}>אין צורך לשמור מספר זמני</div>
+          <div style={{ fontSize: '14px', color: '#6B5C3E' }}>נעדכן אותך במייל כאשר מספר ההזמנה הרשמי יהיה מוכן, עם קישור למעקב באתר.</div>
+        </div>
+        <a href="/products" style={{ background: '#8B6914', color: '#fff', padding: '14px 32px', textDecoration: 'none', fontSize: '15px', fontFamily: 'serif' }}>המשך לקנות</a>
+      </div>
+    )
+  }
+
+  if (false && status === 'success') {
+    return (
+      <div style={{ maxWidth: '600px', margin: '80px auto', padding: '0 24px', textAlign: 'center' }}>
         <div style={{ fontSize: '64px', marginBottom: '16px' }}>✅</div>
         <h2 style={{ fontFamily: 'serif', fontSize: '28px', marginBottom: '12px' }}>ההזמנה התקבלה!</h2>
         <p style={{ color: '#6B5C3E', marginBottom: '24px' }}>תודה {form.firstName}, אישור נשלח למייל שלך.</p>
