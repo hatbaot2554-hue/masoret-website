@@ -79,7 +79,7 @@ function TrackContent() {
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', paddingBottom: '20px', borderBottom: '1px solid #EDE6D9' }}>
               <div>
                 <p style={{ fontSize: '13px', color: '#6B5C3E', marginBottom: '4px' }}>מספר הזמנה</p>
-                <p style={{ fontSize: '22px', fontWeight: '700', fontFamily: 'serif' }}>#{order.our_order_id}</p>
+                <p style={{ fontSize: '22px', fontWeight: '700', fontFamily: 'serif' }}>#{order.external_order_id || order.our_order_id}</p>
               </div>
               <div style={{ textAlign: 'left' }}>
                 <p style={{ fontSize: '13px', color: '#6B5C3E', marginBottom: '4px' }}>תאריך</p>
