@@ -238,6 +238,21 @@ export default function OrderForm({
   if (status === 'success') {
     return (
       <div style={{ padding: '32px', textAlign: 'center' }}>
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}>✓</div>
+        <h3 style={{ fontSize: '22px', marginBottom: '8px', fontFamily: 'serif' }}>ההזמנה התקבלה בהצלחה</h3>
+        <p style={{ marginBottom: '24px', color: '#6B5C3E', lineHeight: 1.8 }}>תודה {form.firstName}. לאחר סיום הטיפול, החשבונית ומספר ההזמנה הרשמי יישלחו אליך למייל בשעות הקרובות.</p>
+        <div style={{ background: '#F8F4EE', border: '1px solid #EDE6D9', padding: '20px', marginBottom: '20px', textAlign: 'right', lineHeight: 1.8 }}>
+          <strong style={{ display: 'block', color: '#2C2416', marginBottom: '6px' }}>אין צורך לשמור מספר זמני.</strong>
+          <span style={{ color: '#6B5C3E' }}>נשלח לך קישור מעקב מסודר ברגע שמספר ההזמנה הרשמי יהיה מוכן.</span>
+        </div>
+        <a href="/products" style={{ color: '#8B6914', textDecoration: 'none', fontWeight: '500' }}>← המשך לקנות</a>
+      </div>
+    )
+  }
+
+  if (false && status === 'success') {
+    return (
+      <div style={{ padding: '32px', textAlign: 'center' }}>
         <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
         <h3 style={{ fontSize: '22px', marginBottom: '8px', fontFamily: 'serif' }}>ההזמנה התקבלה בהצלחה!</h3>
         <p style={{ marginBottom: '24px', color: '#6B5C3E' }}>תודה {form.firstName}, אישור נשלח למייל שלך.</p>
