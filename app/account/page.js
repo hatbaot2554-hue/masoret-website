@@ -183,7 +183,7 @@ export default function AccountPage() {
               <div key={order.id} style={{ background: '#fff', border: '1px solid #EDE6D9', padding: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
                   <div>
-                    <div style={{ fontFamily: 'serif', fontSize: '20px', fontWeight: '700', color: '#8B6914' }}>#{order.our_order_id}</div>
+                    <div style={{ fontFamily: 'serif', fontSize: '20px', fontWeight: '700', color: '#8B6914' }}>#{order.external_order_id || order.our_order_id}</div>
                     <div style={{ fontSize: '13px', color: '#999', marginTop: '2px' }}>{new Date(order.created_at).toLocaleDateString('he-IL')}</div>
                   </div>
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
