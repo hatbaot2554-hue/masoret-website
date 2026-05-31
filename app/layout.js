@@ -7,6 +7,9 @@ import AIChatWidget from './components/AIChatWidget'
 import { LanguageProvider } from './components/LanguageRuntime'
 import MaintenanceScreen from './components/MaintenanceScreen'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export const metadata = {
   title: 'המרכז למסורת יהודית — ספרי קודש ויהדות',
   description: 'מבחר עשיר של ספרי קודש, יהדות ומסורת. משלוח מהיר לכל הארץ.',
