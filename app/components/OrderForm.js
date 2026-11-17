@@ -206,7 +206,7 @@ export default function OrderForm({
             image: product.image || '',
             sku: selectedVariation?.sku || product.sku || '',
             selectedAttributes: selectedAttrs,
-            price: activePrice + engravingExtra,
+            price: activePrice + engravingExtra / quantity,
             cost: activeCost,
             quantity,
             engraving: engravingType !== 'none' ? {

@@ -70,27 +70,30 @@ export default function CartPage() {
 
   useEffect(() => {
     if (!items.length) return
+    const controller = new AbortController()
     setShippingLoading(true)
     fetch('/api/shipping-quote', {
       method: 'POST',
+      signal: controller.signal,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         items: items.map(i => ({
           productId: i.product_id || String(i.index),
           quantity: i.quantity,
         })),
-        city: form.city || 'תל אביב',
+        city: (showAltAddress ? altForm.city : form.city) || 'תל אביב',
       }),
     })
       .then(r => r.json())
       .then(data => {
-        if (data.home_delivery) {
-          setShippingPrices({ home: data.home_delivery, pickup: data.pickup_point || data.home_delivery })
+        if (!controller.signal.aborted && data.home_delivery != null) {
+          setShippingPrices({ home: data.home_delivery, pickup: data.pickup_point ?? data.home_delivery })
         }
       })
       .catch(() => {})
-      .finally(() => setShippingLoading(false))
-  }, [items.length])
+      .finally(() => { if (!controller.signal.aborted) setShippingLoading(false) })
+    return () => controller.abort()
+  }, [items, form.city, altForm.city, showAltAddress])
 
   function handleChange(e) { setForm({ ...form, [e.target.name]: e.target.value }) }
   function handleAltChange(e) { setAltForm({ ...altForm, [e.target.name]: e.target.value }) }
@@ -151,7 +154,7 @@ export default function CartPage() {
             image: i.image || '',
             sku: i.sku || '',
             selectedAttributes: i.selectedAttrs,
-            price: formatPrice(i.price) + (i.engravingExtra || 0),
+            price: Number(i.price) + (i.engravingExtra || 0) / i.quantity,
             cost: parseFloat(i.original_price || 0),
             quantity: i.quantity,
             engraving: i.engravingData || null,
@@ -244,7 +247,7 @@ export default function CartPage() {
                       </div>
                     </div>
                     <a href="/products" style={{ background: '#C9A84C', color: '#1A2332', border: 'none', padding: '8px 12px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', textDecoration: 'none', whiteSpace: 'nowrap', borderRadius: '4px' }}>
-                      הוסף +
+                      לחנות
                     </a>
                   </div>
                 )

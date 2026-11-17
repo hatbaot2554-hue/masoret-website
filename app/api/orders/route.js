@@ -20,14 +20,22 @@ export async function POST(request) {
       return NextResponse.json({ error: 'יש למלא את כל שדות החובה' }, { status: 400 });
     }
 
-    const customerPrice = items.reduce((sum, item) => sum + (parseFloat(item.price || 0) * (item.quantity || 1)), 0);
+    if (!Array.isArray(items) || items.some(item => !Number.isInteger(item.quantity) || item.quantity < 1 || !Number.isFinite(Number(item.price)) || Number(item.price) < 0)) {
+      return NextResponse.json({ error: 'מחיר או כמות לא תקינים' }, { status: 400 });
+    }
+    const shippingPrice = Number(body.shippingPrice || 0);
+    if (!Number.isFinite(shippingPrice) || shippingPrice < 0) return NextResponse.json({ error: 'מחיר משלוח לא תקין' }, { status: 400 });
+    const shippingAddress = body.altAddress || { firstName, lastName, address, city, phone };
+    if (!shippingAddress.address || !shippingAddress.city || !shippingAddress.phone) return NextResponse.json({ error: 'יש להשלים כתובת משלוח' }, { status: 400 });
+    const customerPrice = Math.ceil(items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0));
     const costPrice = items.reduce((sum, item) => sum + (parseFloat(item.cost || 0) * (item.quantity || 1)), 0);
 
     const orderData = {
       customer_name: `${firstName} ${lastName}`,
       customer_phone: phone,
       customer_email: email.toLowerCase(),
-      customer_address: `${address}, ${city}`,
+      customer_address: `${shippingAddress.address}, ${shippingAddress.city}`,
+      shipping_price: shippingPrice,
       items: items,
       total_price: customerPrice,
       cost_price: costPrice,
@@ -59,7 +67,7 @@ export async function POST(request) {
       throw new Error('לא התקבל מזהה הזמנה מהשרת')
     }
 
-    const orderId = generateOrderId(saved.id)
+    const orderId = saved.our_order_id || generateOrderId(saved.id)
 
     return NextResponse.json({
       success: true,
@@ -88,7 +96,7 @@ export async function GET(request) {
         {
           cache: 'no-store',
           headers: {
-            ...(DASHBOARD_ORDERS_API_SECRET ? { 'x-dashboard-orders-secret': DASHBOARD_ORDERS_API_SECRET } : {}),
+            'x-customer-token': request.headers.get('x-customer-token') || '',
           },
         }
       );

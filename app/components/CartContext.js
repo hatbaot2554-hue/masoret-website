@@ -18,7 +18,7 @@ export function CartProvider({ children }) {
     } catch {}
   }, [items, loaded])
   function addItem(product, quantity = 1, selectedAttrs = {}, selectedVariation = null, engravingData = null) {
-    const key = `${product.index ?? product.url}_${JSON.stringify(selectedAttrs)}`
+    const key = `${product.index ?? product.url}_${JSON.stringify(selectedAttrs)}_${engravingData ? crypto.randomUUID() : ''}`
     const engravingExtra = engravingData ? (engravingData.extraCost || 0) : 0
     setItems(prev => {
       const existing = prev.find(i => i.key === key)

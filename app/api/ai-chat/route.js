@@ -112,7 +112,7 @@ function scoreProduct(product, query) {
   ].join(' ').toLowerCase()
 
   let score = 0
-  for (const word of q.split(/\s+/).filter(Boolean)) {
+  for (const word of q.split(/\s+/).filter(word => !['יש', 'לכם', 'ספר', 'בשם', 'האם', 'של', 'את', 'לי', 'אני', 'רוצה', 'מה'].includes(word))) {
     if (word.length < 2) continue
     if (text.includes(word)) score += 2
     if (String(product.name || '').toLowerCase().includes(word)) score += 3
@@ -127,7 +127,7 @@ function scoreProduct(product, query) {
   if (q.includes('סידור') && String(product.name || '').trim().startsWith('סידור')) score += 8
   if (profile?.avoid?.some((term) => text.includes(term))) score -= 30
   if (!query.includes('שליח ציבור') && !query.includes('חזן') && text.includes('שליח ציבור')) score -= 40
-  if (product.in_stock !== false) score += 1
+  if (score > 0 && product.in_stock === true) score += 1
   return score
 }
 
@@ -569,7 +569,7 @@ async function createSafeAiOrder({ messages, force = false }) {
     .filter((message) => message.role === 'user')
     .map((message) => cleanText(message.text || ''))
     .join('\n')
-  if (!force && !isOrderIntent(text)) return null
+  if (!force) return null
 
   const latestText = lastUserText(messages)
   const continuingOrder = isSafeOrderConversation(messages)
@@ -682,6 +682,8 @@ async function createSafeAiOrder({ messages, force = false }) {
 }
 
 function fallbackReply(mode, query, products, order) {
+  if (/שעות|פתיחה|סגור|פתוח/.test(query)) return 'אין לי כרגע שעות פתיחה מאומתות. אפשר לברר דרך עמוד יצירת הקשר: https://masoret-website.vercel.app/contact'
+  if (!products.length && !order) return 'לא מצאתי מידע מתאים לשאלה הזאת. אפשר לציין שם מדויק או מק״ט, או לפנות לשירות דרך https://masoret-website.vercel.app/contact'
   if (mode === 'advisor') {
     const profile = advisorProfile(query)
     if (products.length) {
@@ -853,7 +855,7 @@ ${order ? JSON.stringify(order, null, 2) : 'אין הזמנה מאומתת'}
     },
   }
 
-  const openAiReply = await callOpenAIModel({ mode, systemText, historyText, query })
+  const openAiReply = await callOpenAIModel({ mode, systemText, historyText, query }).catch(() => null)
   if (openAiReply) return sanitizeCustomerReply(openAiReply)
 
   if (!apiKey) return sanitizeCustomerReply(fallbackReply(mode, query, products, order))
@@ -884,15 +886,14 @@ export async function POST(request) {
     const products = await getRelevantProducts(query)
     const order = mode === 'service' ? await getVerifiedOrder(body.orderNumber, body.email) : null
     const explicitOrderIntent = mode === 'service' && isExplicitOrderRequest(query)
-    const productOrderCandidate = mode === 'service' && products.length > 0 && query && !isProductInfoQuestion(query)
+    const productOrderCandidate = false
     const continuingSafeOrder = mode === 'service' && isSafeOrderConversation(messages)
     const safeOrder = await createSafeAiOrder({
       messages,
       force: mode === 'service' && (
         explicitOrderIntent ||
         productOrderCandidate ||
-        continuingSafeOrder ||
-        isExplicitOrderRequest(conversationText(messages))
+        (continuingSafeOrder && !isProductInfoQuestion(query))
       ),
     })
 

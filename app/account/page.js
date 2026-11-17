@@ -20,6 +20,8 @@ function orderItems(order) {
 
 export default function AccountPage() {
   const [step, setStep] = useState('login')
+  const [code, setCode] = useState('')
+  const [challenge, setChallenge] = useState(false)
   const [identifier, setIdentifier] = useState('')
   const [token, setToken] = useState(null)
   const [orders, setOrders] = useState([])
@@ -31,7 +33,8 @@ export default function AccountPage() {
     const saved = localStorage.getItem('masoret_token')
     if (!saved) return
     try {
-      const data = JSON.parse(atob(saved))
+      if (!saved.includes('.')) { localStorage.removeItem('masoret_token'); return }
+      const data = JSON.parse(atob(saved.split('.')[0].replace(/-/g, '+').replace(/_/g, '/')))
       const savedIdentifier = data.identifier || data.email || ''
       if (data.exp > Date.now() && savedIdentifier) {
         setToken(saved)
@@ -54,10 +57,11 @@ export default function AccountPage() {
       const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: clean })
+        body: JSON.stringify({ identifier: clean, code: challenge ? code : undefined })
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
+      if (data.challenge) { setChallenge(true); return }
       localStorage.setItem('masoret_token', data.token)
       setToken(data.token)
       setStep('account')
@@ -71,7 +75,7 @@ export default function AccountPage() {
 
   async function loadOrders(value) {
     try {
-      const res = await fetch('/api/orders?account=' + encodeURIComponent(value), { cache: 'no-store' })
+      const res = await fetch('/api/orders?account=' + encodeURIComponent(value), { cache: 'no-store', headers: { 'x-customer-token': localStorage.getItem('masoret_token') || '' } })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'לא נמצאו הזמנות')
       const nextOrders = data.orders || []
@@ -123,18 +127,19 @@ export default function AccountPage() {
       <div style={{ maxWidth: '480px', margin: '80px auto', padding: '0 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <h1 style={{ fontFamily: 'serif', fontSize: '32px', fontWeight: '900', marginBottom: '8px' }}>האזור האישי שלך</h1>
-          <p style={{ color: '#6B5C3E' }}>הכנס מייל או מספר טלפון כדי לצפות בכל ההזמנות שלך</p>
+          <p style={{ color: '#6B5C3E' }}>כניסה באמצעות קוד חד־פעמי למייל</p>
         </div>
         <div style={{ background: '#fff', border: '1px solid #EDE6D9', padding: '32px' }}>
           <form onSubmit={handleLogin}>
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '6px', fontWeight: '600' }}>מייל או טלפון</label>
-              <input value={identifier} onChange={e => setIdentifier(e.target.value)} required style={inputStyle} placeholder="your@email.com / 0500000000" />
+              <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '6px', fontWeight: '600' }}>כתובת מייל</label>
+              <input type="email" value={identifier} onChange={e => { setIdentifier(e.target.value); setChallenge(false); setCode('') }} required style={inputStyle} placeholder="your@email.com" />
+              {challenge && <input aria-label="קוד אימות" value={code} onChange={e => setCode(e.target.value)} inputMode="numeric" pattern="[0-9]{6}" autoComplete="one-time-code" required style={inputStyle} placeholder="קוד בן שש ספרות שנשלח למייל" />}
             </div>
             {error && <p style={{ color: '#e74c3c', fontSize: '14px', marginBottom: '12px' }}>{error}</p>}
             <button type="submit" disabled={loading}
               style={{ width: '100%', padding: '14px', background: '#C9A84C', color: '#1A2332', border: 'none', fontSize: '16px', fontFamily: 'serif', fontWeight: '700', cursor: 'pointer' }}>
-              {loading ? 'מתחבר...' : 'כניסה לאזור האישי'}
+              {loading ? 'נא להמתין...' : challenge ? 'אימות וכניסה' : 'שליחת קוד כניסה'}
             </button>
           </form>
         </div>
@@ -168,6 +173,7 @@ export default function AccountPage() {
       )}
 
       <h2 style={{ fontFamily: 'serif', fontSize: '24px', marginBottom: '20px' }}>ההזמנות שלי</h2>
+      {error && <p role="alert">{error}</p>}
 
       {visibleOrders.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px', background: '#F8F4EE', color: '#6B5C3E' }}>

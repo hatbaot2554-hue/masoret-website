@@ -424,7 +424,7 @@ export default function ProductPageClient({ product }) {
             image: product.image || '',
             sku: selectedVariation?.sku || product.sku || '',
             selectedAttributes: selectedAttrs,
-            price: activePrice + engravingExtra,
+            price: activePrice + engravingExtra / quantity,
             cost: parseFloat(product.original_price || 0),
             quantity,
             engraving: engravingType !== 'none' ? {
