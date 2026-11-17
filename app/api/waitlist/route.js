@@ -16,6 +16,6 @@ export async function POST(req) {
     if (!res.ok) throw new Error('שגיאה')
     return NextResponse.json({ ok: true })
   } catch {
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ error: 'לא ניתן לשמור את הבקשה כרגע. נסה שוב מאוחר יותר.' }, { status: 503 })
   }
 }
