@@ -143,6 +143,7 @@ export default function AIChatWidget() {
         }),
       })
       const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Chat request failed')
       const reply = data.reply || (isEnglish ? 'There was a temporary issue. Can you try again?' : 'הייתה תקלה רגעית. אפשר לנסות שוב?')
       await new Promise((resolve) => setTimeout(resolve, typingDelay(reply)))
       setMessages((prev) => ({
