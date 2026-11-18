@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLanguage } from './LanguageRuntime'
 import { translateProductName } from '../lib/i18n'
+import { messageParts } from '../lib/chatText.mjs'
 
 const MODES = {
   service: {
@@ -47,23 +48,9 @@ function typingDelay(text) {
 }
 
 function renderMessageLine(line) {
-  const parts = String(line).split(/(https?:\/\/[^\s]+)/g)
-
-  return parts.map((part, index) => {
-    if (!/^https?:\/\//.test(part)) return part
-
-    const cleanUrl = part.replace(/[.,;:!?)]$/, '')
-    const suffix = part.slice(cleanUrl.length)
-
-    return (
-      <span key={`${cleanUrl}-${index}`}>
-        <a href={cleanUrl} target="_blank" rel="noopener noreferrer">
-          {cleanUrl}
-        </a>
-        {suffix}
-      </span>
-    )
-  })
+  return messageParts(String(line)).map((part, index) => part.url
+    ? <a key={index} href={part.url} target="_blank" rel="noopener noreferrer">{part.text}</a>
+    : part.bold ? <strong key={index}>{part.text}</strong> : part.text)
 }
 
 export default function AIChatWidget() {

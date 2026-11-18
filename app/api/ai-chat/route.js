@@ -111,6 +111,10 @@ function scoreProduct(product, query) {
     ...(product.tags || []),
   ].join(' ').toLowerCase()
 
+  const identity = [product.name, product.category, product.parent_category, product.child_category].join(' ')
+  if (profile && !profile.terms.some(term => identity.includes(term))) return 0
+  if (profile?.avoid?.some(term => String(product.name || '').includes(term))) return 0
+
   let score = 0
   for (const word of q.split(/\s+/).filter(word => !['יש', 'לכם', 'ספר', 'בשם', 'האם', 'של', 'את', 'לי', 'אני', 'רוצה', 'מה'].includes(word))) {
     if (word.length < 2) continue
