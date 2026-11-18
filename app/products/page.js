@@ -210,9 +210,9 @@ export default async function ProductsPage({ searchParams }) {
           </div>
 
           {/* בוחר מיון */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', minWidth: 0, maxWidth: '100%' }}>
             <span style={{ fontSize: '13px', color: '#6B5C3E', whiteSpace: 'nowrap' }}>מיון לפי:</span>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', minWidth: 0, maxWidth: '100%' }}>
               {SORT_OPTIONS.map(opt => (
                 <a key={opt.value} href={buildSortHref(opt.value, category, search)}
                   style={{

@@ -8,6 +8,7 @@ import { loadCustomerDetails, saveCustomerDetails } from '../../lib/customerDeta
 import ReviewsCarousel from '../../components/ReviewsCarousel'
 import RecentlyViewed from '../../components/RecentlyViewed'
 import SeasonalAddons from '../../components/SeasonalAddons'
+import { fileToAttachment } from '../../lib/engravingAttachment.mjs'
 
 function formatPrice(price) {
   const p = parseFloat(price || 0)
@@ -163,18 +164,6 @@ function enhancedProductSpecItems(product) {
   set('כריכה', binding)
 
   return Array.from(byLabel, ([label, value]) => ({ label, value })).slice(0, 8)
-}
-
-function fileToAttachment(file) {
-  if (!file) return Promise.resolve(null)
-  const meta = { name: file.name, type: file.type, size: file.size }
-  if (file.size > 2 * 1024 * 1024) return Promise.resolve(meta)
-  return new Promise(resolve => {
-    const reader = new FileReader()
-    reader.onload = () => resolve({ ...meta, dataUrl: reader.result })
-    reader.onerror = () => resolve(meta)
-    reader.readAsDataURL(file)
-  })
 }
 
 const ENGRAVING_PRICING_TEXT = `• הקדשה על ספרים בודדים - 15 ש"ח לספר
@@ -380,7 +369,13 @@ export default function ProductPageClient({ product }) {
   async function handleAddToCart() {
     if (!validateProductOptions() || !validateEngraving()) return
     const engravingNote = buildEngravingNote()
-    const sketchAttachment = await fileToAttachment(sketchFile)
+    let sketchAttachment
+    try {
+      sketchAttachment = await fileToAttachment(sketchFile)
+    } catch (error) {
+      setEngravingError(error.message)
+      return
+    }
     const engravingData = engravingType !== 'none' ? {
       type: engravingType, letterColor, text: engravingText, qty: engravingQty,
       bulkType, sketchText, extraQty, extraCost: engravingExtra, note: engravingNote,
