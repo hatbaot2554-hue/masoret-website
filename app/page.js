@@ -1,6 +1,6 @@
 import ReviewsCarousel from './components/ReviewsCarousel'
 import RotatingProductShowcase from './components/RotatingProductShowcase'
-import { CURATED_CATEGORIES } from './lib/curatedCategories'
+import { categoryNodes, categoryHref } from './lib/sourceCategories.mjs'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,7 +37,9 @@ const whyItems = [
 
 export default async function HomePage() {
   const products = await getProducts()
-  const categoryCards = CURATED_CATEGORIES
+  const categoryCards = await fetch('https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/categories.json', { cache: 'no-store' })
+    .then(response => response.ok ? response.json() : [])
+    .then(categoryNodes).catch(() => [])
 
   return (
     <>
@@ -105,7 +107,7 @@ export default async function HomePage() {
                 <a
                   key={category.name}
                   className="home-category-card"
-                  href={`/products?category=${encodeURIComponent(category.name)}`}
+                  href={categoryHref(category)}
                 >
                   <span className="home-category-icon" aria-hidden="true">{category.icon}</span>
                   <strong>{category.name}</strong>

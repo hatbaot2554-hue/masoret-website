@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import { categoryNodes, flattenCategories, findSourceCategory, matchesSourceCategory, categoryHref } from '../app/lib/sourceCategories.mjs';
+const tree = [{ id: 1, parent: 'Root', nodes: [{ id: 2, name: 'Child', children: [{ id: 3, name: 'Leaf', children: [] }] }] }, { id: 4, parent: 'Other', nodes: [{ id: 5, name: 'Leaf', children: [] }] }];
+assert.equal(flattenCategories(categoryNodes(tree)).length, 5);
+assert.equal(findSourceCategory(tree, 'source:3').name, 'Leaf');
+assert.equal(categoryHref(findSourceCategory(tree, 'source:3')), '/products?category=source%3A3');
+assert.equal(matchesSourceCategory({ source_category_ids: [3] }, findSourceCategory(tree, 'source:1')), true);
+assert.equal(matchesSourceCategory({ source_category_ids: [5] }, findSourceCategory(tree, 'source:1')), false);
+assert.equal(matchesSourceCategory({ source_category_ids: [], categories: ['Root'] }, findSourceCategory(tree, 'source:1')), false);
+assert.equal(flattenCategories(categoryNodes([{ parent: 'Legacy', children: ['Child'] }])).length, 2);
+console.log('PASS: multi-level ancestry, unique IDs, exact membership, legacy tree compatibility');

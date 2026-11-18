@@ -4,6 +4,7 @@ import { useCart } from './CartContext'
 import { useRouter } from 'next/navigation'
 import { LanguageToggle, useLanguage } from './LanguageRuntime'
 import { translateCategoryName, translateProductName, translateText } from '../lib/i18n'
+import { categoryNodes, categoryHref, flattenCategories } from '../lib/sourceCategories.mjs'
 
 export default function Header() {
   const { totalItems } = useCart()
@@ -37,7 +38,7 @@ export default function Header() {
       .then(r => r.json())
       .then(data => {
         const existing = Array.isArray(data) ? data : []
-        setCategoryTree(existing)
+        setCategoryTree(categoryNodes(existing).map(node => ({ ...node, parent: node.name })))
       })
       .catch(() => setCategoryTree([]))
 
@@ -174,7 +175,7 @@ export default function Header() {
               return (
                 <div key={item.parent}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-                    <a href={'/products?category=' + encodeURIComponent(item.parent)}
+                    <a href={categoryHref(item)}
                       style={{ flex: 1, display: 'block', padding: '13px 20px', color: 'var(--gold)', textDecoration: 'none', fontSize: '14px', fontWeight: '700' }}>
                       {translateCategoryName(item.parent, lang)}
                     </a>
@@ -185,11 +186,11 @@ export default function Header() {
                       </button>
                     )}
                   </div>
-                  {isExpanded && item.children && item.children.map(function(child) {
+                  {isExpanded && item.children && flattenCategories(item.children).map(function(child) {
                     return (
-                      <a key={child} href={'/products?category=' + encodeURIComponent(child)}
-                        style={{ display: 'block', padding: '10px 36px', color: 'rgba(255,255,255,0.65)', textDecoration: 'none', fontSize: '13px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                        {translateCategoryName(child, lang)}
+                      <a key={child.id || child.name} href={categoryHref(child)}
+                        style={{ display: 'block', padding: '10px 36px', paddingInlineStart: 36 + child.depth * 18, color: 'rgba(255,255,255,0.65)', textDecoration: 'none', fontSize: '13px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        {translateCategoryName(child.name, lang)}
                       </a>
                     )
                   })}
@@ -313,7 +314,7 @@ export default function Header() {
                 onMouseLeave: handleMenuLeave
               },
                 React.createElement('a', {
-                  href: '/products?category=' + encodeURIComponent(item.parent),
+                  href: categoryHref(item),
                   style: { display: 'block', padding: '11px 14px', color: isActive ? 'var(--gold)' : 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '13px', fontWeight: '500', borderBottom: isActive ? '2px solid var(--gold)' : '2px solid transparent', whiteSpace: 'nowrap' }
                 }, translateCategoryName(item.parent, lang), hasChildren ? ' ▾' : ''),
                 isActive && hasChildren ? React.createElement('div', {
@@ -321,14 +322,14 @@ export default function Header() {
                   onMouseEnter: function() { handleMenuEnter(item.parent) },
                   onMouseLeave: handleMenuLeave
                 },
-                  item.children.map(function(child) {
+                  flattenCategories(item.children).map(function(child) {
                     return React.createElement('a', {
-                      key: child,
-                      href: '/products?category=' + encodeURIComponent(child),
-                      style: { display: 'block', padding: '10px 18px', color: '#2C2416', textDecoration: 'none', fontSize: '14px', borderBottom: '1px solid #f0ebe0' },
+                      key: child.id || child.name,
+                      href: categoryHref(child),
+                      style: { display: 'block', padding: '10px 18px', paddingInlineStart: 18 + child.depth * 18, maxWidth: 'min(420px, 90vw)', whiteSpace: 'normal', color: '#2C2416', textDecoration: 'none', fontSize: '14px', borderBottom: '1px solid #f0ebe0' },
                       onMouseEnter: function(e) { e.currentTarget.style.background = '#F8F4EE'; e.currentTarget.style.color = '#8B6914' },
                       onMouseLeave: function(e) { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#2C2416' }
-                    }, translateCategoryName(child, lang))
+                    }, translateCategoryName(child.name, lang))
                   })
                 ) : null
               )

@@ -1,5 +1,6 @@
 import ProductsBrowserClient from '../components/ProductsBrowserClient'
 import { isCuratedCategory, productMatchesCuratedCategory } from '../lib/curatedCategories'
+import { findSourceCategory, matchesSourceCategory } from '../lib/sourceCategories.mjs'
 
 async function getAllProducts() {
   try {
@@ -149,14 +150,17 @@ export default async function ProductsPage({ searchParams }) {
 
   const all = await getAllProducts()
   const categoryTree = await getCategoryTree()
+  const sourceCategory = findSourceCategory(categoryTree, category)
 
   const allWithIndex = all.map((p, i) => ({ ...p, index: i }))
 
   // ללא סינון מלאי — חסרי מלאי מופיעים בקטגוריות ובחיפוש
-  let filtered = allWithIndex
+  let filtered = allWithIndex.filter(p => !p.source_catalog_missing)
 
   if (category) {
-    if (isCuratedCategory(category)) {
+    if (sourceCategory) {
+      filtered = filtered.filter(p => matchesSourceCategory(p, sourceCategory))
+    } else if (isCuratedCategory(category)) {
       filtered = filtered.filter(p => productMatchesCuratedCategory(p, category))
     } else {
       const parentItem = categoryTree.find(item => item.parent === category)
@@ -187,7 +191,7 @@ export default async function ProductsPage({ searchParams }) {
   const start = (page - 1) * perPage
   const products = filtered.slice(start, start + perPage)
 
-  const title = category || 'כל הספרים'
+  const title = sourceCategory?.name || category || 'כל הספרים'
   const subtitle = search
     ? 'תוצאות חיפוש עבור "' + search + '" — ' + filtered.length + ' מוצרים'
     : category ? filtered.length + ' ספרים' : 'מבחר של למעלה מ-5,000 ספרי קודש ויהדות'
