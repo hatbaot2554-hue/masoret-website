@@ -478,11 +478,11 @@ export default function ProductPageClient({ product }) {
     return (
       <div style={{ maxWidth: '600px', margin: '80px auto', padding: '0 24px', textAlign: 'center' }}>
         <div style={{ fontSize: '64px', marginBottom: '16px' }}>✓</div>
-        <h2 style={{ fontFamily: 'serif', fontSize: '28px', marginBottom: '12px' }}>ההזמנה התקבלה</h2>
-        <p style={{ color: '#6B5C3E', marginBottom: '24px', lineHeight: 1.8 }}>תודה {form.firstName}. לאחר סיום הטיפול, החשבונית ומספר ההזמנה הרשמי יישלחו אליך למייל בשעות הקרובות.</p>
+        <h2 style={{ fontFamily: 'serif', fontSize: '28px', marginBottom: '12px' }}>בקשת ההזמנה התקבלה</h2>
+        <p style={{ color: '#6B5C3E', marginBottom: '24px', lineHeight: 1.8 }}>תודה {form.firstName}. לא בוצע חיוב. הבקשה ממתינה לאישור ולתיאום תשלום ומשלוח מול החנות.</p>
         <div style={{ background: '#F8F4EE', border: '1px solid #EDE6D9', padding: '24px', marginBottom: '24px', lineHeight: 1.8 }}>
-          <div style={{ fontSize: '15px', color: '#2C2416', fontWeight: '700', marginBottom: '6px' }}>אין צורך לשמור מספר זמני</div>
-          <div style={{ fontSize: '14px', color: '#6B5C3E' }}>נעדכן אותך במייל כאשר מספר ההזמנה הרשמי יהיה מוכן, עם קישור למעקב באתר.</div>
+          <div style={{ fontSize: '15px', color: '#2C2416', fontWeight: '700', marginBottom: '6px' }}>מספר הבקשה: {orderId}</div>
+          <div style={{ fontSize: '14px', color: '#6B5C3E' }}>אפשר לפנות לשירות הלקוחות עם מספר הבקשה.</div>
         </div>
         <a href="/products" style={{ background: '#8B6914', color: '#fff', padding: '14px 32px', textDecoration: 'none', fontSize: '15px', fontFamily: 'serif' }}>המשך לקנות</a>
       </div>
@@ -785,6 +785,7 @@ export default function ProductPageClient({ product }) {
                   {engravingType !== 'none' && <div>✍️ הטבעה: ₪{engravingExtra}</div>}
                   <div style={{ fontWeight: '700', color: '#8B6914', marginTop: '6px', fontSize: '16px' }}>סה"כ: ₪{totalPrice}</div>
                 </div>
+                <p style={{ fontSize: '14px', lineHeight: 1.7 }}>לא מתבצע חיוב באתר. מחיר המשלוח והתשלום יתואמו לאחר אישור הבקשה.</p>
                 <form onSubmit={handleQuickBuy}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                     <div>
@@ -823,7 +824,7 @@ export default function ProductPageClient({ product }) {
                   {orderStatus === 'error' && <p style={{ color: 'red', marginBottom: '12px' }}>{orderError}</p>}
                   <button type="submit" disabled={orderStatus === 'loading'}
                     style={{ width: '100%', padding: '14px', background: '#8B6914', color: '#fff', border: 'none', fontSize: '16px', fontFamily: 'serif', cursor: 'pointer' }}>
-                    {orderStatus === 'loading' ? 'שולח...' : 'הזמן עכשיו ⚡'}
+                    {orderStatus === 'loading' ? 'שולח...' : 'שליחת בקשת הזמנה ללא חיוב'}
                   </button>
                 </form>
               </div>

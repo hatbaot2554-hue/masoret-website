@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { priceOrderItems, OrderValidationError } from '../../lib/orderPricing.mjs';
 const DASHBOARD_URL = 'https://masoret-dashboard.vercel.app';
 const DASHBOARD_ORDERS_API_SECRET = process.env.DASHBOARD_ORDERS_API_SECRET || '';
 
@@ -27,8 +28,13 @@ export async function POST(request) {
     if (!Number.isFinite(shippingPrice) || shippingPrice < 0) return NextResponse.json({ error: 'מחיר משלוח לא תקין' }, { status: 400 });
     const shippingAddress = body.altAddress || { firstName, lastName, address, city, phone };
     if (!shippingAddress.address || !shippingAddress.city || !shippingAddress.phone) return NextResponse.json({ error: 'יש להשלים כתובת משלוח' }, { status: 400 });
-    const customerPrice = Math.ceil(items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0));
-    const costPrice = items.reduce((sum, item) => sum + (parseFloat(item.cost || 0) * (item.quantity || 1)), 0);
+    const catalogResponse = await fetch('https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/refs/heads/main/products.json', {
+      cache: 'no-store', signal: AbortSignal.timeout(15000),
+    });
+    if (!catalogResponse.ok) throw new Error('Catalog unavailable');
+    const priced = priceOrderItems(items, await catalogResponse.json());
+    const customerPrice = priced.subtotal;
+    const costPrice = priced.cost;
 
     const orderData = {
       customer_name: `${firstName} ${lastName}`,
@@ -36,7 +42,7 @@ export async function POST(request) {
       customer_email: email.toLowerCase(),
       customer_address: `${shippingAddress.address}, ${shippingAddress.city}`,
       shipping_price: shippingPrice,
-      items: items,
+      items: priced.items,
       total_price: customerPrice,
       cost_price: costPrice,
       profit: customerPrice - costPrice,
@@ -77,6 +83,7 @@ export async function POST(request) {
     });
 
   } catch (e) {
+    if (e instanceof OrderValidationError) return NextResponse.json({ error: e.message }, { status: 409 });
     console.error(e);
     return NextResponse.json({ error: 'לא ניתן ליצור הזמנה כרגע. נסה שוב מאוחר יותר.' }, { status: 500 });
   }
