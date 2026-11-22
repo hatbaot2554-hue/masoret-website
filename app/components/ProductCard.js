@@ -4,6 +4,7 @@ import { useCart } from './CartContext'
 import { useWishlist } from './WishlistContext'
 import { useLanguage } from './LanguageRuntime'
 import { translateProductName } from '../lib/i18n'
+import { productHref } from '../lib/productIdentity.mjs'
 
 function formatPrice(price) {
   const p = parseFloat(price || 0)
@@ -25,7 +26,7 @@ export default function ProductCard({ product, index }) {
   const inStock = product.in_stock !== false
   const wished = isInWishlist(index)
   const displayName = translateProductName(product, lang)
-  const productUrl = '/products/' + index
+  const productUrl = productHref(product)
   const requiresOptions = Boolean(
     (Array.isArray(product.variations) && product.variations.length > 0) ||
     (product.attribute_options &&

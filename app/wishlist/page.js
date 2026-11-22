@@ -2,6 +2,7 @@
 import { useWishlist } from '../components/WishlistContext'
 import { useCart } from '../components/CartContext'
 import { useState } from 'react'
+import { productHref } from '../lib/productIdentity.mjs'
 
 function formatPrice(price) {
   const p = parseFloat(price || 0)
@@ -56,7 +57,7 @@ export default function WishlistPage() {
                   ❤️
                 </button>
 
-                <a href={'/products/' + product.index} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <a href={productHref(product)} style={{ textDecoration: 'none', color: 'inherit' }}>
                   <div style={{ aspectRatio: '3/4', overflow: 'hidden', background: '#EDE6D9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {product.image
                       ? <img src={product.image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -81,7 +82,7 @@ export default function WishlistPage() {
                         style={{ flex: 1, background: isAdded ? '#27ae60' : '#C9A84C', color: isAdded ? '#fff' : '#1A2332', padding: '10px 6px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s' }}>
                         {isAdded ? '✓ נוסף!' : '🛒 הוסף לסל'}
                       </button>
-                      <a href={'/products/' + product.index}
+                      <a href={productHref(product)}
                         style={{ flex: 1, background: '#1A2332', color: '#C9A84C', padding: '10px 6px', textDecoration: 'none', fontSize: '12px', fontWeight: '600', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         פרטים
                       </a>

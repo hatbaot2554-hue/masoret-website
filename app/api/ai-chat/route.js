@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { productHref } from '../../lib/productIdentity.mjs'
 
 const PRODUCTS_URL = 'https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/main/products.json'
 const DASHBOARD_URL = 'https://masoret-dashboard.vercel.app'
@@ -174,7 +175,8 @@ async function getRelevantProducts(query, mode = 'service') {
       stock_text: product.stock_text || '',
       sku: product.sku || product.product_id || '',
       image: product.image || product.images?.[0]?.src || '',
-      url: `${SITE_URL}/products/${product.index}`,
+      sourceProductId: product.source_product_id || product.product_id,
+      url: `${SITE_URL}${productHref(product)}`,
     }))
   } catch {
     return []
@@ -564,7 +566,7 @@ function inferSequentialOrderFields(messages) {
 function safeOrderProductConfirmation(product, index) {
   const sku = product.sku || product.product_id || product.id || ''
   const image = product.image || product.images?.[0]?.src || ''
-  const url = `${SITE_URL}/products/${index}`
+  const url = `${SITE_URL}${productHref(product)}`
   return [
     'מצאתי את המוצר הזה להזמנה:',
     `${product.name || 'מוצר באתר'}`,
@@ -638,7 +640,7 @@ async function createSafeAiOrder({ messages, force = false }) {
         price: found.product.price,
         sku: found.product.sku || found.product.product_id || found.product.id || '',
         image: found.product.image || found.product.images?.[0]?.src || '',
-        url: `${SITE_URL}/products/${found.index}`,
+        url: `${SITE_URL}${productHref(found.product)}`,
       }],
       needsProductConfirmation: true,
     }

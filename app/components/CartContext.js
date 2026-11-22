@@ -1,5 +1,6 @@
 'use client'
 import { createContext, useContext, useState, useEffect } from 'react'
+import { sourceIdentity } from '../lib/productIdentity.mjs'
 const CartContext = createContext(null)
 export function CartProvider({ children }) {
   const [items, setItems] = useState([])
@@ -18,7 +19,7 @@ export function CartProvider({ children }) {
     } catch {}
   }, [items, loaded])
   function addItem(product, quantity = 1, selectedAttrs = {}, selectedVariation = null, engravingData = null) {
-    const key = `${product.index ?? product.url}_${JSON.stringify(selectedAttrs)}_${engravingData ? crypto.randomUUID() : ''}`
+    const key = `${sourceIdentity(product) || product.url}_${JSON.stringify(selectedAttrs)}_${engravingData ? crypto.randomUUID() : ''}`
     const engravingExtra = engravingData ? (engravingData.extraCost || 0) : 0
     setItems(prev => {
       const existing = prev.find(i => i.key === key)
@@ -34,7 +35,7 @@ export function CartProvider({ children }) {
         original_price: selectedVariation ? parseFloat(selectedVariation.original_price) : parseFloat(product.original_price),
         sku: selectedVariation?.sku || product.sku || '',
         product_id: product.product_id || '',
-        sourceProductId: product.product_id || '',
+        sourceProductId: sourceIdentity(product),
         variationId: selectedVariation?.variation_id || null,
         selectedAttrs,
         quantity,

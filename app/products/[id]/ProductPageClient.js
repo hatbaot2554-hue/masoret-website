@@ -257,7 +257,7 @@ export default function ProductPageClient({ product }) {
     try {
       const viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]')
       const filtered = viewed.filter(p => p.index !== product.index)
-      filtered.unshift({ index: product.index, name: displayName, image: product.image, price: product.price })
+      filtered.unshift({ index: product.index, sourceProductId: product.source_product_id || product.product_id, name: displayName, image: product.image, price: product.price })
       localStorage.setItem('recentlyViewed', JSON.stringify(filtered.slice(0, 10)))
     } catch {}
     return () => window.removeEventListener('scroll', onScroll)

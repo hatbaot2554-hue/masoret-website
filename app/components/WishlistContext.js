@@ -31,6 +31,7 @@ export function WishlistProvider({ children }) {
       if (prev.find(i => sameIndex(i.index, product.index))) return prev
       return [...prev, {
         index: product.index,
+        sourceProductId: product.source_product_id || product.product_id || product.sourceProductId,
         name: product.name,
         image: product.image,
         price: product.price,

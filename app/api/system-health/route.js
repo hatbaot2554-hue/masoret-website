@@ -82,6 +82,23 @@ async function dashboardOrdersCheck() {
   }
 }
 
+async function synchronizationCheck() {
+  try {
+    const response = await fetch(PRODUCTS_URL.replace('products.json', 'catalog-audit.json'), {
+      cache: 'no-store', signal: AbortSignal.timeout(15000),
+    })
+    if (!response.ok) throw new Error('דוח הסנכרון אינו זמין.')
+    const report = await response.json()
+    const age = Date.now() - Date.parse(report.checked_at)
+    const fresh = Number.isFinite(age) && age >= 0 && age <= 86400000
+    const complete = report.missing_products === 0 && report.pending_revalidation === 0 && report.source_products > 0
+    return check('CATALOG_SYNC', 'שלמות ועדכניות הסנכרון', 'אתר הלקוחות', fresh && complete ? 'ok' : 'error',
+      `בדיקה אחרונה: ${report.checked_at}. חסרים: ${report.missing_products}. ממתינים לאימות: ${report.pending_revalidation}.${fresh ? '' : ' דוח הסנכרון אינו עדכני.'}`)
+  } catch (error) {
+    return check('CATALOG_SYNC', 'שלמות ועדכניות הסנכרון', 'אתר הלקוחות', 'error', error.message)
+  }
+}
+
 function openAiCheck() {
   const hasKey = configured('OPENAI_API_KEY')
   return check(
@@ -111,6 +128,7 @@ function geminiCheck() {
 export async function GET() {
   const checks = [
     await catalogCheck(),
+    await synchronizationCheck(),
     await dashboardOrdersCheck(),
     openAiCheck(),
     geminiCheck(),

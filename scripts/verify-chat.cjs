@@ -10,6 +10,7 @@ const products = [
 const context = vm.createContext({process:{env:{}},AbortSignal,console,fetch:async()=>({ok:true,json:async()=>products})});
 vm.runInContext(source, context);
 (async()=>{
+  context.productHref = (await import('../app/lib/productIdentity.mjs')).productHref;
   assert.match(vm.runInContext("generalServiceReply('שלום')",context),/שלום/);
   assert.match(vm.runInContext("generalServiceReply('כמה עולה משלוח?')",context),/בסל/);
   assert.equal(vm.runInContext("generalServiceReply('מה מצב ההזמנה שלי?')",context),null);

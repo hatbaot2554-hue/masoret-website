@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { productHref } from '../lib/productIdentity.mjs'
 
 function formatPrice(price) {
   const p = parseFloat(price || 0)
@@ -26,7 +27,7 @@ export default function RecentlyViewed({ currentIndex }) {
       </h3>
       <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '8px' }}>
         {items.map((item, i) => (
-          <a key={i} href={`/products/${item.index}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: '140px' }}>
+          <a key={i} href={productHref(item)} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: '140px' }}>
             <div style={{ background: '#EDE6D9', width: '140px', height: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: '8px', borderRadius: '4px' }}>
               {item.image
                 ? <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

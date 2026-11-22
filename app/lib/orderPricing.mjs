@@ -33,6 +33,7 @@ export function priceOrderItems(items, catalog) {
   const priced = items.map(item => {
     if (!item || !integer(item.quantity)) invalid('כמות המוצר אינה תקינה.');
     const suppliedId = String(item.sourceProductId || '');
+    if (!suppliedId) invalid('יש להוסיף מחדש את המוצר מהקטלוג כדי לוודא את זהותו.');
     let index = Number.isInteger(item.sourceProductIndex) ? item.sourceProductIndex : -1;
     let product = catalog[index];
     const matchesId = p => p && [p.product_id, p.source_product_id, p.url].filter(Boolean).some(id => String(id) === suppliedId);

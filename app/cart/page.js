@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useCart } from '../components/CartContext'
+import { productHref } from '../lib/productIdentity.mjs'
 import { loadCustomerDetails, saveCustomerDetails } from '../lib/customerDetails'
 
 function formatPrice(price) {
@@ -265,7 +266,7 @@ export default function CartPage() {
                   {item.image ? <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '6px' }} /> : <span style={{ fontSize: '32px' }}>📖</span>}
                 </div>
                 <div>
-                  <a href={`/products/${item.index}`} style={{ textDecoration: 'none', color: '#2C2416', fontWeight: '600', fontSize: '15px' }}>{item.name}</a>
+                  <a href={productHref(item)} style={{ textDecoration: 'none', color: '#2C2416', fontWeight: '600', fontSize: '15px' }}>{item.name}</a>
                   {item.sku && <div style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>מק"ט: {item.sku}</div>}
                   {visibleAttributeEntries(item.selectedAttrs).length > 0 && (
                     <div style={{ fontSize: '12px', color: '#6B5C3E', marginTop: '4px' }}>

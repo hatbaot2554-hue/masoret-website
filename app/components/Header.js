@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useCart } from './CartContext'
 import { useRouter } from 'next/navigation'
+import { productHref } from '../lib/productIdentity.mjs'
 import { LanguageToggle, useLanguage } from './LanguageRuntime'
 import { translateCategoryName, translateProductName, translateText } from '../lib/i18n'
 import { categoryNodes, categoryHref, flattenCategories } from '../lib/sourceCategories.mjs'
@@ -105,7 +106,7 @@ export default function Header() {
   function handleSelect(product) {
     setShowSuggestions(false)
     setSearch('')
-    router.push('/products/' + product.index)
+    router.push(productHref(product))
   }
 
   function handleMenuEnter(parentName, event) {
