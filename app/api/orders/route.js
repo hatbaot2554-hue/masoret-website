@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { priceOrderItems, OrderValidationError } from '../../lib/orderPricing.mjs';
 import { getShippingFromSource } from '../../lib/shippingQuote.mjs';
 import { validateOrderShipping, ShippingValidationError } from '../../lib/orderShipping.mjs';
+import { checkoutGuard } from '../../lib/checkoutGuard.mjs';
 const DASHBOARD_URL = 'https://masoret-dashboard.vercel.app';
 const DASHBOARD_ORDERS_API_SECRET = process.env.DASHBOARD_ORDERS_API_SECRET || '';
 
@@ -16,6 +17,10 @@ function generateOrderId(dbId) {
 
 export async function POST(request) {
   try {
+    const requestKey = request.headers.get('idempotency-key');
+    if (!requestKey || !/^[a-f0-9-]{36}$/i.test(requestKey)) return NextResponse.json({ error: 'יש לרענן את הסל לפני שליחת הבקשה.' }, { status: 400 });
+    const guard = await checkoutGuard(request, 'order');
+    if (guard !== 200) return NextResponse.json({ error: guard === 429 ? 'נשלחו בקשות רבות. נסו שוב בעוד כמה דקות.' : 'לא ניתן לשלוח הזמנה כרגע. נסו שוב מאוחר יותר.' }, { status: guard });
     const body = await request.json();
     const { firstName, lastName, email, phone, address, city, items, note, source, utm_source, coupon } = body;
 
@@ -60,6 +65,7 @@ export async function POST(request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'idempotency-key': requestKey,
         ...(DASHBOARD_ORDERS_API_SECRET ? { 'x-dashboard-orders-secret': DASHBOARD_ORDERS_API_SECRET } : {}),
       },
       body: JSON.stringify(orderData)

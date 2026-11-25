@@ -76,7 +76,7 @@ export default function CartPage() {
     setShippingPrices({ home: null, pickup: null })
     setShippingError('')
     setShippingLoading(true)
-    fetch('/api/shipping-quote', {
+    const timer = setTimeout(() => fetch('/api/shipping-quote', {
       method: 'POST',
       signal: controller.signal,
       headers: { 'Content-Type': 'application/json' },
@@ -95,8 +95,8 @@ export default function CartPage() {
         }
       })
       .catch(() => { if (!controller.signal.aborted) setShippingError('יש להזין עיר ולהמתין למחיר משלוח מאומת. אם החישוב נכשל, נסו שוב מאוחר יותר.') })
-      .finally(() => { if (!controller.signal.aborted) setShippingLoading(false) })
-    return () => controller.abort()
+      .finally(() => { if (!controller.signal.aborted) setShippingLoading(false) }), 600)
+    return () => { clearTimeout(timer); controller.abort() }
   }, [items, form.city, altForm.city, showAltAddress])
 
   function handleChange(e) { setForm({ ...form, [e.target.name]: e.target.value }) }
@@ -144,10 +144,7 @@ export default function CartPage() {
       const utmSource = typeof window !== 'undefined'
         ? (new URLSearchParams(window.location.search).get('utm_source') || document.referrer || 'direct')
         : 'direct'
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const payload = JSON.stringify({
           ...form,
           note: form.note,
           shippingMethod: shipping,
@@ -169,12 +166,23 @@ export default function CartPage() {
             sketchFile: i.engravingData?.sketchFile || null,
           })),
           utm_source: utmSource
-        }),
+        })
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(payload))
+      const fingerprint = Array.from(new Uint8Array(digest), n => n.toString(16).padStart(2, '0')).join('')
+      let attempt
+      try { attempt = JSON.parse(sessionStorage.getItem('masoret-order-attempt') || 'null') } catch {}
+      if (attempt?.fingerprint !== fingerprint) attempt = { fingerprint, id: crypto.randomUUID() }
+      sessionStorage.setItem('masoret-order-attempt', JSON.stringify(attempt))
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'idempotency-key': attempt.id },
+        body: payload,
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'שגיאה')
       saveCustomerDetails(form)
       setOrderId(data.ourOrderId)
+      sessionStorage.removeItem('masoret-order-attempt')
       clearCart()
       setStatus('success')
     } catch (err) {
