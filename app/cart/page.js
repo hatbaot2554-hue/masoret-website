@@ -43,7 +43,8 @@ export default function CartPage() {
   const [orderId, setOrderId] = useState(null)
   const [dismissedUpsell, setDismissedUpsell] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
-  const [shippingPrices, setShippingPrices] = useState({ home: 38, pickup: 23 })
+  const [shippingPrices, setShippingPrices] = useState({ home: null, pickup: null })
+  const [shippingError, setShippingError] = useState('')
   const [shippingLoading, setShippingLoading] = useState(false)
   const [couponCode, setCouponCode] = useState('')
   const [coupon, setCoupon] = useState(null)
@@ -72,6 +73,8 @@ export default function CartPage() {
   useEffect(() => {
     if (!items.length) return
     const controller = new AbortController()
+    setShippingPrices({ home: null, pickup: null })
+    setShippingError('')
     setShippingLoading(true)
     fetch('/api/shipping-quote', {
       method: 'POST',
@@ -79,19 +82,19 @@ export default function CartPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         items: items.map(i => ({
-          productId: i.product_id || String(i.index),
+          productId: i.variationId || i.variation_id || i.sourceProductId || i.source_product_id || i.product_id,
           quantity: i.quantity,
         })),
-        city: (showAltAddress ? altForm.city : form.city) || 'תל אביב',
+        city: (showAltAddress ? altForm.city : form.city),
       }),
     })
-      .then(r => r.json())
+      .then(async r => { const data = await r.json(); if (!r.ok) throw new Error(data.error); return data })
       .then(data => {
-        if (!controller.signal.aborted && data.home_delivery != null) {
-          setShippingPrices({ home: data.home_delivery, pickup: data.pickup_point ?? data.home_delivery })
+        if (!controller.signal.aborted) {
+          setShippingPrices({ home: data.home_delivery, pickup: data.pickup_point })
         }
       })
-      .catch(() => {})
+      .catch(() => { if (!controller.signal.aborted) setShippingError('יש להזין עיר ולהמתין למחיר משלוח מאומת. אם החישוב נכשל, נסו שוב מאוחר יותר.') })
       .finally(() => { if (!controller.signal.aborted) setShippingLoading(false) })
     return () => controller.abort()
   }, [items, form.city, altForm.city, showAltAddress])
@@ -126,6 +129,11 @@ export default function CartPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     if (!items.length) return
+    if (shipping !== 'self' && (shippingLoading || selectedShipping?.price == null)) {
+      setStatus('error')
+      setErrorMsg(shippingError || 'יש להמתין לחישוב מחיר המשלוח.')
+      return
+    }
     if (!agreedToTerms) {
       alert('יש לאשר את תקנון האתר לפני ביצוע הזמנה')
       return
@@ -136,13 +144,12 @@ export default function CartPage() {
       const utmSource = typeof window !== 'undefined'
         ? (new URLSearchParams(window.location.search).get('utm_source') || document.referrer || 'direct')
         : 'direct'
-      const shippingNote = `משלוח: ${selectedShipping?.label} (₪${shippingPrice})${showAltAddress ? ` | כתובת משלוח: ${altForm.firstName} ${altForm.lastName}, ${altForm.address}, ${altForm.city}, ${altForm.phone}` : ''}`
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
-          note: [form.note, shippingNote].filter(Boolean).join(' | '),
+          note: form.note,
           shippingMethod: shipping,
           shippingPrice,
           altAddress: showAltAddress ? altForm : null,
@@ -389,11 +396,12 @@ export default function CartPage() {
                         {opt.note && <div style={{ fontSize: '11px', color: '#6B5C3E' }}>{opt.note}</div>}
                       </div>
                       <div style={{ fontSize: '14px', fontWeight: '700', color: opt.price === 0 ? '#27ae60' : '#8B6914' }}>
-                        {opt.price === 0 ? 'חינם' : shippingLoading ? '...' : `₪${opt.price}`}
+                        {opt.price == null ? 'ממתין לחישוב' : opt.price === 0 ? 'חינם' : `₪${opt.price}`}
                       </div>
                     </label>
                   ))}
                 </div>
+                {shippingError && shipping !== 'self' && <p role="alert">{shippingError}</p>}
                 <p style={{ fontSize: '11px', color: '#999', marginTop: '6px' }}>* משלוח חריג עשוי להיות כרוך בתוספת תשלום</p>
               </div>
 
@@ -410,7 +418,7 @@ export default function CartPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#6B5C3E', marginBottom: '12px' }}>
                   <span>משלוח ({selectedShipping?.label}):</span>
                   <span style={{ color: shippingPrice === 0 ? '#27ae60' : '#2C2416' }}>
-                    {shippingPrice === 0 ? 'חינם' : `₪${shippingPrice}`}
+                    {selectedShipping?.price == null ? 'ממתין לחישוב' : shippingPrice === 0 ? 'חינם' : `₪${shippingPrice}`}
                   </span>
                 </div>
                 <div style={{ marginBottom: '12px', background: '#fff', border: '1px solid #EDE6D9', borderRadius: '4px', padding: '12px' }}>
@@ -429,7 +437,7 @@ export default function CartPage() {
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: '700', color: '#2C2416' }}>
                   <span>סכום הבקשה:</span>
-                  <span style={{ color: '#8B6914', fontFamily: 'serif' }}>₪{grandTotal}</span>
+                  <span style={{ color: '#8B6914', fontFamily: 'serif' }}>{selectedShipping?.price == null ? 'ממתין לחישוב משלוח' : `₪${grandTotal}`}</span>
                 </div>
               </div>
 

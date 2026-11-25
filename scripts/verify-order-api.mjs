@@ -2,10 +2,13 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import { priceOrderItems, OrderValidationError } from '../app/lib/orderPricing.mjs';
+import { validateOrderShipping, ShippingValidationError } from '../app/lib/orderShipping.mjs';
 let stored, catalogUnavailable = false;
 const catalog = [{ product_id: 10, name: 'Book', price: 20, original_price: 12, in_stock: true }];
 const context = vm.createContext({
-  priceOrderItems, OrderValidationError, AbortSignal, URL, console: { error() {} },
+  priceOrderItems, OrderValidationError, validateOrderShipping, ShippingValidationError,
+  getShippingFromSource: async () => ({ home_delivery: 38, pickup_point: 23 }),
+  AbortSignal, URL, console: { error() {} },
   process: { env: { DASHBOARD_ORDERS_API_SECRET: 'test-only' } },
   NextResponse: { json: (data, init = {}) => ({ data, status: init.status || 200 }) },
   async fetch(url, options) {
@@ -21,6 +24,7 @@ const source = fs.readFileSync('app/api/orders/route.js', 'utf8')
 vm.runInContext(source, context);
 const body = {
   firstName: 'Test', lastName: 'Only', email: 'test@example.invalid', phone: '0000000000', address: 'Test', city: 'Test',
+  shippingMethod: 'home', shippingPrice: 38,
   items: [{ sourceProductId: 10, sourceProductIndex: 0, quantity: 2, price: 20, cost: 0, name: 'Wrong' }],
 };
 const run = body => context.POST({ json: async () => body });
@@ -29,6 +33,10 @@ assert.equal(stored.total_price, 40);
 assert.equal(stored.cost_price, 24);
 assert.equal(stored.items[0].name, 'Book');
 stored = null;
+assert.equal((await run({ ...body, shippingPrice: 0 })).status, 409);
+assert.equal(stored, null);
+assert.equal((await run({ ...body, shippingMethod: 'invented' })).status, 409);
+assert.equal(stored, null);
 assert.equal((await run({ ...body, items: [{ ...body.items[0], price: 0 }] })).status, 409);
 assert.equal(stored, null);
 catalogUnavailable = true;
