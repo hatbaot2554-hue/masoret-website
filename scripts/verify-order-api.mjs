@@ -9,6 +9,7 @@ const context = vm.createContext({
   priceOrderItems, OrderValidationError, validateOrderShipping, ShippingValidationError,
   getShippingFromSource: async () => ({ home_delivery: 38, pickup_point: 23 }),
   checkoutGuard: async () => guardStatus,
+  validateAttachment: async file => file,
   AbortSignal, URL, console: { error() {} },
   process: { env: { DASHBOARD_ORDERS_API_SECRET: 'test-only' } },
   NextResponse: { json: (data, init = {}) => ({ data, status: init.status || 200 }) },

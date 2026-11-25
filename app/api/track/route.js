@@ -17,7 +17,7 @@ export async function GET(request) {
       isEmail
         ? `${DASHBOARD_URL}/api/orders?order=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(contact.toLowerCase())}`
         : `${DASHBOARD_URL}/api/orders?account=${encodeURIComponent(contact)}`,
-      { cache: 'no-store' }
+      { cache: 'no-store', headers: { 'x-customer-token': request.headers.get('x-customer-token') || '' } }
     )
 
     if (!response.ok) {

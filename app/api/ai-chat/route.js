@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import { productHref } from '../../lib/productIdentity.mjs'
+import { checkoutGuard } from '../../lib/checkoutGuard.mjs'
 
 const PRODUCTS_URL = 'https://raw.githubusercontent.com/hatbaot2554-hue/masoret-automation/main/products.json'
 const DASHBOARD_URL = 'https://masoret-dashboard.vercel.app'
 const SITE_URL = 'https://masoret-website.vercel.app'
-const DASHBOARD_ORDERS_API_SECRET = process.env.DASHBOARD_ORDERS_API_SECRET || ''
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses'
 const DEFAULT_ADVISOR_MODEL = 'gpt-5.1'
 const DEFAULT_SERVICE_MODEL = 'gpt-5-mini'
@@ -183,12 +183,12 @@ async function getRelevantProducts(query, mode = 'service') {
   }
 }
 
-async function getVerifiedOrder(orderNumber, email) {
-  if (!orderNumber || !email) return null
+async function getVerifiedOrder(orderNumber, email, token) {
+  if (!orderNumber || !email || !token) return null
   try {
     const res = await fetch(
       `${DASHBOARD_URL}/api/orders?order=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(email)}`,
-      { cache: 'no-store' }
+      { cache: 'no-store', headers: { 'x-customer-token': token }, signal: AbortSignal.timeout(10000) }
     )
     if (!res.ok) return null
     const data = await res.json()
@@ -199,8 +199,7 @@ async function getVerifiedOrder(orderNumber, email) {
       status: order.status_he || order.status || '',
       date: order.date || '',
       total: order.total_price,
-      items: Array.isArray(order.items) ? order.items : JSON.parse(order.items || '[]'),
-      notes: order.notes || '',
+      items: (Array.isArray(order.items) ? order.items : []).map(item => ({ name: item.name, quantity: item.quantity })),
     }
   } catch {
     return null
@@ -579,136 +578,12 @@ function safeOrderProductConfirmation(product, index) {
   ].filter(Boolean).join('\n')
 }
 
-function safeOrderSuccessReply(orderId, firstName, lastName, quantity, itemName) {
-  return `פתחתי עבורך הזמנה מספר #${orderId}.
-
-ההזמנה נרשמה על ${firstName}${lastName ? ` ${lastName}` : ''} עבור ${quantity} × ${itemName}.
-אחרי בדיקה תקבל קישור לתשלום או עדכון המשך.`
-}
-
-async function createSafeAiOrder({ messages, force = false }) {
-  const text = conversationText(messages)
-  const userText = (messages || [])
-    .filter((message) => message.role === 'user')
-    .map((message) => cleanText(message.text || ''))
-    .join('\n')
-  if (!force) return null
-
-  const latestText = lastUserText(messages)
-  const continuingOrder = isSafeOrderConversation(messages)
-  const productPromptAlreadyShown = continuingOrder && text.includes(`${SITE_URL}/products/`)
-  const latestRejectsProduct = latestText.includes('\u05dc\u05d0') ||
-    latestText.includes('\u05d0\u05d7\u05e8') ||
-    latestText.includes('\u05ea\u05e7\u05df') ||
-    latestText.includes('\u05d8\u05e2\u05d5\u05ea')
-  const productConfirmed = isProductConfirmationAccepted(messages) ||
-    (continuingOrder && (messages || []).some((message) => message.role === 'user' && isPlainPositiveConfirmation(message.text))) ||
-    (productPromptAlreadyShown && !latestRejectsProduct)
-  const found = continuingOrder || productConfirmed
-    ? await findSafeOrderProduct(text)
-    : await findSafeOrderProduct(latestText) || await findSafeOrderProduct(text)
-  const name = labeledValue(text, ['שם', 'שם מלא', 'לקוח', 'customer'])
-  const sequentialFields = inferSequentialOrderFields(messages)
-  const phone = extractPhone(text) || sequentialFields.phone || ''
-  const email = extractEmail(text) || sequentialFields.email || ''
-  const address = labeledValue(text, ['כתובת', 'address'])
-  const city = labeledValue(text, ['עיר', 'city'])
-  const quantity = extractQuantity(userText)
-  const note = labeledValue(text, ['הערות', 'הערה', 'note'])
-
-  const orderName = name || sequentialFields.name || ''
-  const orderAddress = address || sequentialFields.address || ''
-  const orderCity = city || sequentialFields.city || ''
-
-  const fields = {
-    productFound: Boolean(found?.product),
-    name: orderName,
-    phone,
-    email,
-    address: orderAddress,
-    city: orderCity,
-  }
-  const missing = missingSafeOrderFields(fields)
-  if (found?.product && !productConfirmed) {
-    return {
-      handled: true,
-      created: false,
-      reply: safeOrderProductConfirmation(found.product, found.index),
-      products: [{
-        index: found.index,
-        name: found.product.name,
-        price: found.product.price,
-        sku: found.product.sku || found.product.product_id || found.product.id || '',
-        image: found.product.image || found.product.images?.[0]?.src || '',
-        url: `${SITE_URL}${productHref(found.product)}`,
-      }],
-      needsProductConfirmation: true,
-    }
-  }
-  if (missing.length) {
-    return {
-      handled: true,
-      created: false,
-      reply: safeOrderQuestion(missing),
-    }
-  }
-
-  const [firstName, ...lastNameParts] = orderName.split(/\s+/)
-  const item = productToOrderItem(found.product, found.index, quantity)
-  const customerPrice = Number(item.price || 0) * quantity
-  const costPrice = Number(item.cost || 0) * quantity
-
-  const response = await fetch(`${DASHBOARD_URL}/api/orders`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(DASHBOARD_ORDERS_API_SECRET ? { 'x-dashboard-orders-secret': DASHBOARD_ORDERS_API_SECRET } : {}),
-    },
-    body: JSON.stringify({
-      customer_name: orderName,
-      customer_phone: phone,
-      customer_email: email.toLowerCase(),
-      customer_address: `${orderAddress}, ${orderCity}`,
-      items: [item],
-      total_price: customerPrice,
-      cost_price: costPrice,
-      profit: customerPrice - costPrice,
-      payment_method: 'pending',
-      notes: [
-        'AI_CHAT_SAFE_ORDER',
-        'נוצר דרך הצ׳אט כהזמנה לבדיקה ואישור. לא חויב תשלום.',
-        note ? `הערת לקוח: ${note}` : '',
-      ].filter(Boolean).join(' | '),
-      source: 'ai_chat_safe',
-      utm_source: SITE_URL,
-    }),
-  })
-
-  if (!response.ok) {
-    return {
-      handled: true,
-      created: false,
-      reply: 'ניסיתי לפתוח הזמנה, אבל הייתה תקלה בשמירה. אפשר לנסות שוב בעוד רגע.',
-    }
-  }
-
-  const saved = await response.json()
-  const orderId = generateOrderId(saved?.id)
-  const lastName = lastNameParts.join(' ')
-
-  return {
-    handled: true,
-    created: true,
-    orderId,
-    reply: safeOrderSuccessReply(orderId, firstName, lastName, quantity, item.name),
-  }
-}
 
 function fallbackReply(mode, query, products, order) {
   if (mode === 'service') {
     const general = generalServiceReply(query)
     if (general) return general
-    if (!order && /הזמנה|הזמנתי|המשלוח שלי/.test(query)) return 'כדי לבדוק הזמנה קיימת, יש להזין את מספר ההזמנה ואת המייל ששימש להזמנה בשדות למעלה. אין צורך בפרטים האלה לשאלות על מוצרים.'
+    if (!order && /הזמנה|הזמנתי|המשלוח שלי/.test(query)) return 'לבדיקת הזמנה יש להתחבר תחילה לחשבון: https://masoret-website.vercel.app/account ואז להזין מספר הזמנה ומייל. לשאלות על מוצרים אין צורך בכניסה.'
   }
   if (/שעות|פתיחה|סגור|פתוח/.test(query)) return 'אין לי כרגע שעות פתיחה מאומתות. אפשר לברר דרך עמוד יצירת הקשר: https://masoret-website.vercel.app/contact'
   if (!products.length && !order) return 'לא מצאתי מידע מתאים לשאלה הזאת. אפשר לציין שם מדויק או מק״ט, או לפנות לשירות דרך https://masoret-website.vercel.app/contact'
@@ -857,7 +732,7 @@ ${advisorRules}
 אסור להמציא סטטוס הזמנה, מחיר, מלאי או פעולה שבוצעה.
 אם אתה שירות לקוחות והשאלה היא על מוצר, מלאי, מחיר, משלוח, החזרה או מדיניות: ענה ישירות לפי המוצרים והמדיניות. אל תבקש מספר הזמנה אלא אם השאלה באמת דורשת בדיקת הזמנה קיימת או שינוי הזמנה קיימת.
 אם יש כמה מוצרים דומים לשאלה, הצג כמה אפשרויות עם קישור ישיר לכל מוצר, מחיר ומצב מלאי.
-אם מבקשים שינוי הזמנה, ביטול, הוספה או הורדת מוצר: בקש אימות מספר הזמנה ומייל אם חסר, הסבר שתכין בקשת טיפול, ואל תגיד שהשינוי בוצע בפועל.
+אין לך הרשאה ליצור או לשנות הזמנות, לשלוח בקשות טיפול או לקרוא קבצים. לבירור הזמנה יש להתחבר לחשבון באמצעות קוד אימות. לשינוי הזמנה יש להפנות לעמוד יצירת קשר; לרכישה יש להפנות למוצר ולסל. אל תטען ששלחת בקשת טיפול או שביצעת פעולה.
 אם יש הזמנה מאומתת בהקשר, אפשר להתייחס לסטטוס שלה בלי לחשוף מידע מעבר למה שנדרש.
 אם יש מוצרים רלוונטיים, המלץ עם שם, מחיר וקישור ישיר מלא למוצר.
 מדיניות האתר:
@@ -916,6 +791,8 @@ ${order ? JSON.stringify(order, null, 2) : 'אין הזמנה מאומתת'}
 
 export async function POST(request) {
   try {
+    const guard = await checkoutGuard(request, 'ai')
+    if (guard !== 200) return NextResponse.json({ error: 'לא ניתן לשלוח הודעה כרגע. נסו שוב בעוד כמה דקות.' }, { status: guard })
     const body = await request.json()
     const mode = body.mode === 'advisor' ? 'advisor' : 'service'
     const messages = Array.isArray(body.messages) ? body.messages.filter(m => m && ['user', 'assistant'].includes(m.role) && typeof m.text === 'string').slice(-12).map(m => ({ role: m.role, text: m.text.slice(0, 3000) })) : []
@@ -924,18 +801,13 @@ export async function POST(request) {
     const general = mode === 'service' ? generalServiceReply(query) : null
     if (general) return NextResponse.json({ reply: general, products: [], orderFound: false })
     const products = await getRelevantProducts(searchQuery(messages), mode)
-    const order = mode === 'service' ? await getVerifiedOrder(body.orderNumber, body.email) : null
+    const order = mode === 'service' ? await getVerifiedOrder(body.orderNumber, body.email, request.headers.get('x-customer-token')) : null
     const explicitOrderIntent = mode === 'service' && isExplicitOrderRequest(query)
     const productOrderCandidate = false
     const continuingSafeOrder = mode === 'service' && isSafeOrderConversation(messages)
-    const safeOrder = await createSafeAiOrder({
-      messages,
-      force: mode === 'service' && (
-        explicitOrderIntent ||
-        productOrderCandidate ||
-        (continuingSafeOrder && !isProductInfoQuestion(query))
-      ),
-    })
+    const safeOrder = mode === 'service' && (explicitOrderIntent || (continuingSafeOrder && !isProductInfoQuestion(query)))
+      ? { handled: true, created: false, reply: `אשמח לעזור בבחירה. להשלמת הזמנה יש לבחור מוצר ולאשר את הפרטים, המחיר והמשלוח בסל: ${SITE_URL}/cart\nלא נוצרה הזמנה בצ׳אט.`, products }
+      : null
 
     if (safeOrder?.handled) {
       return NextResponse.json({

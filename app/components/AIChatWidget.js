@@ -120,7 +120,7 @@ export default function AIChatWidget() {
     try {
       const res = await fetch('/api/ai-chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-customer-token': localStorage.getItem('masoret_token') || '' },
         body: JSON.stringify({
           mode,
           messages: nextMessages,

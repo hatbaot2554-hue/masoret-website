@@ -32,7 +32,7 @@ function TrackContent() {
     setSearched(true)
 
     try {
-      const res = await fetch(`/api/orders?order=${encodeURIComponent(orderNum)}&contact=${encodeURIComponent(contactVal)}`)
+      const res = await fetch(`/api/orders?order=${encodeURIComponent(orderNum)}&contact=${encodeURIComponent(contactVal)}`, { headers: { 'x-customer-token': localStorage.getItem('masoret_token') || '' } })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'הזמנה לא נמצאה')
       setOrder(data.order)
@@ -47,7 +47,7 @@ function TrackContent() {
     <div style={{ padding: '56px 0', minHeight: '60vh' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto', padding: '0 24px' }}>
         <h1 style={{ fontFamily: 'serif', fontSize: '36px', fontWeight: '900', marginBottom: '8px' }}>מעקב הזמנה</h1>
-        <p style={{ color: '#6B5C3E', marginBottom: '40px' }}>הזן את מספר ההזמנה ומייל או טלפון לאיתור ההזמנה</p>
+        <p style={{ color: '#6B5C3E', marginBottom: '40px' }}>מעקב זמין לאחר <a href="/account">כניסה לחשבון</a> עם כתובת המייל ששימשה להזמנה.</p>
 
         <form onSubmit={handleSearch} style={{ marginBottom: '40px' }}>
           <div style={{ marginBottom: '16px' }}>

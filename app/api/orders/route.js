@@ -3,6 +3,7 @@ import { priceOrderItems, OrderValidationError } from '../../lib/orderPricing.mj
 import { getShippingFromSource } from '../../lib/shippingQuote.mjs';
 import { validateOrderShipping, ShippingValidationError } from '../../lib/orderShipping.mjs';
 import { checkoutGuard } from '../../lib/checkoutGuard.mjs';
+import { validateAttachment } from '../../lib/validateAttachment.mjs';
 const DASHBOARD_URL = 'https://masoret-dashboard.vercel.app';
 const DASHBOARD_ORDERS_API_SECRET = process.env.DASHBOARD_ORDERS_API_SECRET || '';
 
@@ -38,6 +39,17 @@ export async function POST(request) {
     });
     if (!catalogResponse.ok) throw new Error('Catalog unavailable');
     const priced = priceOrderItems(items, await catalogResponse.json());
+    try {
+      let attachmentBytes = 0;
+      for (const item of priced.items) {
+        item.sketchFile = await validateAttachment(item.sketchFile);
+        attachmentBytes += item.sketchFile?.size || 0;
+        if (item.engraving) delete item.engraving.sketchFile;
+      }
+      if (attachmentBytes > 2 * 1024 * 1024) throw new Error('Attachments exceed order limit');
+    } catch {
+      return NextResponse.json({ error: 'קובץ ההטבעה אינו תקין. יש להעלות תמונת PNG או JPEG, עד 2MB בסך הכול.' }, { status: 400 });
+    }
     const shipping = await validateOrderShipping(body, priced.items, shippingAddress, getShippingFromSource);
     const shippingPrice = shipping.amount;
     const customerPrice = priced.subtotal;
@@ -133,7 +145,7 @@ export async function GET(request) {
         {
           cache: 'no-store',
           headers: {
-            ...(DASHBOARD_ORDERS_API_SECRET ? { 'x-dashboard-orders-secret': DASHBOARD_ORDERS_API_SECRET } : {}),
+            'x-customer-token': request.headers.get('x-customer-token') || '',
           },
         }
       )
@@ -155,7 +167,7 @@ export async function GET(request) {
       {
         cache: 'no-store',
         headers: {
-          ...(DASHBOARD_ORDERS_API_SECRET ? { 'x-dashboard-orders-secret': DASHBOARD_ORDERS_API_SECRET } : {}),
+          'x-customer-token': request.headers.get('x-customer-token') || '',
         },
       }
     );

@@ -20,5 +20,17 @@ vm.runInContext(source, context);
   assert.equal((await vm.runInContext("getRelevantProducts('zzzzunlisted','advisor')",context)).length,0);
   assert.match(vm.runInContext("searchQuery([{role:'user',text:'סידור לאמא'},{role:'user',text:'ומה יותר זול?'}])",context),/סידור לאמא/);
   assert.doesNotMatch(vm.runInContext("fallbackReply('advisor','סידור', [{name:'סידור',price:40,url:'https://example.invalid'}],null)",context),/הבטוחה ביותר/);
+  context.checkoutGuard = async () => 200;
+  context.NextResponse = { json: data => data };
+  context.fetch = async (url, options) => {
+    assert.ok(!url.includes('/api/orders'), 'Anonymous chat must not read or write orders');
+    assert.ok(!url.includes('/checkout'), 'Chat must not place supplier orders');
+    return { ok: true, json: async () => products };
+  };
+  assert.equal(await context.getVerifiedOrder('12345', 'owner@example.invalid', ''), null);
+  const response = await context.POST({ headers: new Headers(), json: async () => ({ mode: 'service', messages: [{ role: 'user', text: 'תזמין לי סידור עכשיו' }] }) });
+  assert.equal(response.draftOrderCreated, false);
+  assert.equal(response.actionExecuted, false);
+  assert.match(response.reply, /cart/);
   console.log('PASS: service intent, history, pending-stock exclusion, unavailable exclusion, no-match, cautious fallback');
 })().catch(e=>{console.error(e);process.exitCode=1});

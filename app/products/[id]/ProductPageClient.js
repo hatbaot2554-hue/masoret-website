@@ -715,7 +715,7 @@ export default function ProductPageClient({ product }) {
                           </div>
                           <div style={{ marginBottom: '16px' }}>
                             <label style={{ fontSize: '14px', color: '#6B5C3E', display: 'block', marginBottom: '4px', fontWeight: '600' }}>יש לך סקיצה מוכנה?</label>
-                            <input type="file" accept="image/*,.pdf,.ai,.eps,.svg,.png,.jpg,.jpeg" onChange={e => setSketchFile(e.target.files[0] || null)} style={{ fontSize: '14px', color: '#2C2416' }} />
+                            <input type="file" accept="image/png,image/jpeg" onChange={e => setSketchFile(e.target.files[0] || null)} style={{ fontSize: '14px', color: '#2C2416' }} />
                           </div>
                           {bulkType === 'over100' && (
                             <div>
